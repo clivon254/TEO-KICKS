@@ -33,6 +33,7 @@ This document defines the customer‑facing React app: user flow, pages, functio
     - Filters (category, collection, price, rating, attributes), sorting.
   - Product Details `/product/:slug`
     - Variant selection (size/color/etc.), images, specs, stock per SKU, customization, related products.
+    - Reviews: list with average rating; only users who purchased and received the product can write/edit one review (verified purchase badge).
   - Compare `/compare`
     - Side‑by‑side spec and price comparison.
 
@@ -67,6 +68,7 @@ This document defines the customer‑facing React app: user flow, pages, functio
 - `/search`
 - `/products`
 - `/product/:slug`
+- `/product/:slug/review` (optional dedicated page/modal for writing/editing a review if eligible)
 - `/compare`
 - `/contact`
 - `/login`, `/register`, `/verify-otp`, `/forgot-password`, `/reset-password`

@@ -35,6 +35,7 @@ This document defines the staff/admin React app: flow, pages, functionalities, r
     - Details, images, pricing, status.
   - Edit Product `/products/:id/edit`
     - Variant builder (attributes, options) and SKU matrix (price, stock, barcode, image).
+    - Reviews tab: view product reviews, approve/reject, reply (optional), and see verified badges.
   - Categories `/categories`
   - Collections `/collections`
   - Attributes `/attributes`
@@ -66,6 +67,7 @@ This document defines the staff/admin React app: flow, pages, functionalities, r
 
 - Analytics & Reports
   - `/analytics`
+  - Review analytics: avg rating, volume, verified ratio (optional)
 
 - Content
   - Banners & blocks `/content`

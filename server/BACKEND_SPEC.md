@@ -120,6 +120,12 @@ This document describes the backend architecture, environment, models, controlle
 
 Supporting taxonomies often used: Category, Collection, Brand (optional but recommended for filtering).
 
+- **Review**
+  - product, user, orderId?, orderItemId?
+  - rating (1..5), title, body, images []
+  - isVerifiedPurchase (bool), isApproved (bool)
+  - createdAt, updatedAt
+
 - **StoreSettings**
   - Identity: storeName, contactEmail, contactPhone
   - Location: address { street, city, region, country, postal }, timezone
@@ -145,6 +151,7 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
 - Receipts: generate on successful payment, attach/store URL, email to customer, resend on demand
 - Notifications: send/broadcast (email/sms/in‑app), mark read
 - Store settings: get/update settings (admin only), compute current open/closed status
+- Reviews: create (verified purchasers only), update/delete own review, admin approve/reject, list & aggregate ratings per product
 
 ---
 
@@ -155,6 +162,8 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
 - `/api/auth/oauth/:provider/callback` — OAuth callback
 - `/api/users` — me, profile, addresses, notifications
 - `/api/products` — list, detail, filters, variants, admin CRUD
+- `/api/products/:productId/reviews` — list reviews, create review (if verified buyer)
+- `/api/products/:productId/reviews/:reviewId` — update/delete (owner or admin), approve (admin)
 - `/api/wishlist` — list/add/remove
 - `/api/compare` — list/add/remove
 - `/api/cart` — get/set/update/apply‑coupon
@@ -187,6 +196,11 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
   - GET `/api/products` ?q=&category=&collection=&variants[Size]=M&variants[Color]=Red&price[min]=&price[max]=&sort=
   - GET `/api/products/:slug` — includes variant matrix and SKU stock
   - POST `/api/products` (admin)
+  - GET `/api/products/:id/reviews` — list with pagination and aggregates (avg, counts per star)
+  - POST `/api/products/:id/reviews` { rating, title, body, images } — requires Delivered order containing product; one per user
+  - PATCH `/api/products/:id/reviews/:reviewId` — author can edit within policy window
+  - DELETE `/api/products/:id/reviews/:reviewId` — author or admin
+  - POST `/api/products/:id/reviews/:reviewId/approve` — admin approval
 
 - Wishlist / Compare
   - POST `/api/wishlist` { productId }
@@ -262,6 +276,7 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
 - Input validation (Zod/Joi), rate limits, CORS, Helmet, mongo sanitize, XSS clean, HPP.
 - Centralized error handler with problem details.
 - Structured logs (Pino) with request tracing; health checks.
+- Rate limit review creation/edits; profanity filter; anti‑spam; audit log for moderation actions.
 
 ---
 

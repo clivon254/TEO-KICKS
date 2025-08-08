@@ -28,6 +28,8 @@ This document explains, in simple terms, how the shopping experience works for c
 
 - **Product details and customization**: On the product page, choose variants (e.g., size, color) and customization options if available (e.g., print/logo/text). See real‑time price and stock per variant.
 
+- **Reviews (verified purchase only)**: Write reviews and ratings only if you purchased and received the product (Delivered). Reviews are marked with a Verified Purchase badge.
+
 - **Cart and quantity management**: Add items to cart, adjust quantities, change selected variants, or remove items. The cart shows item totals, shipping estimates, and any savings.
 
 - **Apply coupons**: Enter valid coupon codes from the store to get discounts or special offers. See savings before paying.
@@ -54,6 +56,8 @@ This document explains, in simple terms, how the shopping experience works for c
 - **Analyze sales**: View dashboards and reports showing sales, revenue, top products, best customers, and campaign results.
 
 - **Order management**: See all orders and move them through each status step (Placed → Confirmed → Packed → Shipped → Delivered). Handle cancellations, returns, and refunds. View/download receipts and resend them to customers when needed.
+
+- **Reviews moderation**: Review center to approve/reject reviews, remove inappropriate content, and manage review settings (only verified purchasers may review; one review per user per product; optional review window after delivery).
 
 - **Role‑based access**: Create roles (e.g., Admin, Manager, Staff) and set permissions so only authorized people can perform sensitive actions.
 
