@@ -29,11 +29,14 @@ This document defines the customer‑facing React app: user flow, pages, functio
     - Query bar, facets, results, sort.
   - Contact `/contact`
     - Show store contact info, location map, hours and days off; inquiry form.
+    - Form fields: email, message (content). Optional: name/phone.
+    - Validation and spam protection (rate limit / CAPTCHA). Show success confirmation after submit.
   - Product Listing `/products`
     - Filters (category, collection, price, rating, attributes), sorting.
   - Product Details `/product/:slug`
     - Variant selection (size/color/etc.), images, specs, stock per SKU, customization, related products.
     - Reviews: list with average rating; only users who purchased and received the product can write/edit one review (verified purchase badge).
+    - Packaging options: choose from available packaging (with fees) before adding to cart.
   - Compare `/compare`
     - Side‑by‑side spec and price comparison.
 
@@ -52,11 +55,15 @@ This document defines the customer‑facing React app: user flow, pages, functio
 
 - Shopping
   - Wishlist `/wishlist`
-    - Add/remove items; requires login to persist across devices.
+    - Add/remove items; login required.
+  - Compare `/compare`
+    - Add/remove products to comparison; login required.
   - Cart `/cart`
-    - Edit quantities, variant switches, remove items, apply coupon.
+    - Add items and edit quantities/variants/packaging; login required. Prevent adding out‑of‑stock variants unless pre‑order is enabled.
   - Checkout `/checkout`
-    - Steps: Address → Shipping → Payment → Review.
+    - Steps: Address → Shipping/Pick‑up → Payment → Review.
+    - Fulfilment: “Now” or “Scheduled” (show scheduling fee if applicable).
+    - In‑shop vs Away rules: if Away, require payment at checkout; if In‑shop, allow pay now or post to bill.
 
 ---
 
@@ -73,13 +80,15 @@ This document defines the customer‑facing React app: user flow, pages, functio
 - `/contact`
 - `/login`, `/register`, `/verify-otp`, `/forgot-password`, `/reset-password`
 - `/auth/callback` (OAuth redirect handler if needed)
-- `/wishlist`
-- `/cart`
+- `/wishlist` (auth‑required)
+- `/cart` (auth‑required)
 - `/checkout`
+  - `/checkout/schedule` (optional)
 - `/account`, `/account/profile`, `/account/addresses`, `/account/notifications`, `/account/orders`, `/account/orders/:id`
 - `/account/orders/:id/receipt` (optional direct link)
 
 Protected route guards should enforce authentication for wishlist persistence, checkout, and all `/account` routes.
+Additionally enforce authentication for add‑to‑cart and compare actions.
 
 ---
 
@@ -100,6 +109,39 @@ Planned (do not install yet):
 - `framer-motion` — Micro‑interactions and transitions.
 - `react-helmet-async` — SEO tags per route.
 - `react-pdf` (or open receipt URL) — Optional in‑app PDF viewing/printing of receipts.
+- (Optional later) CAPTCHA library/integration — Protect contact form from spam.
+
+---
+
+## Theme (Light – White background)
+
+Four palette options derived from the brand purple. Use as Tailwind custom colors or CSS variables.
+
+- Palette 1 (Monochrome Lavender)
+  - primary-color: #4B2E83
+  - secondary-color: #BFA6FF
+  - primary-button-color: #3A1F66
+  - secondary-button-color: #EDE8FF
+
+- Palette 2 (Royal Gold Contrast)
+  - primary-color: #4B2E83
+  - secondary-color: #F5C518
+  - primary-button-color: #3A1F66
+  - secondary-button-color: #FFE8A3
+
+- Palette 3 (Cool Teal Contrast)
+  - primary-color: #4B2E83
+  - secondary-color: #2CB1A6
+  - primary-button-color: #3A1F66
+  - secondary-button-color: #C7F5F2
+
+- Palette 4 (Modern Pink Accent) — DEFAULT
+  - primary-color: #4B2E83
+  - secondary-color: #E879F9
+  - primary-button-color: #3A1F66
+  - secondary-button-color: #FDE7FF
+
+Note: Background stays white. Ensure AA contrast for text on buttons.
 
 ---
 

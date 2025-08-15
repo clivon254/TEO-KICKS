@@ -78,6 +78,7 @@ This document describes the backend architecture, environment, models, controlle
 - **Variant (Attribute) & Options**
   - Example attributes: Size, Color, Material; options: [S, M, L], [Red, Blue], etc.
   - Flexible schema so any product can use any variants.
+  - Full CRUD for attributes and options; attach/detach variants to products.
 
 - **Product**
   - Basic: title, slug, description, brand, images, categories, collections, tags
@@ -85,9 +86,11 @@ This document describes the backend architecture, environment, models, controlle
   - Variants: list of attributes used (e.g., Size, Color)
   - SKUs: concrete combinations with SKU, price (override), stock, barcode, image, weight
   - Status: active, draft, archived
+  - Packaging options: [{ name, fee, description, isDefault }]
 
 - **Inventory**
   - Tracks stock per SKU (variant combination), reserves on order placement, deducts on payment.
+  - Real‑time stock updates; prevent add‑to‑cart when qty is 0 unless pre‑order is enabled; optional back‑in‑stock notifications.
 
 - **Wishlist**
   - User ↔ Product references, createdAt
@@ -96,7 +99,7 @@ This document describes the backend architecture, environment, models, controlle
   - User ↔ Products up to N items
 
 - **Cart**
-  - User (or guest token), items [{ productId, skuId, qty, priceSnapshot, customization }], coupon, totals
+  - User (authenticated only), items [{ productId, skuId, qty, priceSnapshot, customization }], coupon, totals
 
 - **Coupon**
   - Code, type (percent/amount/free‑shipping), rules (min spend, usage limit, start/end), status
@@ -111,6 +114,9 @@ This document describes the backend architecture, environment, models, controlle
   - Totals: subtotal, discounts, shipping, tax, grandTotal
   - Timeline: events with actor (system/staff)
   - Receipt: receiptNumber, receiptUrl (or storage key), receiptGeneratedAt
+  - Fulfilment: fulfilNow (bool), scheduledAt (Date), schedulingFee
+  - Context: orderOrigin ("in-shop"|"away"), settlement ("pay-now"|"post-to-bill")
+  - Delivery: method ("pickup"|"delivery"), deliveryDistanceKm, deliveryFeePerKm, deliveryFeeTotal, assignedRiderId
 
 - **Payment**
   - Provider: mpesa|paystack|cash, amount, currency, status, externalRef, metadata, webhook logs
@@ -126,12 +132,22 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
   - isVerifiedPurchase (bool), isApproved (bool)
   - createdAt, updatedAt
 
+- **ContactMessage**
+  - fromEmail, fromUserId?
+  - subject?, content
+  - status: open|resolved, assignedTo?
+  - replies: [{ channel: email|sms|in-app, to, body, sentAt, meta }]
+  - createdAt, updatedAt
+
 - **StoreSettings**
   - Identity: storeName, contactEmail, contactPhone
   - Location: address { street, city, region, country, postal }, timezone
   - Hours: weekly schedule [{ day: 0-6, open: "09:00", close: "18:00", closed: boolean }]
   - Days off / Holidays: dates [], notes
   - Visibility flags: showContactOnSite, showHoursOnSite
+  - Fulfilment: { enableScheduling, schedulingFee }
+  - Delivery: { feePerKm }
+  - Billing: { allowPostToBillInShop }
 
 ---
 
@@ -141,17 +157,20 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
 - Users: profile CRUD, addresses CRUD, notification prefs, list (admin)
 - Products: CRUD, variant builder, SKU generation, images upload
 - Inventory: adjust, reserve, release; low‑stock alerts
+  - Enforce out‑of‑stock restriction on cart; allow pre‑order if enabled; push real‑time updates.
 - Wishlist: add/remove/list
 - Compare: add/remove/list
 - Cart: add/update/remove/merge, apply/remove coupon, totals
 - Coupons: CRUD, validate/apply
 - Campaigns: CRUD, schedule, stats
 - Orders: create (customer/admin), detail, list/filter, status transitions, timeline notes
+  - Support fulfil‑now and scheduled; compute scheduling fee; apply in‑shop vs away payment rules; post‑to‑bill flow; delivery fee per km computation; rider claim/assign operations.
 - Payments: create intents, M‑Pesa STK push, Paystack init, confirm, webhooks
 - Receipts: generate on successful payment, attach/store URL, email to customer, resend on demand
 - Notifications: send/broadcast (email/sms/in‑app), mark read
 - Store settings: get/update settings (admin only), compute current open/closed status
 - Reviews: create (verified purchasers only), update/delete own review, admin approve/reject, list & aggregate ratings per product
+- Contact: submit contact messages (public), admin list/assign, reply via email/SMS/in‑app, resolve
 
 ---
 
@@ -166,16 +185,25 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
 - `/api/products/:productId/reviews/:reviewId` — update/delete (owner or admin), approve (admin)
 - `/api/wishlist` — list/add/remove
 - `/api/compare` — list/add/remove
-- `/api/cart` — get/set/update/apply‑coupon
+- `/api/cart` — get/set/update/apply‑coupon (auth‑required)
+  - Reject add/update when stock unavailable unless pre‑order enabled
 - `/api/coupons` — validate, admin CRUD
 - `/api/campaigns` — admin CRUD, stats
 - `/api/orders` — create, list, detail, status updates
+  - Support payload: { fulfilNow|scheduledAt, origin: 'in-shop'|'away', settlement: 'pay-now'|'post-to-bill', method: 'pickup'|'delivery', packagingOptionId }
+  - Delivery fee per km calculation (reads delivery settings)
+  - Rider: `/api/orders/available` (rider) list claimable; `/api/orders/:id/claim` (rider) claim; `/api/orders/:id/assign` (admin) assign
 - `/api/orders/:id/receipt` — get/download receipt (owner or admin)
 - `/api/orders/:id/receipt/resend` — resend receipt email to customer (admin)
 - `/api/payments` — init, confirm, webhooks (mpesa/paystack), admin collect
 - `/api/notifications` — list, mark‑read, broadcast (admin)
 - `/api/store-settings` — get public settings
 - `/api/admin/store-settings` — get/update (admin only)
+ - `/api/contact` — submit contact message (public)
+ - `/api/admin/contacts` — list/search, get one
+ - `/api/admin/contacts/:id/reply` — reply via channel { channel, body }
+ - `/api/admin/contacts/:id/status` — set status open/resolved, assign owner
+  - Include fulfilment (scheduling + fee), delivery (per‑km fee), billing (post‑to‑bill policies)
 
 ---
 
@@ -203,9 +231,9 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
   - POST `/api/products/:id/reviews/:reviewId/approve` — admin approval
 
 - Wishlist / Compare
-  - POST `/api/wishlist` { productId }
+  - POST `/api/wishlist` { productId } (auth‑required)
   - DELETE `/api/wishlist/:productId`
-  - POST `/api/compare` { productId }
+  - POST `/api/compare` { productId } (auth‑required)
   - DELETE `/api/compare/:productId`
 
 - Cart & Coupons
@@ -213,12 +241,17 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
   - POST `/api/cart/items` { productId, skuId, qty, customization }
   - PATCH `/api/cart/items/:itemId` { qty, skuId }
   - DELETE `/api/cart/items/:itemId`
+  - Response/validation ensures item cannot be added when stock is 0 unless product/SKU has preOrderEnabled
   - POST `/api/cart/coupon` { code }
+  - All cart endpoints require authentication.
 
 - Orders
-  - POST `/api/orders` { addressId, shippingMethod, paymentMethod } → creates order (reserves stock)
+  - POST `/api/orders` { addressId, shippingMethod, paymentMethod, fulfilNow, scheduledAt, origin, settlement, method, packagingOptionId } → creates order (reserves stock)
   - GET `/api/orders/:id` — details + tracking timeline
   - PATCH `/api/orders/:id/status` { status } (admin)
+  - GET `/api/orders/available` (rider) — list of delivery orders to claim
+  - POST `/api/orders/:id/claim` (rider) — claim an order
+  - POST `/api/orders/:id/assign` (admin) { riderId }
 
 - Payments
   - POST `/api/payments/mpesa/initiate` { orderId, phone } → STK Push to customer phone
@@ -232,10 +265,17 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
   - GET `/api/notifications`
   - POST `/api/notifications/broadcast` (admin) { channel, audience, templateId, params }
   
+- Contact Messages
+  - POST `/api/contact` { email, content, subject? }
+  - GET `/api/admin/contacts` (admin) ?q=&status=&page=&pageSize=
+  - GET `/api/admin/contacts/:id`
+  - POST `/api/admin/contacts/:id/reply` (admin) { channel: "email"|"sms"|"in-app", body }
+  - PATCH `/api/admin/contacts/:id/status` (admin) { status: "open"|"resolved", assignedTo }
+  
 - Store Settings
   - GET `/api/store-settings` → public info (name, contact, location visibility, hours)
   - GET `/api/admin/store-settings` (admin) → full editable settings
-  - PUT `/api/admin/store-settings` (admin) { storeName, contactEmail, ..., hours, daysOff }
+  - PUT `/api/admin/store-settings` (admin) { storeName, contactEmail, ..., hours, daysOff, fulfilment: { enableScheduling, schedulingFee }, delivery: { feePerKm }, billing: { allowPostToBillInShop } }
 
 ---
 
@@ -277,6 +317,7 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
 - Centralized error handler with problem details.
 - Structured logs (Pino) with request tracing; health checks.
 - Rate limit review creation/edits; profanity filter; anti‑spam; audit log for moderation actions.
+ - Contact form: rate limit, CAPTCHA support, spam filtering; store minimal PII.
 
 ---
 
