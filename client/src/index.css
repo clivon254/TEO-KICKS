@@ -7,6 +7,60 @@
   --color-secondary-button: #FDE7FF;
 }
 
+@layer components {
+  /* Custom Button Styles */
+  .btn-primary {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer border inline-block bg-primary-button text-white border-primary-button hover:bg-primary hover:border-primary hover:scale-105;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer border inline-block bg-secondary-button text-primary border-secondary-button hover:bg-secondary hover:text-white hover:border-secondary;
+  }
+
+  .btn-outline {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer border inline-block bg-transparent text-primary border-primary hover:bg-primary hover:text-white;
+  }
+
+  /* Custom Title Styles */
+  .title {
+    @apply text-4xl font-bold text-primary mb-4;
+  }
+
+  .title2 {
+    @apply text-3xl font-semibold text-primary mb-3;
+  }
+
+  .title3 {
+    @apply text-2xl font-medium text-primary mb-2;
+  }
+
+  /* Custom Input Styles */
+  .input {
+    @apply w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-200;
+  }
+
+  .input2 {
+    @apply w-full px-3 py-2 rounded-md border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all duration-200;
+  }
+
+  .input3 {
+    @apply w-full px-4 py-2 rounded-full border-2 border-primary focus:border-secondary focus:ring-2 focus:ring-secondary/30 outline-none transition-all duration-200;
+  }
+
+  /* Custom Container Styles */
+  .container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .container-sm {
+    @apply max-w-4xl mx-auto px-4 sm:px-6;
+  }
+
+  .container-xs {
+    @apply max-w-2xl mx-auto px-4;
+  }
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
