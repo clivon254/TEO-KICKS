@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken"
 import validator from "validator"
 import crypto from "crypto"
 import { errorHandler } from "../utils/error.js"
+import { sendOTPNotification, sendPasswordResetNotification, sendWelcomeNotification } from "../services/notificationService.js"
 
 
 // Helper function to generate JWT tokens
@@ -34,16 +35,6 @@ const generateOTP = () => {
 }
 
 
-// Helper function to send OTP (placeholder - implement with actual SMS/Email service)
-const sendOTP = async (contact, otp, method = 'email') => {
-
-    // TODO: Implement actual SMS/Email sending
-    console.log(`Sending OTP ${otp} to ${contact} via ${method}`)
-
-    // Return success for now
-    return { success: true }
-
-}
 
 
 // @desc    Register new user
@@ -110,8 +101,10 @@ export const register = async (req, res, next) => {
 
         await user.save()
 
-        // Send OTP
-        await sendOTP(email, otp, 'email')
+        // Send OTP via email and SMS
+        const notificationResult = await sendOTPNotification(email, phone, otp, name)
+
+        console.log('OTP notification result:', notificationResult)
 
         res.status(201).json({
             success: true,
@@ -183,6 +176,11 @@ export const verifyOTP = async (req, res, next) => {
 
         await user.save()
 
+        // Send welcome notification
+        const welcomeResult = await sendWelcomeNotification(user.email, user.phone, user.name)
+
+        console.log('Welcome notification result:', welcomeResult)
+
         // Generate tokens
         const { accessToken, refreshToken } = generateTokens(user._id)
 
@@ -208,6 +206,78 @@ export const verifyOTP = async (req, res, next) => {
         console.error('Verify OTP error:', error)
 
         next(errorHandler(500, "Server error during OTP verification"))
+
+    }
+
+}
+
+
+// @desc    Resend OTP
+// @route   POST /api/auth/resend-otp
+// @access  Public
+export const resendOTP = async (req, res, next) => {
+
+    try {
+
+        const { email, phone } = req.body
+
+        if (!email && !phone) {
+
+            return next(errorHandler(400, "Email or phone is required"))
+
+        }
+
+        // Find user by email or phone
+        const query = email ? { email: email.toLowerCase() } : { phone }
+
+        const user = await User.findOne(query)
+
+        if (!user) {
+
+            return next(errorHandler(404, "User not found"))
+
+        }
+
+        // Check if user is already verified
+        if (user.isVerified) {
+
+            return next(errorHandler(400, "Account is already verified"))
+
+        }
+
+        // Generate new OTP
+        const otp = generateOTP()
+
+        const otpExpiry = new Date(Date.now() + (parseInt(process.env.OTP_EXP_MINUTES) || 10) * 60 * 1000)
+
+        // Update user with new OTP
+        user.otpCode = otp
+
+        user.otpExpiry = otpExpiry
+
+        await user.save()
+
+        // Send OTP via email and SMS
+        const notificationResult = await sendOTPNotification(user.email, user.phone, otp, user.name)
+
+        console.log('Resend OTP notification result:', notificationResult)
+
+        res.status(200).json({
+            success: true,
+            message: "OTP has been resent to your email and phone",
+            data: {
+                userId: user._id,
+                email: user.email,
+                phone: user.phone,
+                otpExpiry: otpExpiry
+            }
+        })
+
+    } catch (error) {
+
+        console.error('Resend OTP error:', error)
+
+        next(errorHandler(500, "Server error during OTP resend"))
 
     }
 
@@ -372,7 +442,6 @@ export const forgotPassword = async (req, res, next) => {
         const { email } = req.body
 
 
-
         if (!email) {
 
             return next(errorHandler(400, "Email is required"))
@@ -380,9 +449,7 @@ export const forgotPassword = async (req, res, next) => {
         }
 
 
-
         const user = await User.findOne({ email: email.toLowerCase() })
-
 
 
         if (!user) {
@@ -390,7 +457,6 @@ export const forgotPassword = async (req, res, next) => {
             return next(errorHandler(404, "No user found with this email"))
 
         }
-
 
 
         // Generate reset token
@@ -406,16 +472,19 @@ export const forgotPassword = async (req, res, next) => {
 
         await user.save()
 
+        // Send password reset notification via email and SMS
+        const notificationResult = await sendPasswordResetNotification(
+            user.email, 
+            user.phone, 
+            resetToken, 
+            user.name
+        )
 
-
-        // TODO: Send reset email with token
-        console.log(`Password reset token for ${email}: ${resetToken}`)
-
-
+        console.log('Password reset notification result:', notificationResult)
 
         res.status(200).json({
             success: true,
-            message: "Password reset instructions sent to your email"
+            message: "Password reset instructions sent to your email and phone"
         })
 
     } catch (error) {
@@ -428,7 +497,6 @@ export const forgotPassword = async (req, res, next) => {
 
 }
 
-
 // @desc    Reset password
 // @route   POST /api/auth/reset-password
 // @access  Public
@@ -439,7 +507,6 @@ export const resetPassword = async (req, res, next) => {
         const { token, newPassword } = req.body
 
 
-
         if (!token || !newPassword) {
 
             return next(errorHandler(400, "Token and new password are required"))
@@ -447,13 +514,11 @@ export const resetPassword = async (req, res, next) => {
         }
 
 
-
         // Find user with valid reset token
         const user = await User.findOne({
             resetPasswordToken: token,
             resetPasswordExpiry: { $gt: new Date() }
         })
-
 
 
         if (!user) {
@@ -538,8 +603,6 @@ export const getMe = async (req, res, next) => {
             return next(errorHandler(404, "User not found"))
 
         }
-
-
 
         res.status(200).json({
             success: true,
