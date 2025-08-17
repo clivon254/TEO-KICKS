@@ -8,8 +8,9 @@ import { Server } from 'socket.io'
 
 
 
-// Import routes (to be created)
-// import authRoute from "./routes/authRoute.js"
+// Import routes
+import authRoute from "./routes/authRoute.js"
+
 // import userRoute from "./routes/userRoute.js"
 // import productRoute from "./routes/productRoute.js"
 // import orderRoute from "./routes/orderRoute.js"
@@ -42,8 +43,9 @@ mongoose.connect(process.env.MONGO_URI)
 // Static file serving for uploads
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 
-// API ROUTES (to be uncommented when routes are created)
-// app.use("/api/auth", authRoute)
+// API ROUTES
+app.use("/api/auth", authRoute)
+
 // app.use("/api/users", userRoute)
 // app.use("/api/products", productRoute)
 // app.use("/api/orders", orderRoute)
