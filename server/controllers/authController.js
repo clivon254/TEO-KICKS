@@ -1,23 +1,34 @@
 import User from "../models/userModel.js"
+import Role from "../models/roleModel.js"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 import validator from "validator"
 import crypto from "crypto"
 import { errorHandler } from "../utils/error.js"
 import { sendOTPNotification, sendPasswordResetNotification, sendWelcomeNotification } from "../services/notificationService.js"
+import { assignDefaultRole } from "./userController.js"
 
 
 // Helper function to generate JWT tokens
-const generateTokens = (userId) => {
+const generateTokens = (user) => {
+
+    // Get role names for JWT payload
+    const roleNames = user.roles?.map(role => role.name || role) || []
+
+    const payload = {
+        userId: user._id,
+        isAdmin: user.isAdmin,
+        roleNames: roleNames
+    }
 
     const accessToken = jwt.sign(
-        { userId }, 
+        payload, 
         process.env.JWT_SECRET, 
         { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
     )
 
     const refreshToken = jwt.sign(
-        { userId }, 
+        { userId: user._id }, 
         process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, 
         { expiresIn: '7d' }
     )
@@ -81,7 +92,7 @@ export const register = async (req, res, next) => {
         // Hash password
         const saltRounds = 12
 
-        const hashedPassword = await bcrypt.hash(password, saltRounds)
+        const hashedPassword = bcrypt.hashSync(password, saltRounds)
 
         // Generate OTP
         const otp = generateOTP()
@@ -181,8 +192,11 @@ export const verifyOTP = async (req, res, next) => {
 
         console.log('Welcome notification result:', welcomeResult)
 
+        // Populate user roles for token generation
+        await user.populate('roles', 'name')
+
         // Generate tokens
-        const { accessToken, refreshToken } = generateTokens(user._id)
+        const { accessToken, refreshToken } = generateTokens(user)
 
         res.status(200).json({
             success: true,
@@ -317,7 +331,7 @@ export const login = async (req, res, next) => {
         }
 
         // Check password
-        const isPasswordValid = await bcrypt.compare(password, user.password)
+        const isPasswordValid = bcrypt.compareSync(password, user.password)
 
         if (!isPasswordValid) {
 
@@ -344,8 +358,11 @@ export const login = async (req, res, next) => {
 
         await user.save()
 
+        // Populate user roles for token generation
+        await user.populate('roles', 'name')
+
         // Generate tokens
-        const { accessToken, refreshToken } = generateTokens(user._id)
+        const { accessToken, refreshToken } = generateTokens(user)
 
         res.status(200).json({
             success: true,
@@ -385,8 +402,6 @@ export const refreshToken = async (req, res, next) => {
 
         const { refreshToken } = req.body
 
-
-
         if (!refreshToken) {
 
             return next(errorHandler(400, "Refresh token is required"))
@@ -408,10 +423,11 @@ export const refreshToken = async (req, res, next) => {
 
         }
 
-
+        // Populate user roles for token generation
+        await user.populate('roles', 'name')
 
         // Generate new tokens
-        const tokens = generateTokens(user._id)
+        const tokens = generateTokens(user)
 
 
 
@@ -498,13 +514,15 @@ export const forgotPassword = async (req, res, next) => {
 }
 
 // @desc    Reset password
-// @route   POST /api/auth/reset-password
+// @route   POST /api/auth/reset-password/:token
 // @access  Public
 export const resetPassword = async (req, res, next) => {
 
     try {
 
-        const { token, newPassword } = req.body
+        const { token } = req.params
+
+        const { newPassword } = req.body
 
 
         if (!token || !newPassword) {
@@ -530,9 +548,7 @@ export const resetPassword = async (req, res, next) => {
 
 
         // Hash new password
-        const saltRounds = 12
-
-        const hashedPassword = await bcrypt.hash(newPassword, saltRounds)
+        const hashedPassword = bcrypt.hashSync(newPassword, 12)
 
 
 

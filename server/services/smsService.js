@@ -2,19 +2,27 @@ import AfricasTalking from "africastalking"
 import { errorHandler } from "../utils/error.js"
 
 
-// Initialize Africa's Talking
-if (!process.env.AT_API_KEY || !process.env.AT_USERNAME) {
+// Initialize Africa's Talking only if credentials are available
+let africasTalking = null
 
-    throw errorHandler(500, "Africa's Talking configuration is missing. Please check AT_API_KEY and AT_USERNAME environment variables.")
+let sms = null
+
+if (process.env.AT_API_KEY && process.env.AT_USERNAME && 
+    process.env.AT_API_KEY !== 'your-africastalking-api-key' && 
+    process.env.AT_USERNAME !== 'your-africastalking-username') {
+
+    africasTalking = AfricasTalking({
+        apiKey: process.env.AT_API_KEY,
+        username: process.env.AT_USERNAME
+    })
+
+    sms = africasTalking.SMS
+
+} else {
+
+    console.warn('Africa\'s Talking SMS service not initialized: Invalid or missing credentials')
 
 }
-
-const africasTalking = AfricasTalking({
-    apiKey: process.env.AT_API_KEY,
-    username: process.env.AT_USERNAME
-})
-
-const sms = africasTalking.SMS
 
 
 // Format phone number for Kenya
@@ -44,6 +52,12 @@ export const sendOTPSMS = async (phone, otp, name = "User") => {
     if (!phone || !otp) {
 
         throw errorHandler(400, "Phone number and OTP are required for sending SMS")
+
+    }
+
+    if (!sms) {
+
+        throw errorHandler(500, "SMS service not initialized - check Africa's Talking credentials")
 
     }
 

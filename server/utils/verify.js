@@ -71,8 +71,15 @@ export const requireRole = (...roles) => {
 
         }
 
-        // Check if user has any of the required roles
-        const hasRole = roles.some(role => req.user.roles?.includes(role))
+        // Admin users have access to all roles
+        if (req.user.isAdmin) {
+
+            return next()
+
+        }
+
+        // Check if user has any of the required roles (by role name)
+        const hasRole = roles.some(role => req.user.roleNames?.includes(role))
 
         if (!hasRole) {
 
@@ -96,13 +103,47 @@ export const requireAdmin = (req, res, next) => {
 
     }
 
-    if (!req.user.roles?.includes('admin')) {
+    if (!req.user.isAdmin) {
 
         return next(errorHandler(403, "Admin access required"))
 
     }
 
     next()
+
+}
+
+
+// Permission-based authorization middleware (simplified without specific permissions)
+export const requirePermission = (...roleNames) => {
+
+    return (req, res, next) => {
+
+        if (!req.user) {
+
+            return next(errorHandler(401, "Authentication required"))
+
+        }
+
+        // Admin users have all permissions
+        if (req.user.isAdmin) {
+
+            return next()
+
+        }
+
+        // Check if user has any of the required roles
+        const hasRole = roleNames.some(roleName => req.user.roleNames?.includes(roleName))
+
+        if (!hasRole) {
+
+            return next(errorHandler(403, "Insufficient permissions"))
+
+        }
+
+        next()
+
+    }
 
 }
 

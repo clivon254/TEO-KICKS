@@ -2,24 +2,6 @@ import mongoose from "mongoose"
 
 
 
-const addressSchema = new mongoose.Schema({
-
-    label: { type: String, required: true }, // e.g., "Home", "Office"
-
-    street: { type: String, required: true },
-
-    city: { type: String, required: true },
-
-    region: { type: String, required: true },
-
-    country: { type: String, required: true, default: "Kenya" },
-
-    postal: { type: String },
-
-    isDefault: { type: Boolean, default: false }
-
-}, { timestamps: true })
-
 
 
 const oauthProviderSchema = new mongoose.Schema({
@@ -80,18 +62,21 @@ const userSchema = new mongoose.Schema({
 
     resetPasswordExpiry: { type: Date },
 
-    // Role-based access control
+    // Admin flag - admins have access to all role permissions
+    isAdmin: { 
+        type: Boolean, 
+        default: false 
+    },
+
+    // Role-based access control - references to Role model
     roles: [{ 
-        type: String, 
-        enum: ["customer", "staff", "admin", "rider"], 
-        default: ["customer"] 
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Role'
     }],
 
     // OAuth providers for social login
     oauthProviders: [oauthProviderSchema],
 
-    // User addresses
-    addresses: [addressSchema],
 
     // Notification preferences
     notificationPreferences: {
@@ -117,8 +102,6 @@ const userSchema = new mongoose.Schema({
 
 
 
-
-
 // Index for better query performance
 // Note: email index is automatically created by unique: true
 userSchema.index({ phone: 1 })
@@ -129,24 +112,56 @@ userSchema.index({ 'oauthProviders.provider': 1, 'oauthProviders.providerUserId'
 
 
 
-// Method to check if user has specific role
-userSchema.methods.hasRole = function(role) {
-    return this.roles.includes(role)
+// Method to check if user has specific role (by role name or ObjectId)
+userSchema.methods.hasRole = function(roleName) {
+
+    if (this.isAdmin) return true // Admins have access to all roles
+
+    // If roles are populated
+    if (this.roles.length > 0 && this.roles[0].name) {
+
+        return this.roles.some(role => role.name === roleName)
+
+    }
+
+    // If roles are not populated, we need to populate them first
+    return false
+
 }
 
 
 
-// Method to check if user is admin
-userSchema.methods.isAdmin = function() {
-    return this.roles.includes('admin')
+// Method to check if user has admin privileges
+userSchema.methods.hasAdminAccess = function() {
+
+    return this.isAdmin
+
 }
 
 
 
-// Method to get default address
-userSchema.methods.getDefaultAddress = function() {
-    return this.addresses.find(addr => addr.isDefault) || this.addresses[0]
+// Method to add role to user
+userSchema.methods.addRole = function(roleId) {
+
+    if (!this.roles.includes(roleId)) {
+
+        this.roles.push(roleId)
+
+    }
+
 }
+
+
+
+// Method to remove role from user
+userSchema.methods.removeRole = function(roleId) {
+
+    this.roles = this.roles.filter(role => !role.equals(roleId))
+
+}
+
+
+
 
 
 

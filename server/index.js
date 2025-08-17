@@ -5,13 +5,16 @@ import "dotenv/config"
 import path from "path"
 import { createServer } from 'http'
 import { Server } from 'socket.io'
+import { logConfigStatus } from './utils/configCheck.js'
+import swaggerConfig from './config/swagger.js'
 
 
 
 // Import routes
 import authRoute from "./routes/authRoute.js"
-
-// import userRoute from "./routes/userRoute.js"
+import userRoute from "./routes/userRoute.js"
+import roleRoute from "./routes/roleRoute.js"
+import addressRoute from "./routes/addressRoute.js"
 // import productRoute from "./routes/productRoute.js"
 // import orderRoute from "./routes/orderRoute.js"
 // import paymentRoute from "./routes/paymentRoute.js"
@@ -46,11 +49,19 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 // API ROUTES
 app.use("/api/auth", authRoute)
 
-// app.use("/api/users", userRoute)
+app.use("/api/users", userRoute)
+
+app.use("/api/roles", roleRoute)
+
+app.use("/api/addresses", addressRoute)
 // app.use("/api/products", productRoute)
 // app.use("/api/orders", orderRoute)
 // app.use("/api/payments", paymentRoute)
 // app.use("/api/cart", cartRoute)
+
+
+// Swagger Documentation
+app.use('/api/docs', swaggerConfig.swaggerUi.serve, swaggerConfig.swaggerUi.setup(swaggerConfig.specs, swaggerConfig.options))
 
 
 // Socket.io setup for real-time features
@@ -195,6 +206,9 @@ server.listen(PORT, (err) => {
     console.log(`💰 Currency: KES (Kenyan Shillings)`)
     console.log(`🔌 Socket.io enabled for real-time features`)
     console.log(`📱 Express app is accessible via the HTTP server`)
+    
+    // Check notification service configuration
+    logConfigStatus()
   } else {
     console.error('Failed to start server:', err)
   }
