@@ -31,18 +31,20 @@ This document defines the staff/admin React app: flow, pages, functionalities, r
 - Catalog
   - Products `/products`
     - List/search/filter; bulk actions.
+    - Bulk upload (CSV/XLSX) and bulk delete.
   - New Product `/products/new`
     - Details, images, pricing, status.
   - Edit Product `/products/:id/edit`
     - Variant builder (attributes, options) and SKU matrix (price, stock, barcode, image).
     - Reviews tab: view product reviews, approve/reject, reply (optional), and see verified badges.
+    - Packaging options: manage multiple packaging choices with fees.
   - Categories `/categories`
   - Collections `/collections`
   - Attributes `/attributes`
 
 - Inventory
   - Variant/SKU stock `/inventory`
-    - Adjust, reserve, release; low‑stock thresholds.
+    - Real‑time updates; prevent overselling; adjust, reserve, release; low‑stock thresholds; pre‑order toggle per SKU/product.
 
 - Orders
   - Orders list `/orders`
@@ -50,10 +52,18 @@ This document defines the staff/admin React app: flow, pages, functionalities, r
     - Timeline, payments, status transitions (Placed → Confirmed → Packed → Shipped → OutForDelivery → Delivered; Cancelled/Refunded), notes.
     - View/download/print receipt (PDF) and resend to customer.
   - Create order `/orders/new` (admin‑initiated) and prompt customer to pay.
+  - Fulfilment: Now or Scheduled (with scheduling fee setting). In‑shop vs Away rules enforced.
+  - Delivery management: distance‑based delivery fee per km; assign rider; riders see and claim available orders.
 
 - Customers
   - List `/customers`
   - Detail `/customers/:id`
+
+- Inbox / Contacts
+  - Messages `/inbox` (or `/contacts`)
+    - View customer reach‑outs; filters (status: open/resolved, channel), search.
+    - Message detail: conversation thread, customer context.
+    - Reply via email, SMS, or in‑app; send templates; keep history; set status.
 
 - Staff & Roles
   - Staff `/staff`
@@ -81,6 +91,8 @@ This document defines the staff/admin React app: flow, pages, functionalities, r
     - Integrations `/settings/integrations`
     - Store Details `/settings/store` (name, email/phone, location/address, timezone)
     - Hours & Days Off `/settings/hours` (open hours per weekday, holidays/closures)
+    - Fulfilment `/settings/fulfilment` (enable scheduling + fee, in‑shop vs away rules, post‑to‑bill settings)
+    - Delivery `/settings/delivery` (fee per km, rider role permissions)
     - Branding & legal `/settings/branding`, `/settings/legal`
 
 - Audit
@@ -99,6 +111,7 @@ This document defines the staff/admin React app: flow, pages, functionalities, r
 - `/orders`, `/orders/new`, `/orders/:id`
 - `/orders/:id/receipt` (optional direct link)
 - `/customers`, `/customers/:id`
+- `/inbox` (or `/contacts`)
 - `/staff`, `/roles`
 - `/coupons`, `/campaigns`, `/offers`, `/broadcasts`
 - `/analytics`
@@ -154,4 +167,37 @@ Usage note: Only `VITE_`‑prefixed variables are exposed to the admin app at bu
 ```sh
 npm i react-router-dom
 ```
+
+
+---
+
+## Theme (Light – White background)
+
+Four palette options derived from the brand purple. Use as Tailwind custom colors or CSS variables.
+
+- Palette 1 (Monochrome Lavender)
+  - primary-color: #4B2E83
+  - secondary-color: #BFA6FF
+  - primary-button-color: #3A1F66
+  - secondary-button-color: #EDE8FF
+
+- Palette 2 (Royal Gold Contrast)
+  - primary-color: #4B2E83
+  - secondary-color: #F5C518
+  - primary-button-color: #3A1F66
+  - secondary-button-color: #FFE8A3
+
+- Palette 3 (Cool Teal Contrast)
+  - primary-color: #4B2E83
+  - secondary-color: #2CB1A6
+  - primary-button-color: #3A1F66
+  - secondary-button-color: #C7F5F2
+
+- Palette 4 (Modern Pink Accent) — DEFAULT
+  - primary-color: #4B2E83
+  - secondary-color: #E879F9
+  - primary-button-color: #3A1F66
+  - secondary-button-color: #FDE7FF
+
+Note: Background stays white. Ensure AA contrast for text on buttons and table headers.
 
