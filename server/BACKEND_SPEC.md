@@ -67,6 +67,9 @@ This document describes the backend architecture, environment, models, controlle
 - `CLOUDINARY_API_KEY` - Cloudinary API key
 - `CLOUDINARY_API_SECRET` - Cloudinary API secret
 
+### Currency
+- `DEFAULT_CURRENCY` - Store currency (KES - Kenyan Shilling)
+
 ### Firebase Configuration
 - `FIREBASE_PROJECT_ID` - Firebase project ID
 - `FIREBASE_PRIVATE_KEY` - Firebase private key
@@ -142,6 +145,7 @@ This document describes the backend architecture, environment, models, controlle
   - OAuth: linked providers [{ provider: "google"|"apple"|"instagram", providerUserId, email, linkedAt }]
   - Addresses: list (label, street, city, region, country, postal, isDefault)
   - Preferences: notification settings
+  - Location: country, timezone
 
 - **Variant (Attribute) & Options**
   - Example attributes: Size, Color, Material; options: [S, M, L], [Red, Blue], etc.
@@ -152,7 +156,7 @@ This document describes the backend architecture, environment, models, controlle
   - Basic: title, slug, description, brand, images, categories, collections, tags
   - Pricing: basePrice, compareAtPrice, tax class
   - Variants: list of attributes used (e.g., Size, Color)
-  - SKUs: concrete combinations with SKU, price (override), stock, barcode, image, weight
+  - SKUs: concrete combinations with SKU, price, compareAtPrice, stock, barcode, image, weight
   - Status: active, draft, archived
   - Packaging options: [{ name, fee, description, isDefault }]
 
@@ -167,19 +171,26 @@ This document describes the backend architecture, environment, models, controlle
   - User ↔ Products up to N items
 
 - **Cart**
-  - User (authenticated only), items [{ productId, skuId, qty, priceSnapshot, customization }], coupon, totals
+  - User (authenticated only)
+  - Items [{ productId, skuId, qty, priceSnapshot, customization }]
+  - Coupon, totals { subtotal, discount, tax, shipping, total }
 
 - **Coupon**
-  - Code, type (percent/amount/free‑shipping), rules (min spend, usage limit, start/end), status
+  - Code, type (percent/amount/free‑shipping)
+  - Rules: minSpend, usage limit, start/end dates
+  - Discount value for fixed amount coupons
+  - Status
 
 - **Campaign**
   - Name, audience/segments, schedule (start/end), message, channels (email/sms/in‑app), performance stats
 
 - **Order**
-  - User, items (productId, skuId, name, image, qty, price), address snapshot, shipping method
+  - User
+  - Items (productId, skuId, name, image, qty, price)
+  - Address snapshot, shipping method
   - Status: Placed → Confirmed → Packed → Shipped → OutForDelivery → Delivered → (Cancelled/Refunded)
-  - Payments: list (provider, ref, amount, currency, result, timestamps)
-  - Totals: subtotal, discounts, shipping, tax, grandTotal
+  - Payments: list (provider, ref, amount, result, timestamps)
+  - Totals: { subtotal, discounts, shipping, tax, grandTotal }
   - Timeline: events with actor (system/staff)
   - Receipt: receiptNumber, receiptUrl (or storage key), receiptGeneratedAt
   - Fulfilment: fulfilNow (bool), scheduledAt (Date), schedulingFee
@@ -187,7 +198,7 @@ This document describes the backend architecture, environment, models, controlle
   - Delivery: method ("pickup"|"delivery"), deliveryDistanceKm, deliveryFeePerKm, deliveryFeeTotal, assignedRiderId
 
 - **Payment**
-  - Provider: mpesa|paystack|cash, amount, currency, status, externalRef, metadata, webhook logs
+  - Provider: mpesa|paystack|cash, amount, status, externalRef, metadata, webhook logs
 
 - **Notification**
   - Type: in‑app | email | sms; template, payload, user(s), read status
@@ -244,6 +255,7 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
 
 ## Routes (High‑Level)
 
+
 - `/api/auth` — register, login, otp, refresh, logout, forgot‑password, reset‑password
 - `/api/auth/oauth/:provider` — start OAuth (google|apple|instagram)
 - `/api/auth/oauth/:provider/callback` — OAuth callback
@@ -290,8 +302,9 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
 
 - Products
   - GET `/api/products` ?q=&category=&collection=&variants[Size]=M&variants[Color]=Red&price[min]=&price[max]=&sort=
-  - GET `/api/products/:slug` — includes variant matrix and SKU stock
-  - POST `/api/products` (admin)
+  - GET `/api/products/:slug` → includes variant matrix, SKU stock, prices in KES
+  - POST `/api/products` (admin) → create with KES pricing
+  - All product responses include prices in KES
   - GET `/api/products/:id/reviews` — list with pagination and aggregates (avg, counts per star)
   - POST `/api/products/:id/reviews` { rating, title, body, images } — requires Delivered order containing product; one per user
   - PATCH `/api/products/:id/reviews/:reviewId` — author can edit within policy window
@@ -305,13 +318,13 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
   - DELETE `/api/compare/:productId`
 
 - Cart & Coupons
-  - GET `/api/cart`
+  - GET `/api/cart` → returns cart with prices in KES
   - POST `/api/cart/items` { productId, skuId, qty, customization }
   - PATCH `/api/cart/items/:itemId` { qty, skuId }
   - DELETE `/api/cart/items/:itemId`
   - Response/validation ensures item cannot be added when stock is 0 unless product/SKU has preOrderEnabled
-  - POST `/api/cart/coupon` { code }
-  - All cart endpoints require authentication.
+  - POST `/api/cart/coupon` { code } → validates coupon
+  - All cart endpoints require authentication
 
 - Orders
   - POST `/api/orders` { addressId, shippingMethod, paymentMethod, fulfilNow, scheduledAt, origin, settlement, method, packagingOptionId } → creates order (reserves stock)
@@ -394,5 +407,5 @@ Supporting taxonomies often used: Category, Collection, Brand (optional but reco
 - Unit tests (Jest), API tests (Supertest), factories/fixtures.
 - Swagger/OpenAPI docs served at `/api/docs` (disabled in production or protected).
 
-This backend spec supports the required flows: flexible variants per product, robust filters, coupons, wishlist/compare, order lifecycle, OTP verification, notifications, and payments via M‑Pesa, Paystack, and Cash, including admin‑initiated orders with customer prompts.
+This backend spec supports the required flows: flexible variants per product, robust filters, coupons, wishlist/compare, order lifecycle, OTP verification, notifications, payments via M‑Pesa, Paystack, and Cash, including admin‑initiated orders with customer prompts. All prices and transactions are handled in KES (Kenyan Shillings).
 
