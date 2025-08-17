@@ -9,7 +9,7 @@ This document describes the backend architecture, environment, models, controlle
 - **Stack**: Node.js, Express, MongoDB (Mongoose)
 - **Patterns**: MVC + services; REST APIs; webhooks for payments; background jobs for notifications
 - **Recommended folders**
-  - `src/`
+
     - `config/` (env, db)
     - `models/`
     - `controllers/`
@@ -26,43 +26,111 @@ This document describes the backend architecture, environment, models, controlle
 
 ## Environment Variables (.env)
 
-- `NODE_ENV`
-- `PORT`
-- `MONGO_URI`
-- `JWT_SECRET`
-- `JWT_EXPIRES_IN`
-- `OTP_EXP_MINUTES`
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`
-- `SMS_PROVIDER` (e.g., "twilio" or "africastalking")
-- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM`
-- `AT_API_KEY`, `AT_USERNAME` (if using Africa's Talking)
-- `DARaja_CONSUMER_KEY`, `DARaja_CONSUMER_SECRET`, `DARaja_PASSKEY`, `DARaja_SHORTCODE`, `DARaja_ENV` (sandbox|production)
-- `PAYSTACK_SECRET_KEY`, `PAYSTACK_PUBLIC_KEY`
-- `CLIENT_BASE_URL`, `ADMIN_BASE_URL`
-- `REDIS_URL`
-- `CLOUDINARY_URL` (or S3 creds if used)
--- OAuth providers
-- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
-- `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`
-- `INSTAGRAM_CLIENT_ID`, `INSTAGRAM_CLIENT_SECRET`, `INSTAGRAM_REDIRECT_URI`
+### Core Application
+- `NODE_ENV` - Environment (development|production|test)
+- `PORT` - Server port number
+- `MONGO_URI` - MongoDB connection string
+- `JWT_SECRET` - Secret key for JWT token signing
+- `JWT_EXPIRES_IN` - JWT token expiration time
+- `OTP_EXP_MINUTES` - OTP expiration time in minutes
+
+### Email Configuration
+- `SMTP_HOST` - SMTP server hostname
+- `SMTP_PORT` - SMTP server port
+- `SMTP_USER` - SMTP username
+- `SMTP_PASS` - SMTP password
+
+### SMS Configuration
+- `SMS_PROVIDER` - SMS provider (e.g., "twilio" or "africastalking")
+- `TWILIO_ACCOUNT_SID` - Twilio account SID
+- `TWILIO_AUTH_TOKEN` - Twilio authentication token
+- `TWILIO_FROM` - Twilio phone number
+- `AT_API_KEY` - Africa's Talking API key
+- `AT_USERNAME` - Africa's Talking username
+
+### Payment Providers
+- `DARaja_CONSUMER_KEY` - M-Pesa Daraja consumer key
+- `DARaja_CONSUMER_SECRET` - M-Pesa Daraja consumer secret
+- `DARaja_PASSKEY` - M-Pesa Daraja passkey
+- `DARaja_SHORTCODE` - M-Pesa short code
+- `DARaja_ENV` - M-Pesa environment (sandbox|production)
+- `PAYSTACK_SECRET_KEY` - Paystack secret key
+- `PAYSTACK_PUBLIC_KEY` - Paystack public key
+
+### Application URLs
+- `CLIENT_BASE_URL` - Client application base URL
+- `ADMIN_BASE_URL` - Admin application base URL
+
+### External Services
+- `REDIS_URL` - Redis connection URL for caching and queues
+- `CLOUDINARY_CLOUD_NAME` - Cloudinary cloud name
+- `CLOUDINARY_API_KEY` - Cloudinary API key
+- `CLOUDINARY_API_SECRET` - Cloudinary API secret
+
+### Firebase Configuration
+- `FIREBASE_PROJECT_ID` - Firebase project ID
+- `FIREBASE_PRIVATE_KEY` - Firebase private key
+- `FIREBASE_CLIENT_EMAIL` - Firebase client email
+- `FIREBASE_DATABASE_URL` - Firebase database URL
+
+### OAuth Providers
+- `GOOGLE_CLIENT_ID` - Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
+- `APPLE_CLIENT_ID` - Apple OAuth client ID
+- `APPLE_TEAM_ID` - Apple team ID
+- `APPLE_KEY_ID` - Apple key ID
+- `APPLE_PRIVATE_KEY` - Apple private key
+- `INSTAGRAM_CLIENT_ID` - Instagram OAuth client ID
+- `INSTAGRAM_CLIENT_SECRET` - Instagram OAuth client secret
+- `INSTAGRAM_REDIRECT_URI` - Instagram OAuth redirect URI
 
 ---
 
 ## Packages
 
-- Core: `express`, `mongoose`, `cors`, `helmet`, `morgan`
-- Auth: `jsonwebtoken`, `bcryptjs`
-- Validation: `zod` (or `joi`), custom middlewares
-- Security: `express-rate-limit`, `hpp`, `xss-clean`, `express-mongo-sanitize`
-- File uploads: `multer` (+ `cloudinary` or AWS SDK if needed)
+### Core Framework & Database
+- `express`: Web application framework for Node.js
+- `mongoose`: MongoDB object modeling for Node.js
+- `cors`: Cross-Origin Resource Sharing middleware
+- `dotenv`: Environment variables loader
+
+### Authentication & Security
+- `jsonwebtoken`: JSON Web Token implementation
+- `bcryptjs`: Password hashing library
+- `validator`: String validation and sanitization library
+
+### File Uploads & Media
+- `multer`: Middleware for handling multipart/form-data (file uploads)
+- `cloudinary`: Cloud-based image and video management service
+- `multer-storage-cloudinary`: Multer storage engine for Cloudinary
+
+### Communication & Notifications
+- `nodemailer`: Send emails from Node.js applications
+- `socket.io`: Real-time bidirectional event-based communication
+- `axios`: HTTP client for making API requests
+
+### Authentication Services
+- `firebase`: Google Firebase SDK for authentication and other services
+
+### PDF Generation & Documents
+- `pdfkit`: JavaScript library for generating PDF documents
+- `stream-buffers`: Buffer utilities for streams
+
+### Development
+- `nodemon`: Development utility that automatically restarts server on file changes
+
+### Documentation
+- `swagger-ui-express`: Swagger UI middleware for Express
+- `swagger-jsdoc`: Generate Swagger documentation from JSDoc comments
+
+### Additional Packages (Recommended)
+- Security: `express-rate-limit`, `hpp`, `xss-clean`, `express-mongo-sanitize`, `helmet`
 - Payments: M‑Pesa (Daraja via REST), `paystack-sdk` or direct REST
-- Emails/SMS: `nodemailer`, `twilio` or `africastalking`
+- SMS: `twilio` or `africastalking`
 - Queues: `bullmq`, `ioredis`
 - Logging: `pino` (or `winston`), `pino-pretty`
-- Docs: `swagger-ui-express`, `swagger-jsdoc`
 - Testing: `jest`, `supertest`
-- OAuth & SSO: `passport`, `passport-google-oauth20`, `passport-apple`, `passport-instagram` (or use direct OAuth 2.0 libs like `simple-oauth2` / `apple-signin-auth`)
-- PDF/Receipts: `pdfkit` or `puppeteer` (HTML → PDF) — Generate order receipts as PDFs.
+- OAuth & SSO: `passport`, `passport-google-oauth20`, `passport-apple`, `passport-instagram`
 
 ---
 
