@@ -328,6 +328,152 @@ const options = {
               description: 'Whether there is a previous page'
             }
           }
+        },
+        Variant: {
+          type: 'object',
+          properties: {
+            _id: {
+              type: 'string',
+              description: 'Variant ID'
+            },
+            name: {
+              type: 'string',
+              description: 'Variant name (e.g., Size, Color)'
+            },
+            description: {
+              type: 'string',
+              description: 'Variant description'
+            },
+            options: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  _id: {
+                    type: 'string',
+                    description: 'Option ID'
+                  },
+                  value: {
+                    type: 'string',
+                    description: 'Option value'
+                  },
+                  sortOrder: {
+                    type: 'integer',
+                    description: 'Sort order'
+                  },
+                  isActive: {
+                    type: 'boolean',
+                    description: 'Whether option is active'
+                  }
+                }
+              }
+            },
+            displayType: {
+              type: 'string',
+              enum: ['dropdown', 'radio', 'checkbox', 'swatch'],
+              description: 'Display type for the variant'
+            },
+            colorHex: {
+              type: 'string',
+              description: 'Color hex code (for color variants)'
+            },
+            measurement: {
+              type: 'string',
+              description: 'Measurement unit'
+            },
+            isActive: {
+              type: 'boolean',
+              description: 'Whether variant is active'
+            },
+            sortOrder: {
+              type: 'integer',
+              description: 'Sort order'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Creation timestamp'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Last update timestamp'
+            }
+          }
+        },
+        Product: {
+          type: 'object',
+          properties: {
+            _id: {
+              type: 'string',
+              description: 'Product ID'
+            },
+            title: {
+              type: 'string',
+              description: 'Product title'
+            },
+            slug: {
+              type: 'string',
+              description: 'Product slug'
+            },
+            description: {
+              type: 'string',
+              description: 'Product description'
+            },
+            basePrice: {
+              type: 'number',
+              description: 'Base price'
+            },
+            status: {
+              type: 'string',
+              enum: ['active', 'draft', 'archived'],
+              description: 'Product status'
+            },
+            variants: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/Variant'
+              }
+            },
+            skus: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  _id: {
+                    type: 'string',
+                    description: 'SKU ID'
+                  },
+                  price: {
+                    type: 'number',
+                    description: 'SKU price'
+                  },
+                  stock: {
+                    type: 'integer',
+                    description: 'Stock quantity'
+                  },
+                  skuCode: {
+                    type: 'string',
+                    description: 'SKU code'
+                  },
+                  isActive: {
+                    type: 'boolean',
+                    description: 'Whether SKU is active'
+                  }
+                }
+              }
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Creation timestamp'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Last update timestamp'
+            }
+          }
         }
       }
     },
@@ -347,6 +493,10 @@ const options = {
       {
         name: 'Roles',
         description: 'Role-based access control and permission management'
+      },
+      {
+        name: 'Variants',
+        description: 'Product variant and option management'
       },
       {
         name: 'Products',

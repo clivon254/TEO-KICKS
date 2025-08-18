@@ -16,7 +16,7 @@ import userRoute from "./routes/userRoute.js"
 import roleRoute from "./routes/roleRoute.js"
 import addressRoute from "./routes/addressRoute.js"
 import variantRoute from "./routes/variantRoute.js"
-// import productRoute from "./routes/productRoute.js"
+import productRoute from "./routes/productRoute.js"
 // import orderRoute from "./routes/orderRoute.js"
 // import paymentRoute from "./routes/paymentRoute.js"
 // import cartRoute from "./routes/cartRoute.js"
@@ -56,7 +56,7 @@ app.use("/api/roles", roleRoute)
 
 app.use("/api/addresses", addressRoute)
 app.use("/api/variants", variantRoute)
-// app.use("/api/products", productRoute)
+app.use("/api/products", productRoute)
 // app.use("/api/orders", orderRoute)
 // app.use("/api/payments", paymentRoute)
 // app.use("/api/cart", cartRoute)

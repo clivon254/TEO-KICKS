@@ -1,4 +1,5 @@
 import mongoose from "mongoose"
+import mongoosePaginate from "mongoose-paginate-v2"
 
 
 
@@ -465,6 +466,13 @@ productSchema.statics.search = function(query) {
     }).sort({ createdAt: -1 })
 
 }
+
+
+
+
+
+// Add pagination plugin
+productSchema.plugin(mongoosePaginate)
 
 
 
