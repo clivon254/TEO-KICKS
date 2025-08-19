@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: teo-kicks-admin
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ROLLUP_NATIVE
+        value: false 
