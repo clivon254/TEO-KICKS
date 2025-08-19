@@ -19,53 +19,11 @@ const categorySchema = new mongoose.Schema({
         lowercase: true
     },
 
-    description: { 
-        type: String,
-        trim: true
-    },
-
-    image: { 
-        type: String 
-    },
-
-    // Hierarchical structure
-    parent: { 
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category'
-    },
-
-    children: [{ 
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category'
-    }],
-
     // Display settings
     isActive: { 
         type: Boolean, 
         default: true 
     },
-
-    sortOrder: { 
-        type: Number, 
-        default: 0 
-    },
-
-    // SEO fields
-    metaTitle: { 
-        type: String,
-        trim: true
-    },
-
-    metaDescription: { 
-        type: String,
-        trim: true
-    },
-
-    // Category features
-    features: [{ 
-        type: String,
-        trim: true
-    }],
 
     // Created by
     createdBy: { 
@@ -92,21 +50,7 @@ categorySchema.index({ sortOrder: 1 })
 
 
 
-// Pre-save middleware to generate slug if not provided
-categorySchema.pre('save', function(next) {
 
-    if (!this.slug && this.name) {
-
-        this.slug = this.name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '')
-
-    }
-
-    next()
-
-})
 
 
 

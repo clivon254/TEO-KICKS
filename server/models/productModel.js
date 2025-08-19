@@ -114,8 +114,8 @@ const productSchema = new mongoose.Schema({
     },
 
     brand: { 
-        type: String,
-        trim: true
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Brand'
     },
 
     images: [{
@@ -135,8 +135,8 @@ const productSchema = new mongoose.Schema({
     }],
 
     tags: [{ 
-        type: String,
-        trim: true
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Tag'
     }],
 
     // Base pricing
@@ -184,10 +184,7 @@ const productSchema = new mongoose.Schema({
         default: true 
     },
 
-    allowBackorders: { 
-        type: Boolean, 
-        default: false 
-    },
+
 
     // Shipping settings
     weight: { 
@@ -195,56 +192,14 @@ const productSchema = new mongoose.Schema({
         min: 0
     },
 
-    dimensions: {
-        length: { type: Number, min: 0 },
-        width: { type: Number, min: 0 },
-        height: { type: Number, min: 0 }
-    },
-
-    // Tax settings
-    taxable: { 
-        type: Boolean, 
-        default: true 
-    },
-
-    taxClass: { 
-        type: String,
-        default: "standard"
-    },
-
-    // Vendor/Supplier info
-    vendor: { 
-        type: String,
-        trim: true
-    },
-
-    supplierCode: { 
-        type: String,
-        trim: true
-    },
-
+ 
+   
     // Product features
     features: [{ 
         type: String,
         trim: true
     }],
 
-    specifications: [{
-        name: { type: String, required: true },
-        value: { type: String, required: true }
-    }],
-
-    // Related products
-    relatedProducts: [{ 
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Product'
-    }],
-
-    // Analytics
-    viewCount: { 
-        type: Number, 
-        default: 0 
-    },
 
     // Created by
     createdBy: { 
@@ -272,24 +227,6 @@ productSchema.index({ 'skus.skuCode': 1 })
 productSchema.index({ createdAt: -1 })
 
 
-
-
-
-// Pre-save middleware to generate slug if not provided
-productSchema.pre('save', function(next) {
-
-    if (!this.slug && this.title) {
-
-        this.slug = this.title
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '')
-
-    }
-
-    next()
-
-})
 
 
 
@@ -458,12 +395,36 @@ productSchema.statics.search = function(query) {
     return this.find({
         $or: [
             { title: { $regex: query, $options: 'i' } },
-            { description: { $regex: query, $options: 'i' } },
-            { brand: { $regex: query, $options: 'i' } },
-            { tags: { $in: [new RegExp(query, 'i')] } }
+            { description: { $regex: query, $options: 'i' } }
         ],
         status: "active"
-    }).sort({ createdAt: -1 })
+    }).populate('brand', 'name')
+      .populate('tags', 'name')
+      .populate('categories', 'name')
+      .populate('collections', 'name')
+      .sort({ createdAt: -1 })
+
+}
+
+// Static method to search products by brand and tags
+productSchema.statics.searchByBrandAndTags = function(brandId, tagIds) {
+
+    const query = { status: "active" }
+
+    if (brandId) {
+        query.brand = brandId
+    }
+
+    if (tagIds && tagIds.length > 0) {
+        query.tags = { $in: tagIds }
+    }
+
+    return this.find(query)
+        .populate('brand', 'name')
+        .populate('tags', 'name')
+        .populate('categories', 'name')
+        .populate('collections', 'name')
+        .sort({ createdAt: -1 })
 
 }
 

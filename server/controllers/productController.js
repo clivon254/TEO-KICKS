@@ -1,80 +1,102 @@
 import Product from "../models/productModel.js"
-
 import { validateProduct, validateSKU } from "../utils/validation.js"
+import { errorHandler } from "../utils/error.js"
+import { generateUniqueSlug } from "../utils/slugGenerator.js"
+import { 
+    uploadToCloudinary, 
+    deleteFromCloudinary, 
+    getResponsiveImageUrls,
+    getOptimizedImageUrl 
+} from "../utils/cloudinary.js"
 
 
 
 
 
 // Create a new product
-export const createProduct = async (req, res) => {
-
+export const createProduct = async (req, res, next) => {
     try {
+        const { title, description, shortDescription, brand, categories, collections, tags, basePrice, comparePrice, variants, features, metaTitle, metaDescription, trackInventory, weight } = req.body
 
-        const { error, value } = validateProduct(req.body)
-
-        if (error) {
-
-            return res.status(400).json({
-
-                success: false,
-
-                message: "Validation error",
-
-                error: error.details[0].message
-
-            })
-
+        if (!title) {
+            return next(errorHandler(400, "Product title is required"))
         }
 
-
-
-
-
-        const product = new Product({
-
-            ...value,
-
-            createdBy: req.user._id
-
+        // Generate unique slug
+        const slug = await generateUniqueSlug(title, async (slug) => {
+            const existingProduct = await Product.findOne({ slug })
+            return !!existingProduct
         })
 
+        // Handle image uploads
+        let processedImages = []
+        if (req.files && req.files.length > 0) {
+            for (const file of req.files) {
+                try {
+                    const uploadResult = await uploadToCloudinary(file.path, 'teo-kicks/products')
+                    
+                    processedImages.push({
+                        url: uploadResult.url,
+                        public_id: uploadResult.public_id,
+                        alt: file.originalname,
+                        isPrimary: processedImages.length === 0 // First image is primary
+                    })
+                } catch (uploadError) {
+                    console.error('Image upload error:', uploadError)
+                    return next(errorHandler(500, `Failed to upload image: ${uploadError.message}`))
+                }
+            }
+        }
 
-
-
+        const product = new Product({
+            title,
+            slug,
+            description,
+            shortDescription,
+            brand,
+            categories: categories ? JSON.parse(categories) : [],
+            collections: collections ? JSON.parse(collections) : [],
+            tags: tags ? JSON.parse(tags) : [],
+            basePrice,
+            comparePrice,
+            variants: variants ? JSON.parse(variants) : [],
+            images: processedImages,
+            features: features ? JSON.parse(features) : [],
+            metaTitle,
+            metaDescription,
+            trackInventory,
+            weight,
+            createdBy: req.user.userId
+        })
 
         await product.save()
 
-
-
-
-
         res.status(201).json({
-
             success: true,
-
             message: "Product created successfully",
-
-            data: product
-
+            data: {
+                product: {
+                    id: product._id,
+                    title: product.title,
+                    slug: product.slug,
+                    description: product.description,
+                    brand: product.brand,
+                    categories: product.categories,
+                    collections: product.collections,
+                    tags: product.tags,
+                    basePrice: product.basePrice,
+                    comparePrice: product.comparePrice,
+                    images: product.images,
+                    status: product.status,
+                    createdAt: product.createdAt
+                }
+            }
         })
 
     } catch (error) {
-
         console.error("Create product error:", error)
-
-        res.status(500).json({
-
-            success: false,
-
-            message: "Error creating product",
-
-            error: error.message
-
-        })
-
+        next(errorHandler(500, "Server error while creating product"))
     }
-
 }
 
 
@@ -284,86 +306,94 @@ export const getProductById = async (req, res) => {
 
 
 // Update product
-export const updateProduct = async (req, res) => {
-
+export const updateProduct = async (req, res, next) => {
     try {
+        const { productId } = req.params
+        const { title, description, shortDescription, brand, categories, collections, tags, basePrice, comparePrice, variants, features, metaTitle, metaDescription, trackInventory, weight, status } = req.body
 
-        const { error, value } = validateProduct(req.body)
-
-        if (error) {
-
-            return res.status(400).json({
-
-                success: false,
-
-                message: "Validation error",
-
-                error: error.details[0].message
-
-            })
-
-        }
-
-
-
-
-
-        const product = await Product.findByIdAndUpdate(
-
-            req.params.id,
-
-            value,
-
-            { new: true, runValidators: true }
-
-        ).populate(['categories', 'collections', 'createdBy'])
-
-
-
-
+        const product = await Product.findById(productId)
 
         if (!product) {
-
-            return res.status(404).json({
-
-                success: false,
-
-                message: "Product not found"
-
-            })
-
+            return next(errorHandler(404, "Product not found"))
         }
 
+        // Generate new slug if title changed
+        if (title && title !== product.title) {
+            const slug = await generateUniqueSlug(title, async (slug) => {
+                const existingProduct = await Product.findOne({ 
+                    slug, 
+                    _id: { $ne: productId } 
+                })
+                return !!existingProduct
+            })
+            product.slug = slug
+        }
 
+        // Handle new image uploads
+        if (req.files && req.files.length > 0) {
+            for (const file of req.files) {
+                try {
+                    const uploadResult = await uploadToCloudinary(file.path, 'teo-kicks/products')
+                    
+                    product.images.push({
+                        url: uploadResult.url,
+                        public_id: uploadResult.public_id,
+                        alt: file.originalname,
+                        isPrimary: product.images.length === 0 // Primary if no images exist
+                    })
+                } catch (uploadError) {
+                    console.error('Image upload error:', uploadError)
+                    return next(errorHandler(500, `Failed to upload image: ${uploadError.message}`))
+                }
+            }
+        }
 
+        // Update fields
+        if (title) product.title = title
+        if (description !== undefined) product.description = description
+        if (shortDescription !== undefined) product.shortDescription = shortDescription
+        if (brand !== undefined) product.brand = brand
+        if (categories !== undefined) product.categories = JSON.parse(categories)
+        if (collections !== undefined) product.collections = JSON.parse(collections)
+        if (tags !== undefined) product.tags = JSON.parse(tags)
+        if (basePrice !== undefined) product.basePrice = basePrice
+        if (comparePrice !== undefined) product.comparePrice = comparePrice
+        if (variants !== undefined) product.variants = JSON.parse(variants)
+        if (features !== undefined) product.features = JSON.parse(features)
+        if (metaTitle !== undefined) product.metaTitle = metaTitle
+        if (metaDescription !== undefined) product.metaDescription = metaDescription
+        if (trackInventory !== undefined) product.trackInventory = trackInventory
+        if (weight !== undefined) product.weight = weight
+        if (status !== undefined) product.status = status
 
+        await product.save()
 
-        res.json({
-
+        res.status(200).json({
             success: true,
-
             message: "Product updated successfully",
-
-            data: product
-
+            data: {
+                product: {
+                    id: product._id,
+                    title: product.title,
+                    slug: product.slug,
+                    description: product.description,
+                    brand: product.brand,
+                    categories: product.categories,
+                    collections: product.collections,
+                    tags: product.tags,
+                    basePrice: product.basePrice,
+                    comparePrice: product.comparePrice,
+                    images: product.images,
+                    status: product.status,
+                    updatedAt: product.updatedAt
+                }
+            }
         })
 
     } catch (error) {
-
         console.error("Update product error:", error)
-
-        res.status(500).json({
-
-            success: false,
-
-            message: "Error updating product",
-
-            error: error.message
-
-        })
-
+        next(errorHandler(500, "Server error while updating product"))
     }
-
 }
 
 
@@ -371,56 +401,40 @@ export const updateProduct = async (req, res) => {
 
 
 // Delete product
-export const deleteProduct = async (req, res) => {
-
+export const deleteProduct = async (req, res, next) => {
     try {
+        const { productId } = req.params
 
-        const product = await Product.findByIdAndDelete(req.params.id)
-
-
-
-
+        const product = await Product.findById(productId)
 
         if (!product) {
-
-            return res.status(404).json({
-
-                success: false,
-
-                message: "Product not found"
-
-            })
-
+            return next(errorHandler(404, "Product not found"))
         }
 
+        // Delete images from Cloudinary
+        if (product.images && product.images.length > 0) {
+            for (const image of product.images) {
+                if (image.public_id) {
+                    try {
+                        await deleteFromCloudinary(image.public_id)
+                    } catch (deleteError) {
+                        console.error('Failed to delete image from Cloudinary:', deleteError)
+                    }
+                }
+            }
+        }
 
+        await Product.findByIdAndDelete(productId)
 
-
-
-        res.json({
-
+        res.status(200).json({
             success: true,
-
             message: "Product deleted successfully"
-
         })
 
     } catch (error) {
-
         console.error("Delete product error:", error)
-
-        res.status(500).json({
-
-            success: false,
-
-            message: "Error deleting product",
-
-            error: error.message
-
-        })
-
+        next(errorHandler(500, "Server error while deleting product"))
     }
-
 }
 
 
@@ -582,82 +596,188 @@ export const updateSKU = async (req, res) => {
 
 
 // Delete SKU
-export const deleteSKU = async (req, res) => {
-
+export const deleteSKU = async (req, res, next) => {
     try {
-
         const { productId, skuId } = req.params
 
         const product = await Product.findById(productId)
 
-
-
-
-
         if (!product) {
-
-            return res.status(404).json({
-
-                success: false,
-
-                message: "Product not found"
-
-            })
-
+            return next(errorHandler(404, "Product not found"))
         }
-
-
-
-
 
         const sku = product.skus.id(skuId)
-
         if (!sku) {
-
-            return res.status(404).json({
-
-                success: false,
-
-                message: "SKU not found"
-
-            })
-
+            return next(errorHandler(404, "SKU not found"))
         }
 
-
-
-
-
         sku.remove()
-
         await product.save()
 
-
-
-
-
-        res.json({
-
+        res.status(200).json({
             success: true,
-
             message: "SKU deleted successfully"
-
         })
 
     } catch (error) {
-
         console.error("Delete SKU error:", error)
+        next(errorHandler(500, "Server error while deleting SKU"))
+    }
+}
 
-        res.status(500).json({
+// Upload product images
+export const uploadProductImages = async (req, res, next) => {
+    try {
+        const { productId } = req.params
 
-            success: false,
+        const product = await Product.findById(productId)
+        if (!product) {
+            return next(errorHandler(404, "Product not found"))
+        }
 
-            message: "Error deleting SKU",
+        if (!req.files || req.files.length === 0) {
+            return next(errorHandler(400, "No images uploaded"))
+        }
 
-            error: error.message
+        const uploadedImages = []
+        for (const file of req.files) {
+            try {
+                const uploadResult = await uploadToCloudinary(file.path, 'teo-kicks/products')
+                
+                uploadedImages.push({
+                    url: uploadResult.url,
+                    public_id: uploadResult.public_id,
+                    alt: file.originalname,
+                    isPrimary: product.images.length === 0 && uploadedImages.length === 0
+                })
+            } catch (uploadError) {
+                console.error('Image upload error:', uploadError)
+                return next(errorHandler(500, `Failed to upload image: ${uploadError.message}`))
+            }
+        }
 
+        // Add new images to product
+        product.images.push(...uploadedImages)
+        await product.save()
+
+        res.status(200).json({
+            success: true,
+            message: "Images uploaded successfully",
+            data: {
+                images: uploadedImages,
+                totalImages: product.images.length
+            }
         })
 
+    } catch (error) {
+        console.error("Upload product images error:", error)
+        next(errorHandler(500, "Server error while uploading images"))
     }
+}
 
+// Delete product image
+export const deleteProductImage = async (req, res, next) => {
+    try {
+        const { productId, imageId } = req.params
+
+        const product = await Product.findById(productId)
+        if (!product) {
+            return next(errorHandler(404, "Product not found"))
+        }
+
+        const image = product.images.id(imageId)
+        if (!image) {
+            return next(errorHandler(404, "Image not found"))
+        }
+
+        // Delete from Cloudinary
+        if (image.public_id) {
+            try {
+                await deleteFromCloudinary(image.public_id)
+            } catch (deleteError) {
+                console.error('Failed to delete image from Cloudinary:', deleteError)
+            }
+        }
+
+        // Remove from product
+        image.remove()
+        await product.save()
+
+        res.status(200).json({
+            success: true,
+            message: "Image deleted successfully"
+        })
+
+    } catch (error) {
+        console.error("Delete product image error:", error)
+        next(errorHandler(500, "Server error while deleting image"))
+    }
+}
+
+// Set primary image
+export const setPrimaryImage = async (req, res, next) => {
+    try {
+        const { productId, imageId } = req.params
+
+        const product = await Product.findById(productId)
+        if (!product) {
+            return next(errorHandler(404, "Product not found"))
+        }
+
+        const image = product.images.id(imageId)
+        if (!image) {
+            return next(errorHandler(404, "Image not found"))
+        }
+
+        // Reset all images to not primary
+        product.images.forEach(img => {
+            img.isPrimary = false
+        })
+
+        // Set selected image as primary
+        image.isPrimary = true
+        await product.save()
+
+        res.status(200).json({
+            success: true,
+            message: "Primary image updated successfully",
+            data: {
+                primaryImage: image
+            }
+        })
+
+    } catch (error) {
+        console.error("Set primary image error:", error)
+        next(errorHandler(500, "Server error while setting primary image"))
+    }
+}
+
+// Get optimized image URLs
+export const getOptimizedImages = async (req, res, next) => {
+    try {
+        const { productId } = req.params
+        const { width = 800, height = 800 } = req.query
+
+        const product = await Product.findById(productId)
+        if (!product) {
+            return next(errorHandler(404, "Product not found"))
+        }
+
+        const optimizedImages = product.images.map(image => ({
+            ...image.toObject(),
+            optimized: getOptimizedImageUrl(image.public_id, { width: parseInt(width), height: parseInt(height) }),
+            responsive: getResponsiveImageUrls(image.public_id)
+        }))
+
+        res.status(200).json({
+            success: true,
+            data: {
+                images: optimizedImages
+            }
+        })
+
+    } catch (error) {
+        console.error("Get optimized images error:", error)
+        next(errorHandler(500, "Server error while getting optimized images"))
+    }
 } 

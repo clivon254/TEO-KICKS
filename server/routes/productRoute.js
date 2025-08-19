@@ -1,8 +1,20 @@
 import express from "express"
-
-import { authenticateToken, authorizeRoles } from "../middlewares/auth.js"
-
-import { createProduct, getAllProducts, getProductById, updateProduct, deleteProduct, generateSKUs, updateSKU, deleteSKU } from "../controllers/productController.js"
+import { verifyBearerToken, requireAdmin } from "../utils/verify.js"
+import { uploadProductImage } from "../utils/cloudinary.js"
+import { 
+    createProduct, 
+    getAllProducts, 
+    getProductById, 
+    updateProduct, 
+    deleteProduct, 
+    generateSKUs, 
+    updateSKU, 
+    deleteSKU,
+    uploadProductImages,
+    deleteProductImage,
+    setPrimaryImage,
+    getOptimizedImages
+} from "../controllers/productController.js"
 
 
 
@@ -10,39 +22,27 @@ import { createProduct, getAllProducts, getProductById, updateProduct, deletePro
 
 const router = express.Router()
 
-
-
-
-
 // Public routes
 router.get("/", getAllProducts)
+router.get("/:productId", getProductById)
+router.get("/:productId/optimized-images", getOptimizedImages)
 
-router.get("/:id", getProductById)
+// Protected routes (require authentication)
+router.use(verifyBearerToken)
 
+// Admin-only routes
+router.post("/", requireAdmin, uploadProductImage.array('images', 10), createProduct)
+router.put("/:productId", requireAdmin, uploadProductImage.array('images', 10), updateProduct)
+router.delete("/:productId", requireAdmin, deleteProduct)
 
-
-
-
-// Protected routes (require authentication and admin/manager role)
-router.post("/", authenticateToken, authorizeRoles(["admin", "manager"]), createProduct)
-
-router.put("/:id", authenticateToken, authorizeRoles(["admin", "manager"]), updateProduct)
-
-router.delete("/:id", authenticateToken, authorizeRoles(["admin", "manager"]), deleteProduct)
-
-
-
-
+// Image management routes
+router.post("/:productId/images", requireAdmin, uploadProductImage.array('images', 10), uploadProductImages)
+router.delete("/:productId/images/:imageId", requireAdmin, deleteProductImage)
+router.put("/:productId/images/:imageId/primary", requireAdmin, setPrimaryImage)
 
 // SKU management routes
-router.post("/:id/generate-skus", authenticateToken, authorizeRoles(["admin", "manager"]), generateSKUs)
-
-router.patch("/:productId/skus/:skuId", authenticateToken, authorizeRoles(["admin", "manager"]), updateSKU)
-
-router.delete("/:productId/skus/:skuId", authenticateToken, authorizeRoles(["admin", "manager"]), deleteSKU)
-
-
-
-
+router.post("/:productId/generate-skus", requireAdmin, generateSKUs)
+router.patch("/:productId/skus/:skuId", requireAdmin, updateSKU)
+router.delete("/:productId/skus/:skuId", requireAdmin, deleteSKU)
 
 export default router 

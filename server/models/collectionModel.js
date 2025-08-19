@@ -19,18 +19,7 @@ const collectionSchema = new mongoose.Schema({
         lowercase: true
     },
 
-    description: { 
-        type: String,
-        trim: true
-    },
 
-    image: { 
-        type: String 
-    },
-
-    banner: { 
-        type: String 
-    },
 
     // Collection type
     type: { 
@@ -39,20 +28,7 @@ const collectionSchema = new mongoose.Schema({
         default: "manual"
     },
 
-    // For automatic collections
-    conditions: [{
-        field: { 
-            type: String, 
-            enum: ["title", "brand", "category", "tag", "price", "vendor"]
-        },
-        operator: { 
-            type: String, 
-            enum: ["equals", "contains", "starts_with", "ends_with", "greater_than", "less_than"]
-        },
-        value: { 
-            type: String 
-        }
-    }],
+
 
     // Manual product selection
     products: [{ 
@@ -66,33 +42,14 @@ const collectionSchema = new mongoose.Schema({
         default: true 
     },
 
-    sortOrder: { 
-        type: Number, 
-        default: 0 
-    },
-
-    // SEO fields
-    metaTitle: { 
-        type: String,
-        trim: true
-    },
-
-    metaDescription: { 
-        type: String,
-        trim: true
-    },
-
+ 
     // Collection features
     features: [{ 
         type: String,
         trim: true
     }],
 
-    // Publishing settings
-    publishedAt: { 
-        type: Date 
-    },
-
+    
     // Created by
     createdBy: { 
         type: mongoose.Schema.Types.ObjectId,
@@ -118,21 +75,7 @@ collectionSchema.index({ type: 1 })
 
 
 
-// Pre-save middleware to generate slug if not provided
-collectionSchema.pre('save', function(next) {
 
-    if (!this.slug && this.name) {
-
-        this.slug = this.name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '')
-
-    }
-
-    next()
-
-})
 
 
 
