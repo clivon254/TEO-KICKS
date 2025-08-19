@@ -14,8 +14,8 @@ import './App.css'
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <div className="App">
           <Routes>
             {/* Public Routes */}
@@ -26,7 +26,7 @@ function App() {
             
             {/* Protected Routes */}
             <Route 
-              path="/dashboard" 
+              path="/" 
               element={
                 <ProtectedRoute>
                   <Dashboard />
@@ -35,7 +35,6 @@ function App() {
             />
             
             {/* Default redirect */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
           
@@ -65,8 +64,8 @@ function App() {
             }}
           />
         </div>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   )
 }
 

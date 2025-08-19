@@ -1,5 +1,6 @@
 import { createContext, useContext, useReducer, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import { setAuthLoading, setAuthSuccess, clearAuth } from '../store/slices/authSlice'
 import { authAPI } from '../utils/api'
 import toast from 'react-hot-toast'
@@ -78,6 +79,13 @@ export const AuthProvider = ({ children }) => {
     const [state, dispatch] = useReducer(authReducer, initialState)
     const reduxDispatch = useDispatch()
     const authState = useSelector((s) => s.auth)
+    const navigate = useNavigate()
+    
+    // Use Redux state as source of truth for auth
+    const isAuthenticated = authState.isAuthenticated
+    const user = authState.user
+    const isLoading = authState.isLoading
+    const error = authState.error
 
     // Check if user is already logged in on app start
     useEffect(() => {
@@ -134,6 +142,7 @@ export const AuthProvider = ({ children }) => {
     // Login function
     const login = async (credentials) => {
         dispatch({ type: AUTH_ACTIONS.LOGIN_START })
+        reduxDispatch(setAuthLoading(true))
         
         try {
             const response = await authAPI.login(credentials)
@@ -148,15 +157,18 @@ export const AuthProvider = ({ children }) => {
                 type: AUTH_ACTIONS.LOGIN_SUCCESS,
                 payload: { user }
             })
+            reduxDispatch(setAuthSuccess(user))
 
             toast.success('Login successful!')
             return { success: true }
+            
         } catch (error) {
             const errorMessage = error.response?.data?.message || 'Login failed'
             dispatch({
                 type: AUTH_ACTIONS.LOGIN_FAILURE,
                 payload: errorMessage
             })
+            reduxDispatch(setAuthFailure(errorMessage))
             toast.error(errorMessage)
             return { success: false, error: errorMessage }
         }
@@ -264,17 +276,25 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('user')
             
             dispatch({ type: AUTH_ACTIONS.LOGOUT })
+            reduxDispatch(clearAuth())
             toast.success('Logged out successfully!')
+            
+            // Navigate to login page
+            navigate('/login')
         }
     }
 
     // Clear error function
     const clearError = () => {
         dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR })
+        reduxDispatch(setAuthFailure(null))
     }
 
     const value = {
-        ...state,
+        user,
+        isAuthenticated,
+        isLoading,
+        error,
         login,
         register,
         verifyOTP,

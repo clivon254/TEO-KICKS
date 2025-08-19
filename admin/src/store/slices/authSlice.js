@@ -21,9 +21,11 @@ const authSlice = createSlice({
             state.isLoading = false
         },
         setAuthFailure(state, action) {
-            state.error = action.payload || 'Auth error'
-            state.isAuthenticated = false
-            state.user = null
+            state.error = action.payload
+            if (action.payload) {
+                state.isAuthenticated = false
+                state.user = null
+            }
             state.isLoading = false
         },
         clearAuth(state) {
