@@ -1,115 +1,73 @@
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
+import { AuthProvider } from './contexts/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
+
+// Pages
+import Login from './pages/Login'
+import OTPVerification from './pages/OTPVerification'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
+import Dashboard from './pages/Dashboard'
+
 import './App.css'
 
-
-
-
-
 function App() {
-
   return (
-
-    <div className="min-h-screen bg-white py-8">
-
-      <div className="container">
-
-        <div className="text-center mb-8">
-
-          <h1 className="title">TEO KICKS ADMIN</h1>
-
-          <p className="text-2xl text-secondary">Button Showcase</p>
-
-        </div>
-
-        
-
-        <div className="max-w-2xl mx-auto space-y-6">
-
-          {/* Button Variants */}
-
-          <div className="space-y-4">
-
-            <h2 className="title2">Button Styles</h2>
-
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/otp-verification" element={<OTPVerification />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
             
-
-            <div className="flex flex-wrap gap-4 justify-center">
-
-              <button className="btn-primary">Primary Button</button>
-
-              <button className="btn-secondary">Secondary Button</button>
-
-              <button className="btn-outline">Outline Button</button>
-
-            </div>
-
-          </div>
-
-
-
-          {/* Title Examples */}
-
-          <div className="space-y-4 text-center">
-
-            <h2 className="title2">Title Examples</h2>
-
-            <h1 className="title">This is Title (Large)</h1>
-
-            <h2 className="title2">This is Title2 (Medium)</h2>
-
-            <h3 className="title3">This is Title3 (Small)</h3>
-
-          </div>
-
-
-
-          {/* Input Examples */}
-
-          <div className="space-y-4">
-
-            <h2 className="title2">Input Styles</h2>
-
-            <input className="input" placeholder="Standard Input - Type something..." />
-
-            <input className="input2" placeholder="Compact Input2 - Search here..." />
-
-            <input className="input3" placeholder="Pill Input3 - Filter..." />
-
-          </div>
-
-
-
-          {/* Container Examples */}
-
-          <div className="space-y-4">
-
-            <h2 className="title2">Container Examples</h2>
-
-            <div className="container-xs bg-gray-100 p-4 rounded">
-
-              <p className="text-center">Container XS - Small container</p>
-
-            </div>
-
-            <div className="container-sm bg-gray-100 p-4 rounded">
-
-              <p className="text-center">Container SM - Medium container</p>
-
-            </div>
-
-          </div>
-
+            {/* Protected Routes */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Default redirect */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+          
+          {/* Toast notifications */}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#363636',
+                color: '#fff',
+              },
+              success: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#10B981',
+                  secondary: '#fff',
+                },
+              },
+              error: {
+                duration: 5000,
+                iconTheme: {
+                  primary: '#EF4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
         </div>
-
-      </div>
-
-    </div>
-
+      </Router>
+    </AuthProvider>
   )
-
 }
-
-
-
-
 
 export default App
