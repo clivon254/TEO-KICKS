@@ -5,6 +5,7 @@ import { FiMail, FiPhone, FiLock, FiEye, FiEyeOff, FiChevronDown } from 'react-i
 import { FcGoogle } from 'react-icons/fc'
 import { FaApple, FaInstagram } from 'react-icons/fa'
 import logo from '../assets/logo.png'
+import { loginSchema } from '../utils/validation'
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -17,6 +18,7 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
+    const [validationErrors, setValidationErrors] = useState({})
 
     // Country codes data
     const countryCodes = [
@@ -73,27 +75,49 @@ const Login = () => {
         e.preventDefault()
         setIsLoading(true)
         setError('')
+        setValidationErrors({})
 
-        const credentials = {
-            password: formData.password
-        }
+        try {
+            // Validate form data
+            const validationData = {
+                ...formData,
+                email: formData.loginMethod === 'email' ? formData.email : undefined,
+                phone: formData.loginMethod === 'phone' ? formData.phone : undefined
+            }
+            
+            await loginSchema.validate(validationData, { abortEarly: false })
 
-        if (formData.loginMethod === 'email') {
-            credentials.email = formData.email
-        } else {
-            // Combine country code with phone number
-            credentials.phone = countryCode + formData.phone
-        }
+            const credentials = {
+                password: formData.password
+            }
 
-        const result = await login(credentials)
-        
-        if (result.success) {
-            navigate('/dashboard')
-        } else {
-            setError(result.error)
+            if (formData.loginMethod === 'email') {
+                credentials.email = formData.email
+            } else {
+                // Combine country code with phone number
+                credentials.phone = countryCode + formData.phone
+            }
+
+            const result = await login(credentials)
+            
+            if (result.success) {
+                navigate('/dashboard')
+            } else {
+                setError(result.error)
+            }
+        } catch (validationError) {
+            if (validationError.name === 'ValidationError') {
+                const errors = {}
+                validationError.inner.forEach((error) => {
+                    errors[error.path] = error.message
+                })
+                setValidationErrors(errors)
+            } else {
+                setError('An unexpected error occurred')
+            }
+        } finally {
+            setIsLoading(false)
         }
-        
-        setIsLoading(false)
     }
 
     return (
@@ -169,11 +193,14 @@ const Login = () => {
                                             name={formData.loginMethod}
                                             type="email"
                                             required
-                                            className="input pl-10"
+                                            className={`input pl-10 ${validationErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
                                             placeholder="Enter your email"
                                             value={formData[formData.loginMethod]}
                                             onChange={handleInputChange}
                                         />
+                                        {validationErrors.email && (
+                                            <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
+                                        )}
                                     </>
                                 ) : (
                                     <div className="flex">
@@ -198,12 +225,15 @@ const Login = () => {
                                                 name={formData.loginMethod}
                                                 type="tel"
                                                 required
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-r-lg focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-200 text-sm"
+                                                className={`w-full px-4 py-3 border border-gray-300 rounded-r-lg focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-200 text-sm ${validationErrors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
                                                 placeholder="Enter your phone number"
                                                 value={formData[formData.loginMethod]}
                                                 onChange={handleInputChange}
                                             />
                                         </div>
+                                        {validationErrors.phone && (
+                                            <p className="mt-1 text-sm text-red-600">{validationErrors.phone}</p>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -223,11 +253,14 @@ const Login = () => {
                                     name="password"
                                     type={showPassword ? 'text' : 'password'}
                                     required
-                                    className="input pl-10 pr-10"
+                                    className={`input pl-10 pr-10 ${validationErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
                                     placeholder="Enter your password"
                                     value={formData.password}
                                     onChange={handleInputChange}
                                 />
+                                {validationErrors.password && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
+                                )}
                                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                                     <button
                                         type="button"

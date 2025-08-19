@@ -2,35 +2,58 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { FiMail, FiArrowLeft } from 'react-icons/fi'
+import logo from '../assets/logo.png'
+import { forgotPasswordSchema } from '../utils/validation'
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [isSubmitted, setIsSubmitted] = useState(false)
+    const [validationErrors, setValidationErrors] = useState({})
 
     const { forgotPassword } = useAuth()
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setIsLoading(true)
+        setValidationErrors({})
 
-        const result = await forgotPassword(email)
+        try {
+            // Validate email
+            await forgotPasswordSchema.validate({ email }, { abortEarly: false })
 
-        if (result.success) {
-            setIsSubmitted(true)
+            const result = await forgotPassword(email)
+
+            if (result.success) {
+                setIsSubmitted(true)
+            }
+        } catch (validationError) {
+            if (validationError.name === 'ValidationError') {
+                const errors = {}
+                validationError.inner.forEach((error) => {
+                    errors[error.path] = error.message
+                })
+                setValidationErrors(errors)
+            }
+        } finally {
+            setIsLoading(false)
         }
-
-        setIsLoading(false)
     }
 
     if (isSubmitted) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-                <div className="sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="min-h-screen flex flex-col md:flex-row justify-center md:justify-start md:items-start py-5 lg:py-10 sm:px-5 lg:px-8 gap-x-10 gap-y-5">
+
+                {/* Left Side */}
+                <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center justify-center gap-y-3">
+                    
+                    {/* Logo */}
+                    <div className="w-32 h-24 md:w-48 md:h-32 lg:w-64 lg:h-48">
+                        <img src={logo} alt="logo" className="w-full h-full" />
+                    </div>
+
+                    {/* Title */}
                     <div className="text-center">
-                        <h1 className="title">
-                            TEO KICKS ADMIN
-                        </h1>
                         <div className="mt-6">
                             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
                                 <FiMail className="h-6 w-6 text-green-600" />
@@ -51,8 +74,9 @@ const ForgotPassword = () => {
                     </div>
                 </div>
 
-                <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                    <div className="bg-white py-8 px-4 shadow-lg rounded-lg sm:px-10">
+                {/* Right Side */}
+                <div className="sm:mx-auto sm:w-full sm:max-w-md">
+                    <div className="">
                         <div className="text-center space-y-4">
                             <Link
                                 to="/login"
@@ -78,12 +102,18 @@ const ForgotPassword = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="min-h-screen flex flex-col md:flex-row justify-center md:justify-start md:items-start py-5 lg:py-10 sm:px-5 lg:px-8 gap-x-10 gap-y-5">
+
+            {/* Left Side */}
+            <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center justify-center gap-y-3">
+                
+                {/* Logo */}
+                <div className="w-32 h-24 md:w-48 md:h-32 lg:w-64 lg:h-48">
+                    <img src={logo} alt="logo" className="w-full h-full" />
+                </div>
+
+                {/* Title */}
                 <div className="text-center">
-                    <h1 className="title">
-                        TEO KICKS ADMIN
-                    </h1>
                     <h2 className="title2">
                         Forgot your password?
                     </h2>
@@ -93,8 +123,9 @@ const ForgotPassword = () => {
                 </div>
             </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow-lg rounded-lg sm:px-10">
+            {/* Right Side */}
+            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+                <div className="">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         {/* Email Input */}
                         <div>
@@ -110,11 +141,14 @@ const ForgotPassword = () => {
                                     name="email"
                                     type="email"
                                     required
-                                    className="input pl-10"
+                                    className={`input pl-10 ${validationErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
                                     placeholder="Enter your email address"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                 />
+                                {validationErrors.email && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
+                                )}
                             </div>
                         </div>
 

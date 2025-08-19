@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { FiMail, FiArrowLeft, FiRefreshCw } from 'react-icons/fi'
+import logo from '../assets/logo.png'
+import { otpSchema } from '../utils/validation'
 
 const OTPVerification = () => {
     const [otp, setOtp] = useState(['', '', '', '', '', ''])
@@ -9,6 +11,7 @@ const OTPVerification = () => {
     const [resendLoading, setResendLoading] = useState(false)
     const [countdown, setCountdown] = useState(0)
     const [email, setEmail] = useState('')
+    const [validationErrors, setValidationErrors] = useState({})
 
     const { verifyOTP, resendOTP } = useAuth()
     const navigate = useNavigate()
@@ -63,25 +66,37 @@ const OTPVerification = () => {
     const handleSubmit = async (e) => {
         e.preventDefault()
         setIsLoading(true)
+        setValidationErrors({})
 
-        const otpString = otp.join('')
-        if (otpString.length !== 6) {
-            alert('Please enter a valid 6-digit OTP')
+        try {
+            const otpString = otp.join('')
+            
+            // Validate OTP
+            await otpSchema.validate({
+                otp: otpString,
+                email
+            }, { abortEarly: false })
+
+            const result = await verifyOTP({
+                email,
+                otp: otpString
+            })
+
+            if (result.success) {
+                localStorage.removeItem('pendingEmail')
+                navigate('/dashboard')
+            }
+        } catch (validationError) {
+            if (validationError.name === 'ValidationError') {
+                const errors = {}
+                validationError.inner.forEach((error) => {
+                    errors[error.path] = error.message
+                })
+                setValidationErrors(errors)
+            }
+        } finally {
             setIsLoading(false)
-            return
         }
-
-        const result = await verifyOTP({
-            email,
-            otp: otpString
-        })
-
-        if (result.success) {
-            localStorage.removeItem('pendingEmail')
-            navigate('/dashboard')
-        }
-
-        setIsLoading(false)
     }
 
     const handleResendOTP = async () => {
@@ -102,12 +117,18 @@ const OTPVerification = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="min-h-screen flex flex-col md:flex-row justify-center md:justify-start md:items-start py-5 lg:py-10 sm:px-5 lg:px-8 gap-x-10 gap-y-5">
+
+            {/* Left Side */}
+            <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center justify-center gap-y-3">
+                
+                {/* Logo */}
+                <div className="w-32 h-24 md:w-48 md:h-32 lg:w-64 lg:h-48">
+                    <img src={logo} alt="logo" className="w-full h-full" />
+                </div>
+
+                {/* Title */}
                 <div className="text-center">
-                    <h1 className="title">
-                        TEO KICKS ADMIN
-                    </h1>
                     <h2 className="title2">
                         Verify your email
                     </h2>
@@ -120,8 +141,9 @@ const OTPVerification = () => {
                 </div>
             </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow-lg rounded-lg sm:px-10">
+            {/* Right Side */}
+            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+                <div className="">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         {/* OTP Input Fields */}
                         <div>
@@ -144,6 +166,13 @@ const OTPVerification = () => {
                                 ))}
                             </div>
                         </div>
+
+                        {/* Validation Error */}
+                        {validationErrors.otp && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                                <p className="text-sm font-medium">{validationErrors.otp}</p>
+                            </div>
+                        )}
 
                         {/* Submit Button */}
                         <div>

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { FiLock, FiEye, FiEyeOff, FiCheck } from 'react-icons/fi'
+import logo from '../assets/logo.png'
+import { resetPasswordSchema } from '../utils/validation'
 
 const ResetPassword = () => {
     const [formData, setFormData] = useState({
@@ -12,6 +14,7 @@ const ResetPassword = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
+    const [validationErrors, setValidationErrors] = useState({})
 
     const { token } = useParams()
     const { resetPassword } = useAuth()
@@ -45,39 +48,44 @@ const ResetPassword = () => {
     const handleSubmit = async (e) => {
         e.preventDefault()
         setIsLoading(true)
+        setValidationErrors({})
 
-        // Validate passwords match
-        if (formData.newPassword !== formData.confirmPassword) {
-            alert('Passwords do not match')
+        try {
+            // Validate form data
+            await resetPasswordSchema.validate(formData, { abortEarly: false })
+
+            const result = await resetPassword(token, formData.newPassword)
+
+            if (result.success) {
+                setIsSuccess(true)
+            }
+        } catch (validationError) {
+            if (validationError.name === 'ValidationError') {
+                const errors = {}
+                validationError.inner.forEach((error) => {
+                    errors[error.path] = error.message
+                })
+                setValidationErrors(errors)
+            }
+        } finally {
             setIsLoading(false)
-            return
         }
-
-        // Validate password strength
-        const passwordValidation = validatePassword(formData.newPassword)
-        if (!passwordValidation.isValid) {
-            alert('Password must be at least 6 characters long and contain uppercase, lowercase, and numbers')
-            setIsLoading(false)
-            return
-        }
-
-        const result = await resetPassword(token, formData.newPassword)
-
-        if (result.success) {
-            setIsSuccess(true)
-        }
-
-        setIsLoading(false)
     }
 
     if (isSuccess) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-                <div className="sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="min-h-screen flex flex-col md:flex-row justify-center md:justify-start md:items-start py-5 lg:py-10 sm:px-5 lg:px-8 gap-x-10 gap-y-5">
+
+                {/* Left Side */}
+                <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center justify-center gap-y-3">
+                    
+                    {/* Logo */}
+                    <div className="w-32 h-24 md:w-48 md:h-32 lg:w-64 lg:h-48">
+                        <img src={logo} alt="logo" className="w-full h-full" />
+                    </div>
+
+                    {/* Title */}
                     <div className="text-center">
-                        <h1 className="title">
-                            TEO KICKS ADMIN
-                        </h1>
                         <div className="mt-6">
                             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
                                 <FiCheck className="h-6 w-6 text-green-600" />
@@ -92,8 +100,9 @@ const ResetPassword = () => {
                     </div>
                 </div>
 
-                <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                    <div className="bg-white py-8 px-4 shadow-lg rounded-lg sm:px-10">
+                {/* Right Side */}
+                <div className="sm:mx-auto sm:w-full sm:max-w-md">
+                    <div className="">
                         <div className="text-center">
                             <Link
                                 to="/login"
@@ -109,12 +118,18 @@ const ResetPassword = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="min-h-screen flex flex-col md:flex-row justify-center md:justify-start md:items-start py-5 lg:py-10 sm:px-5 lg:px-8 gap-x-10 gap-y-5">
+
+            {/* Left Side */}
+            <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center justify-center gap-y-3">
+                
+                {/* Logo */}
+                <div className="w-32 h-24 md:w-48 md:h-32 lg:w-64 lg:h-48">
+                    <img src={logo} alt="logo" className="w-full h-full" />
+                </div>
+
+                {/* Title */}
                 <div className="text-center">
-                    <h1 className="title">
-                        TEO KICKS ADMIN
-                    </h1>
                     <h2 className="title2">
                         Reset your password
                     </h2>
@@ -124,8 +139,9 @@ const ResetPassword = () => {
                 </div>
             </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow-lg rounded-lg sm:px-10">
+            {/* Right Side */}
+            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+                <div className="">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         {/* New Password Input */}
                         <div>
@@ -141,11 +157,14 @@ const ResetPassword = () => {
                                     name="newPassword"
                                     type={showPassword ? 'text' : 'password'}
                                     required
-                                    className="input pl-10 pr-10"
+                                    className={`input pl-10 pr-10 ${validationErrors.newPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
                                     placeholder="Enter new password"
                                     value={formData.newPassword}
                                     onChange={handleInputChange}
                                 />
+                                {validationErrors.newPassword && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.newPassword}</p>
+                                )}
                                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                                     <button
                                         type="button"
@@ -196,11 +215,14 @@ const ResetPassword = () => {
                                     name="confirmPassword"
                                     type={showConfirmPassword ? 'text' : 'password'}
                                     required
-                                    className="input pl-10 pr-10"
+                                    className={`input pl-10 pr-10 ${validationErrors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
                                     placeholder="Confirm new password"
                                     value={formData.confirmPassword}
                                     onChange={handleInputChange}
                                 />
+                                {validationErrors.confirmPassword && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.confirmPassword}</p>
+                                )}
                                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                                     <button
                                         type="button"
