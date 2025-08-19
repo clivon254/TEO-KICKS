@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { FiMail, FiPhone, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
+import { FiMail, FiPhone, FiLock, FiEye, FiEyeOff, FiChevronDown } from 'react-icons/fi'
+import logo from '../assets/logo.png'
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -10,8 +11,25 @@ const Login = () => {
         password: '',
         loginMethod: 'email' // 'email' or 'phone'
     })
+    const [countryCode, setCountryCode] = useState('+254') // Default to Kenya
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState('')
+
+    // Country codes data
+    const countryCodes = [
+        { code: '+254', country: 'Kenya', flag: '🇰🇪' },
+        { code: '+1', country: 'USA', flag: '🇺🇸' },
+        { code: '+44', country: 'UK', flag: '🇬🇧' },
+        { code: '+91', country: 'India', flag: '🇮🇳' },
+        { code: '+234', country: 'Nigeria', flag: '🇳🇬' },
+        { code: '+27', country: 'South Africa', flag: '🇿🇦' },
+        { code: '+256', country: 'Uganda', flag: '🇺🇬' },
+        { code: '+255', country: 'Tanzania', flag: '🇹🇿' },
+        { code: '+250', country: 'Rwanda', flag: '🇷🇼' },
+        { code: '+251', country: 'Ethiopia', flag: '🇪🇹' },
+        { code: '+254', country: 'Kenya', flag: '🇰🇪' },
+    ]
 
     const { login } = useAuth()
     const navigate = useNavigate()
@@ -36,6 +54,7 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault()
         setIsLoading(true)
+        setError('')
 
         const credentials = {
             password: formData.password
@@ -44,25 +63,31 @@ const Login = () => {
         if (formData.loginMethod === 'email') {
             credentials.email = formData.email
         } else {
-            credentials.phone = formData.phone
+            // Combine country code with phone number
+            credentials.phone = countryCode + formData.phone
         }
 
         const result = await login(credentials)
         
         if (result.success) {
             navigate('/dashboard')
+        } else {
+            setError(result.error)
         }
         
         setIsLoading(false)
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="min-h-screen flex flex-col md:flex-row justify-center py-5 lg:py-10 sm:px-5  lg:px-8 gap-x-10 gap-y-5">
+
+            <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center justify-center">
+                
+                <div className="w-32 h-24 mb-4">
+                    <img src={logo} alt="logo" className="w-full h-full" />
+                </div>
+
                 <div className="text-center">
-                    <h1 className="title">
-                        TEO KICKS ADMIN
-                    </h1>
                     <h2 className="title2">
                         Sign in to your account
                     </h2>
@@ -70,9 +95,10 @@ const Login = () => {
                         Welcome back! Please enter your details.
                     </p>
                 </div>
+
             </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow-lg rounded-lg sm:px-10">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         {/* Login Method Toggle */}
@@ -105,33 +131,63 @@ const Login = () => {
 
                         {/* Email/Phone Input */}
                         <div>
-                            <label htmlFor={formData.loginMethod} className="block text-sm font-medium text-gray-700 mb-2">
+                            <label htmlFor={formData.loginMethod} className="block text-start text-sm font-medium text-gray-700 mb-2">
                                 {formData.loginMethod === 'email' ? 'Email address' : 'Phone number'}
                             </label>
                             <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    {formData.loginMethod === 'email' ? (
-                                        <FiMail className="h-5 w-5 text-primary" />
-                                    ) : (
-                                        <FiPhone className="h-5 w-5 text-primary" />
-                                    )}
-                                </div>
-                                <input
-                                    id={formData.loginMethod}
-                                    name={formData.loginMethod}
-                                    type={formData.loginMethod === 'email' ? 'email' : 'tel'}
-                                    required
-                                    className="input pl-10"
-                                    placeholder={formData.loginMethod === 'email' ? 'Enter your email' : 'Enter your phone number'}
-                                    value={formData[formData.loginMethod]}
-                                    onChange={handleInputChange}
-                                />
+                                {formData.loginMethod === 'email' ? (
+                                    <>
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <FiMail className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <input
+                                            id={formData.loginMethod}
+                                            name={formData.loginMethod}
+                                            type="email"
+                                            required
+                                            className="input pl-10"
+                                            placeholder="Enter your email"
+                                            value={formData[formData.loginMethod]}
+                                            onChange={handleInputChange}
+                                        />
+                                    </>
+                                ) : (
+                                    <div className="flex">
+                                        {/* Country Code Selector */}
+                                        <div className="relative flex-shrink-0">
+                                            <select
+                                                value={countryCode}
+                                                onChange={(e) => setCountryCode(e.target.value)}
+                                                className="h-full px-3 py-3 border border-gray-300 rounded-l-lg border-r-0 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 bg-white text-sm"
+                                            >
+                                                {countryCodes.map((country, index) => (
+                                                    <option key={index} value={country.code}>
+                                                        {country.flag} {country.code}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        {/* Phone Input */}
+                                        <div className="flex-1 relative">
+                                            <input
+                                                id={formData.loginMethod}
+                                                name={formData.loginMethod}
+                                                type="tel"
+                                                required
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-r-lg focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-200 text-sm"
+                                                placeholder="Enter your phone number"
+                                                value={formData[formData.loginMethod]}
+                                                onChange={handleInputChange}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
                         {/* Password Input */}
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                            <label htmlFor="password" className="block text-start text-sm font-medium text-gray-700 mb-2">
                                 Password
                             </label>
                             <div className="relative">
@@ -163,6 +219,13 @@ const Login = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Error Message */}
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                                <p className="text-sm font-medium">{error}</p>
+                            </div>
+                        )}
 
                         {/* Forgot Password Link */}
                         <div className="flex items-center justify-between">
@@ -209,6 +272,7 @@ const Login = () => {
                     </form>
                 </div>
             </div>
+
         </div>
     )
 }

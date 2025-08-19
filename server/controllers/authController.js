@@ -325,9 +325,11 @@ export const login = async (req, res, next) => {
         const user = await User.findOne(query)
 
         if (!user) {
-
-            return next(errorHandler(401, "Invalid credentials"))
-
+            if (email) {
+                return next(errorHandler(401, "Email does not exist"))
+            } else {
+                return next(errorHandler(401, "Phone number does not exist"))
+            }
         }
 
         // Check password
@@ -335,7 +337,7 @@ export const login = async (req, res, next) => {
 
         if (!isPasswordValid) {
 
-            return next(errorHandler(401, "Invalid credentials"))
+            return next(errorHandler(401, "Password is incorrect"))
 
         }
 
