@@ -79,14 +79,17 @@ const Login = () => {
     }
 
     return (
-        <div className="min-h-screen flex flex-col md:flex-row justify-center py-5 lg:py-10 sm:px-5  lg:px-8 gap-x-10 gap-y-5">
+        <div className="min-h-screen flex flex-col md:flex-row justify-center md:justify-start md:items-start py-5 lg:py-10 sm:px-5  lg:px-8 gap-x-10 gap-y-5">
 
-            <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center justify-center">
+            {/* Left Side */}
+            <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center justify-center gap-y-3">
                 
-                <div className="w-32 h-24 mb-4">
+                {/* Logo */}
+                <div className="w-32 h-24 md:w-48 md:h-32 lg:w-64 lg:h-48 ">
                     <img src={logo} alt="logo" className="w-full h-full" />
                 </div>
 
+                {/* Title */}
                 <div className="text-center">
                     <h2 className="title2">
                         Sign in to your account
@@ -98,8 +101,9 @@ const Login = () => {
 
             </div>
 
+            {/* Right Side */}
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow-lg rounded-lg sm:px-10">
+                <div className="">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         {/* Login Method Toggle */}
                         <div className="flex rounded-lg shadow-sm overflow-hidden">
