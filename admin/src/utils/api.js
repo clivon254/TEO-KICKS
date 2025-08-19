@@ -46,11 +46,8 @@ api.interceptors.response.use(
                     originalRequest.headers.Authorization = `Bearer ${accessToken}`
                     return api(originalRequest)
                 } catch (refreshError) {
-                    // Refresh token failed, redirect to login
-                    localStorage.removeItem('accessToken')
-                    localStorage.removeItem('refreshToken')
-                    localStorage.removeItem('user')
-                    window.location.href = '/login'
+                    // Refresh token failed; keep existing storage to allow manual retry or background validation.
+                    // Do not redirect here; let the app decide based on guarded routes.
                     return Promise.reject(refreshError)
                 }
             }

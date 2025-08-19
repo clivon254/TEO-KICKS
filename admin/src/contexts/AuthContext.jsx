@@ -1,4 +1,6 @@
 import { createContext, useContext, useReducer, useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { setAuthLoading, setAuthSuccess, clearAuth } from '../store/slices/authSlice'
 import { authAPI } from '../utils/api'
 import toast from 'react-hot-toast'
 
@@ -74,33 +76,59 @@ const AuthContext = createContext()
 // Auth Provider component
 export const AuthProvider = ({ children }) => {
     const [state, dispatch] = useReducer(authReducer, initialState)
+    const reduxDispatch = useDispatch()
+    const authState = useSelector((s) => s.auth)
 
     // Check if user is already logged in on app start
     useEffect(() => {
-        const checkAuthStatus = async () => {
-            const token = localStorage.getItem('accessToken')
-            const user = localStorage.getItem('user')
+        const token = localStorage.getItem('accessToken')
+        const storedUserString = localStorage.getItem('user')
 
-            if (token && user) {
-                try {
-                    const response = await authAPI.getMe()
+        // 1) Rehydrate immediately from localStorage so state survives reloads
+        if (token && storedUserString) {
+            try {
+                const storedUser = JSON.parse(storedUserString)
+                if (storedUser) {
                     dispatch({
                         type: AUTH_ACTIONS.LOGIN_SUCCESS,
-                        payload: { user: response.data.data.user }
+                        payload: { user: storedUser }
                     })
-                } catch (error) {
-                    // Token is invalid, clear storage
-                    localStorage.removeItem('accessToken')
-                    localStorage.removeItem('refreshToken')
-                    localStorage.removeItem('user')
+                    reduxDispatch(setAuthSuccess(storedUser))
+                } else {
                     dispatch({ type: AUTH_ACTIONS.LOGOUT })
+                    reduxDispatch(clearAuth())
                 }
-            } else {
-                dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false })
+            } catch {
+                dispatch({ type: AUTH_ACTIONS.LOGOUT })
+                reduxDispatch(clearAuth())
+            }
+        } else {
+            dispatch({ type: AUTH_ACTIONS.LOGOUT })
+            reduxDispatch(clearAuth())
+        }
+
+        // Mark loading complete for initial render
+        dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false })
+
+        // 2) Background refresh of user profile; do NOT clear tokens on failure
+        const refreshUserInBackground = async () => {
+            if (!token) return
+            try {
+                const response = await authAPI.getMe()
+                const userData = response.data.data.user
+                localStorage.setItem('user', JSON.stringify(userData))
+                dispatch({
+                    type: AUTH_ACTIONS.LOGIN_SUCCESS,
+                    payload: { user: userData }
+                })
+                reduxDispatch(setAuthSuccess(userData))
+            } catch (error) {
+                console.log('Background token validation failed:', error.response?.status)
+                // intentionally do not clear tokens here to preserve persisted state
             }
         }
 
-        checkAuthStatus()
+        refreshUserInBackground()
     }, [])
 
     // Login function
