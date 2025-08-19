@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { FiMail, FiPhone, FiLock, FiEye, FiEyeOff, FiChevronDown } from 'react-icons/fi'
+import { FcGoogle } from 'react-icons/fc'
+import { FaApple, FaInstagram } from 'react-icons/fa'
 import logo from '../assets/logo.png'
 
 const Login = () => {
@@ -33,6 +35,22 @@ const Login = () => {
 
     const { login } = useAuth()
     const navigate = useNavigate()
+
+    // Social login handlers
+    const handleGoogleLogin = () => {
+        console.log('Google login clicked')
+        // TODO: Implement Google OAuth
+    }
+
+    const handleAppleLogin = () => {
+        console.log('Apple login clicked')
+        // TODO: Implement Apple OAuth
+    }
+
+    const handleInstagramLogin = () => {
+        console.log('Instagram login clicked')
+        // TODO: Implement Instagram OAuth
+    }
 
     const handleInputChange = (e) => {
         const { name, value } = e.target
@@ -104,6 +122,8 @@ const Login = () => {
             {/* Right Side */}
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="">
+
+                    {/* Login Form */}
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         {/* Login Method Toggle */}
                         <div className="flex rounded-lg shadow-sm overflow-hidden">
@@ -274,6 +294,50 @@ const Login = () => {
                             </p>
                         </div>
                     </form>
+
+                    {/* Social Login Section */}
+                    <div className="mt-8">
+                        {/* Divider */}
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-gray-300"></div>
+                            </div>
+                            <div className="relative flex justify-center text-sm">
+                                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                            </div>
+                        </div>
+
+                        {/* Social Login Buttons */}
+                        <div className="mt-6 space-y-3">
+                            {/* Google Login */}
+                            <button
+                                onClick={handleGoogleLogin}
+                                className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200"
+                            >
+                                <FcGoogle className="w-5 h-5 mr-3" />
+                                <span className="font-medium">Continue with Google</span>
+                            </button>
+
+                            {/* Apple Login */}
+                            <button
+                                onClick={handleAppleLogin}
+                                className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-black text-white hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200"
+                            >
+                                <FaApple className="w-5 h-5 mr-3" />
+                                <span className="font-medium">Continue with Apple</span>
+                            </button>
+
+                            {/* Instagram Login */}
+                            <button
+                                onClick={handleInstagramLogin}
+                                className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white hover:from-purple-600 hover:via-pink-600 hover:to-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200"
+                            >
+                                <FaInstagram className="w-5 h-5 mr-3" />
+                                <span className="font-medium">Continue with Instagram</span>
+                            </button>
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
 
