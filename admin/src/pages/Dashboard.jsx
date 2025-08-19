@@ -1,41 +1,11 @@
 import { useAuth } from '../contexts/AuthContext'
-import { FiLogOut, FiUser, FiMail, FiCalendar } from 'react-icons/fi'
+import { FiUser, FiMail, FiCalendar } from 'react-icons/fi'
 
 const Dashboard = () => {
-    const { user, logout } = useAuth()
-
-    const handleLogout = async () => {
-        await logout()
-    }
+    const { user } = useAuth()
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <header className="bg-white shadow-lg">
-                <div className="container">
-                    <div className="flex justify-between items-center py-6">
-                        <div>
-                            <h1 className="title">
-                                TEO KICKS ADMIN
-                            </h1>
-                            <p className="text-sm text-gray-600">Dashboard</p>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                            <div className="text-right">
-                                <p className="text-sm font-medium text-primary">{user?.name}</p>
-                                <p className="text-xs text-gray-500">{user?.email}</p>
-                            </div>
-                            <button
-                                onClick={handleLogout}
-                                className="btn-outline inline-flex items-center"
-                            >
-                                <FiLogOut className="mr-2" />
-                                Logout
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </header>
 
             {/* Main Content */}
             <main className="container py-6">

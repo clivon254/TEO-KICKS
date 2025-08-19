@@ -314,18 +314,6 @@ const Login = () => {
                             </button>
                         </div>
 
-                        {/* Register Link */}
-                        <div className="text-center">
-                            <p className="text-sm text-gray-600">
-                                Don't have an account?{' '}
-                                <Link
-                                    to="/register"
-                                    className="font-medium text-primary hover:text-secondary transition-colors"
-                                >
-                                    Register here
-                                </Link>
-                            </p>
-                        </div>
                     </form>
 
                     {/* Social Login Section */}
