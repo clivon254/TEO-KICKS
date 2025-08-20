@@ -7,7 +7,7 @@ import { generateUniqueSlug } from "../utils/slugGenerator.js"
 // @access  Private (Admin)
 export const createCategory = async (req, res, next) => {
     try {
-        const { name, description, parent, sortOrder } = req.body
+        const { name, description } = req.body
 
         if (!name) {
             return next(errorHandler(400, "Category name is required"))
@@ -23,8 +23,6 @@ export const createCategory = async (req, res, next) => {
             name,
             slug,
             description,
-            parent,
-            sortOrder,
             createdBy: req.user.userId
         })
 
@@ -39,8 +37,6 @@ export const createCategory = async (req, res, next) => {
                     name: category.name,
                     slug: category.slug,
                     description: category.description,
-                    parent: category.parent,
-                    sortOrder: category.sortOrder,
                     isActive: category.isActive,
                     createdAt: category.createdAt
                 }
@@ -58,7 +54,7 @@ export const createCategory = async (req, res, next) => {
 // @access  Public
 export const getAllCategories = async (req, res, next) => {
     try {
-        const { page = 1, limit = 10, search, isActive, parent } = req.query
+        const { page = 1, limit = 10, search, isActive } = req.query
 
         const query = {}
 
@@ -72,21 +68,15 @@ export const getAllCategories = async (req, res, next) => {
             query.isActive = isActive === 'true'
         }
 
-        // Filter by parent
-        if (parent === 'null' || parent === '') {
-            query.parent = null
-        } else if (parent) {
-            query.parent = parent
-        }
+        // Parent filtering removed
 
         const options = {
             page: parseInt(page),
             limit: parseInt(limit),
-            sort: { sortOrder: 1, name: 1 }
+            sort: { name: 1 }
         }
 
         const categories = await Category.find(query)
-            .populate('parent', 'name slug')
             .sort(options.sort)
             .limit(options.limit * 1)
             .skip((options.page - 1) * options.limit)
@@ -121,7 +111,6 @@ export const getCategoryById = async (req, res, next) => {
         const { categoryId } = req.params
 
         const category = await Category.findById(categoryId)
-            .populate('parent', 'name slug')
             .populate('createdBy', 'name email')
 
         if (!category) {
@@ -147,7 +136,7 @@ export const getCategoryById = async (req, res, next) => {
 export const updateCategory = async (req, res, next) => {
     try {
         const { categoryId } = req.params
-        const { name, description, parent, sortOrder, isActive } = req.body
+        const { name, description, isActive } = req.body
 
         const category = await Category.findById(categoryId)
 
@@ -170,8 +159,6 @@ export const updateCategory = async (req, res, next) => {
         // Update fields
         if (name) category.name = name
         if (description !== undefined) category.description = description
-        if (parent !== undefined) category.parent = parent
-        if (sortOrder !== undefined) category.sortOrder = sortOrder
         if (isActive !== undefined) category.isActive = isActive
 
         await category.save()
@@ -185,8 +172,6 @@ export const updateCategory = async (req, res, next) => {
                     name: category.name,
                     slug: category.slug,
                     description: category.description,
-                    parent: category.parent,
-                    sortOrder: category.sortOrder,
                     isActive: category.isActive,
                     updatedAt: category.updatedAt
                 }
@@ -212,11 +197,7 @@ export const deleteCategory = async (req, res, next) => {
             return next(errorHandler(404, "Category not found"))
         }
 
-        // Check if category has children
-        const hasChildren = await Category.exists({ parent: categoryId })
-        if (hasChildren) {
-            return next(errorHandler(400, "Cannot delete category with subcategories"))
-        }
+        // Child relationship removed; proceed to delete
 
         await Category.findByIdAndDelete(categoryId)
 

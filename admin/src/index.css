@@ -59,6 +59,94 @@
   .container-xs {
     @apply max-w-2xl mx-auto px-4;
   }
+
+  /* TipTap Editor Custom Styles */
+  .ProseMirror {
+    @apply outline-none min-h-[120px] text-sm leading-relaxed;
+  }
+
+  .ProseMirror p.is-editor-empty:first-child::before {
+    @apply text-gray-400 float-left h-0 pointer-events-none;
+    content: attr(data-placeholder);
+  }
+
+  .ProseMirror p {
+    @apply mb-2;
+  }
+
+  .ProseMirror h1 {
+    @apply text-2xl font-bold mb-3;
+  }
+
+  .ProseMirror h2 {
+    @apply text-xl font-bold mb-2;
+  }
+
+  .ProseMirror h3 {
+    @apply text-lg font-bold mb-2;
+  }
+
+  .ProseMirror ul {
+    @apply list-disc list-inside mb-2;
+  }
+
+  .ProseMirror ol {
+    @apply list-decimal list-inside mb-2;
+  }
+
+  .ProseMirror li {
+    @apply mb-1;
+  }
+
+  .ProseMirror blockquote {
+    @apply border-l-4 border-primary pl-4 italic text-gray-600 mb-2;
+  }
+
+  .ProseMirror a {
+    @apply text-primary hover:text-secondary underline;
+  }
+
+  .ProseMirror strong {
+    @apply font-bold;
+  }
+
+  .ProseMirror em {
+    @apply italic;
+  }
+
+  .ProseMirror u {
+    @apply underline;
+  }
+
+  .ProseMirror s {
+    @apply line-through;
+  }
+
+  /* TipTap toolbar button styles */
+  .tiptap-toolbar button {
+    @apply transition-colors duration-200;
+  }
+
+  .tiptap-toolbar button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* TipTap text alignment */
+  .ProseMirror[data-text-align="left"] {
+    @apply text-left;
+  }
+
+  .ProseMirror[data-text-align="center"] {
+    @apply text-center;
+  }
+
+  .ProseMirror[data-text-align="right"] {
+    @apply text-right;
+  }
+
+  .ProseMirror[data-text-align="justify"] {
+    @apply text-justify;
+  }
 }
 
 :root {

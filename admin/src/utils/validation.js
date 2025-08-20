@@ -88,4 +88,15 @@ export const changePasswordSchema = yup.object().shape({
     confirmPassword: yup.string()
         .required('Please confirm your password')
         .oneOf([yup.ref('newPassword'), null], 'Passwords must match')
+})
+
+// Category validation schema
+export const categorySchema = yup.object().shape({
+    name: yup.string()
+        .required('Category name is required')
+        .min(2, 'Category name must be at least 2 characters')
+        .max(100, 'Category name must be less than 100 characters'),
+    description: yup.string()
+        .max(500, 'Description must be less than 500 characters'),
+    
 }) 

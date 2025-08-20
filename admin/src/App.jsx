@@ -14,6 +14,7 @@ import ResetPassword from './pages/auth/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import NotFound from './pages/NotFound'
 import Categories from './pages/classifications/category/Categories'
+import AddCategory from './pages/classifications/category/AddCategory'
 import Brands from './pages/classifications/Brand/Brands'
 import Collections from './pages/classifications/collections/Collections'
 import Tags from './pages/classifications/tags/Tags'
@@ -69,6 +70,7 @@ function App() {
             <Route element={<Layout />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/categories" element={<Categories />} />
+              <Route path="/categories/add" element={<AddCategory />} />
               <Route path="/brands" element={<Brands />} />
               <Route path="/collections" element={<Collections />} />
               <Route path="/tags" element={<Tags />} />

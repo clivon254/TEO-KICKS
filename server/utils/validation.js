@@ -414,22 +414,12 @@ export const validateCategory = (data) => {
                 'string.uri': 'Image must be a valid URL'
             }),
 
-        parent: Joi.string()
-            .hex()
-            .length(24)
-            .optional()
-            .messages({
-                'string.hex': 'Invalid parent category ID format',
-                'string.length': 'Invalid parent category ID length'
-            }),
+        // parent removed
 
         isActive: Joi.boolean()
             .optional(),
 
-        sortOrder: Joi.number()
-            .integer()
-            .min(0)
-            .optional(),
+        // sortOrder removed
 
         metaTitle: Joi.string()
             .trim()

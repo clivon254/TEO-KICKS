@@ -42,9 +42,7 @@ const categorySchema = new mongoose.Schema({
 
 // Indexes for better query performance
 // Note: slug index is automatically created due to unique: true
-categorySchema.index({ parent: 1 })
 categorySchema.index({ isActive: 1 })
-categorySchema.index({ sortOrder: 1 })
 
 
 
@@ -57,18 +55,9 @@ categorySchema.index({ sortOrder: 1 })
 
 
 // Instance method to get full path
+// Note: hierarchy was removed; getFullPath now returns just the category name
 categorySchema.methods.getFullPath = function() {
-
-    const path = [this.name]
-
-    if (this.parent) {
-
-        path.unshift(this.parent.name)
-
-    }
-
-    return path.join(' > ')
-
+    return this.name
 }
 
 
@@ -77,12 +66,7 @@ categorySchema.methods.getFullPath = function() {
 
 // Static method to get root categories
 categorySchema.statics.getRootCategories = function() {
-
-    return this.find({ 
-        parent: null, 
-        isActive: true 
-    }).sort({ sortOrder: 1, name: 1 })
-
+    return this.find({ isActive: true }).sort({ name: 1 })
 }
 
 
@@ -91,11 +75,7 @@ categorySchema.statics.getRootCategories = function() {
 
 // Static method to get category tree
 categorySchema.statics.getCategoryTree = function() {
-
-    return this.find({ isActive: true })
-        .populate('children')
-        .sort({ sortOrder: 1, name: 1 })
-
+    return this.find({ isActive: true }).sort({ name: 1 })
 }
 
 
@@ -124,9 +104,7 @@ categorySchema.statics.getWithProductCount = function() {
                 products: 0
             }
         },
-        {
-            $sort: { sortOrder: 1, name: 1 }
-        }
+        { $sort: { name: 1 } }
     ])
 
 }

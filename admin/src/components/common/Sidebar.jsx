@@ -86,7 +86,7 @@ const Sidebar = () => {
                             })}
 
                             {/* Classification Section */}
-                            <div className="mt-6">
+                            <div className="">
                                 <button
                                     onClick={toggleClassification}
                                     className="group flex items-center justify-between w-full px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md transition-colors duration-200"

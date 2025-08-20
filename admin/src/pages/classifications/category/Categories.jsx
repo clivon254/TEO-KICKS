@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter } from 'react-icons/fi'
 
 
@@ -116,13 +117,13 @@ const Categories = () => {
                     <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
                     <p className="text-gray-600">Manage your product categories</p>
                 </div>
-                <button
-                    onClick={() => setShowAddModal(true)}
+                <Link
+                    to="/categories/add"
                     className="btn-primary inline-flex items-center"
                 >
                     <FiPlus className="mr-2 h-4 w-4" />
                     Add Category
-                </button>
+                </Link>
             </div>
 
 
