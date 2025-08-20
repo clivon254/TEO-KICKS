@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './contexts/AuthContext'
 import { useAuth } from './contexts/AuthContext'
+import { useState } from 'react'
 import Header from './components/common/Header'
 import Sidebar from './components/common/Sidebar'
 
@@ -12,13 +13,23 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import NotFound from './pages/NotFound'
-
+import Categories from './pages/Categories'
+import Brands from './pages/Brands'
+import Collections from './pages/Collections'
+import Tags from './pages/Tags'
 
 
 // Main Layout - only for authenticated users
 function Layout() {
   const { isAuthenticated, isLoading } = useAuth()
-  
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen)
+  }
+
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -29,11 +40,13 @@ function Layout() {
       </div>
     )
   }
-  
+
+
   return isAuthenticated ? (
-    <div className="min-h-screen h-screen  flex flex-col">
-      <Header />
+    <div className="min-h-screen h-screen flex flex-col">
+      <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {/* TODO: Implement mobile sidebar visibility */}
         <Sidebar />
         <div className="flex-1 lg:w-[70%] h-full overflow-y-auto relative">
           <Outlet />
@@ -45,6 +58,7 @@ function Layout() {
   )
 }
 
+
 function App() {
   return (
     <Router>
@@ -54,6 +68,10 @@ function App() {
             {/* Main authenticated layout */}
             <Route element={<Layout />}>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/categories" element={<Categories />} />
+              <Route path="/brands" element={<Brands />} />
+              <Route path="/collections" element={<Collections />} />
+              <Route path="/tags" element={<Tags />} />
             </Route>
 
             {/* Public Routes */}
@@ -96,5 +114,6 @@ function App() {
     </Router>
   )
 }
+
 
 export default App
