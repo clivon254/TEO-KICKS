@@ -407,6 +407,10 @@ export const validateCategory = (data) => {
                 'string.max': 'Description cannot exceed 500 characters'
             }),
 
+        status: Joi.string()
+            .valid('active', 'inactive')
+            .optional(),
+
         image: Joi.string()
             .uri()
             .optional()

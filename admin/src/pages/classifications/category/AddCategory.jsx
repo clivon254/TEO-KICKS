@@ -14,7 +14,8 @@ const AddCategory = () => {
     
     const [formData, setFormData] = useState({
         name: '',
-        description: ''
+        description: '',
+        status: 'active'
     })
     
     const [validationErrors, setValidationErrors] = useState({})
@@ -76,7 +77,8 @@ const AddCategory = () => {
             // Prepare payload
             const payload = {
                 name: formData.name.trim(),
-                description: formData.description.trim() || undefined
+                description: formData.description.trim() || undefined,
+                status: formData.status
             }
             
             await createCategoryMutation.mutateAsync(payload)
@@ -235,8 +237,23 @@ const AddCategory = () => {
                         </p>
                     </div>
 
-
-                    {/* Parent and sortOrder removed */}
+                    {/* Status (Toggle) */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, status: prev.status === 'active' ? 'inactive' : 'active' }))}
+                            disabled={createCategoryMutation.isPending}
+                            className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 ${formData.status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`}
+                            aria-pressed={formData.status === 'active'}
+                        >
+                            <span className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow transform transition-transform ${formData.status === 'active' ? 'translate-x-7' : 'translate-x-0'}`} />
+                            <span className="sr-only">Toggle status</span>
+                        </button>
+                        <span className={`ml-3 text-sm font-medium ${formData.status === 'active' ? 'text-green-700' : 'text-gray-700'}`}>
+                            {formData.status === 'active' ? 'Active' : 'Inactive'}
+                        </span>
+                    </div>
 
 
                     {/* Form Actions */}

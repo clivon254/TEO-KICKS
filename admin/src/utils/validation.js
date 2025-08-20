@@ -98,5 +98,6 @@ export const categorySchema = yup.object().shape({
         .max(100, 'Category name must be less than 100 characters'),
     description: yup.string()
         .max(500, 'Description must be less than 500 characters'),
+    status: yup.string().oneOf(['active', 'inactive']).optional(),
     
 }) 

@@ -1,7 +1,7 @@
 import { createContext, useContext, useReducer, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { setAuthLoading, setAuthSuccess, clearAuth } from '../store/slices/authSlice'
+import { setAuthLoading, setAuthSuccess, clearAuth, setAuthFailure } from '../store/slices/authSlice'
 import { authAPI } from '../utils/api'
 import toast from 'react-hot-toast'
 
@@ -163,7 +163,8 @@ export const AuthProvider = ({ children }) => {
             return { success: true }
             
         } catch (error) {
-            const errorMessage = error.response?.data?.message || 'Login failed'
+            // Prefer server-provided, specific errors (e.g., Invalid password, User not found, Account inactive)
+            const errorMessage = error?.response?.data?.message || error?.message || 'Login failed'
             dispatch({
                 type: AUTH_ACTIONS.LOGIN_FAILURE,
                 payload: errorMessage

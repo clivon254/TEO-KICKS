@@ -1,84 +1,54 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter } from 'react-icons/fi'
+import { Link, useNavigate } from 'react-router-dom'
+import { useGetCategories, useDeleteCategory } from '../../../hooks/useCategories'
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiGrid, FiAlertTriangle } from 'react-icons/fi'
+import toast from 'react-hot-toast'
 
 
 const Categories = () => {
-    const [categories, setCategories] = useState([])
-    const [isLoading, setIsLoading] = useState(true)
+    const [searchTerm, setSearchTerm] = useState('')
+    const [debouncedSearch, setDebouncedSearch] = useState('')
+    const [filterStatus, setFilterStatus] = useState('all')
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(5)
+
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(searchTerm), 300)
+        return () => clearTimeout(t)
+    }, [searchTerm])
+
+    const params = {}
+    if (filterStatus === 'active') params.status = 'active'
+    if (filterStatus === 'inactive') params.status = 'inactive'
+    if (filterStatus === 'all') delete params.status
+    if (debouncedSearch) params.search = debouncedSearch
+    params.page = currentPage
+    params.limit = itemsPerPage
+
+    const { data, isLoading } = useGetCategories(params)
+    const categories = data?.data?.data?.categories || []
+    const pagination = data?.data?.data?.pagination || {}
+    const totalItems = pagination.totalCategories || pagination.totalItems || 0
+    const totalPages = pagination.totalPages || Math.max(1, Math.ceil((totalItems || 0) / (itemsPerPage || 1)))
     const [showAddModal, setShowAddModal] = useState(false)
     const [showEditModal, setShowEditModal] = useState(false)
     const [selectedCategory, setSelectedCategory] = useState(null)
-    const [searchTerm, setSearchTerm] = useState('')
-    const [filterStatus, setFilterStatus] = useState('all')
+    const [confirmDelete, setConfirmDelete] = useState({ open: false, category: null })
+    const navigate = useNavigate()
+    const deleteCategory = useDeleteCategory()
 
 
-    const [formData, setFormData] = useState({
-        name: '',
-        description: '',
-        slug: '',
-        isActive: true
-    })
+    // Real data now fetched via useGetCategories
 
 
-    // Mock data - replace with actual API calls
-    useEffect(() => {
-        const mockCategories = [
-            { id: 1, name: 'Sneakers', description: 'Casual and athletic footwear', slug: 'sneakers', isActive: true, productCount: 45 },
-            { id: 2, name: 'Boots', description: 'Formal and casual boots', slug: 'boots', isActive: true, productCount: 23 },
-            { id: 3, name: 'Sandals', description: 'Summer and casual sandals', slug: 'sandals', isActive: false, productCount: 12 },
-            { id: 4, name: 'Formal Shoes', description: 'Business and formal footwear', slug: 'formal-shoes', isActive: true, productCount: 18 },
-        ]
-        setCategories(mockCategories)
-        setIsLoading(false)
-    }, [])
+    const handleInputChange = () => {}
 
 
-    const handleInputChange = (e) => {
-        const { name, value, type, checked } = e.target
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }))
-    }
-
-
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        // TODO: Implement API call to create/update category
-        console.log('Form data:', formData)
-        
-        if (showEditModal) {
-            // Update existing category
-            setCategories(prev => prev.map(cat => 
-                cat.id === selectedCategory.id ? { ...cat, ...formData } : cat
-            ))
-            setShowEditModal(false)
-        } else {
-            // Add new category
-            const newCategory = {
-                id: Date.now(),
-                ...formData,
-                productCount: 0
-            }
-            setCategories(prev => [...prev, newCategory])
-            setShowAddModal(false)
-        }
-        
-        setFormData({ name: '', description: '', slug: '', isActive: true })
-        setSelectedCategory(null)
-    }
+    const handleSubmit = async () => {}
 
 
     const handleEdit = (category) => {
-        setSelectedCategory(category)
-        setFormData({
-            name: category.name,
-            description: category.description,
-            slug: category.slug,
-            isActive: category.isActive
-        })
-        setShowEditModal(true)
+        navigate(`/categories/${category._id || category.id}/edit`)
     }
 
 
@@ -90,23 +60,37 @@ const Categories = () => {
     }
 
 
-    const filteredCategories = categories.filter(category => {
-        const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            category.description.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesFilter = filterStatus === 'all' || 
-                            (filterStatus === 'active' && category.isActive) ||
-                            (filterStatus === 'inactive' && !category.isActive)
-        return matchesSearch && matchesFilter
-    })
+    const filteredCategories = categories
 
 
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+    const LoadingSkeleton = () => (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No.</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                            <tr key={i}>
+                                <td className="px-6 py-4"><div className="h-4 w-6 bg-gray-200 rounded animate-pulse" /></td>
+                                <td className="px-6 py-4"><div className="h-4 w-40 bg-gray-200 rounded animate-pulse" /></td>
+                                <td className="px-6 py-4"><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></td>
+                                <td className="px-6 py-4"><div className="h-4 w-20 bg-gray-200 rounded animate-pulse" /></td>
+                                <td className="px-6 py-4 text-right"><div className="h-8 w-24 bg-gray-200 rounded animate-pulse ml-auto" /></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
             </div>
         )
-    }
 
 
     return (
@@ -154,22 +138,50 @@ const Categories = () => {
                             <option value="inactive">Inactive</option>
                         </select>
                     </div>
+                    {/* Items per page moved to top next to status filter */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">Rows per page:</span>
+                        <select
+                            value={itemsPerPage}
+                            onChange={(e) => { setItemsPerPage(parseInt(e.target.value)); setCurrentPage(1) }}
+                            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
+                        >
+                            {[5, 10, 20, 50].map(n => (<option key={n} value={n}>{n}</option>))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
 
             {/* Categories List */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                {isLoading ? (
+                    <LoadingSkeleton />
+                ) : filteredCategories.length === 0 ? (
+                    <div className="py-16 px-6 text-center">
+                        <div className="mx-auto h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                            <FiGrid className="h-7 w-7 text-primary" />
+                        </div>
+                        <h3 className="mt-4 text-lg font-semibold text-gray-900">No categories yet</h3>
+                        <p className="mt-1 text-sm text-gray-500">Get started by creating your first category.</p>
+                        <div className="mt-6">
+                            <Link to="/categories/add" className="btn-primary inline-flex items-center">
+                                <FiPlus className="mr-2 h-4 w-4" />
+                                Add Category
+                            </Link>
+                        </div>
+                    </div>
+                ) : (
+                <>
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No.</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Category
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Description
-                                </th>
+                                {/* Description column removed */}
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Products
                                 </th>
@@ -182,31 +194,27 @@ const Categories = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredCategories.map((category) => (
-                                <tr key={category.id} className="hover:bg-gray-50">
+                            {filteredCategories.map((category, index) => (
+                                <tr key={category._id || category.id} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{(pagination.currentPage ? (pagination.currentPage - 1) * itemsPerPage : (currentPage - 1) * itemsPerPage) + index + 1}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div>
                                             <div className="text-sm font-medium text-gray-900">{category.name}</div>
                                             <div className="text-sm text-gray-500">{category.slug}</div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="text-sm text-gray-900 max-w-xs truncate">
-                                            {category.description}
-                                        </div>
-                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            {category.productCount} products
+                                            {category.productCount || 0} products
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                            category.isActive 
+                                            (category.status || (category.isActive ? 'active' : 'inactive')) === 'active'
                                                 ? 'bg-green-100 text-green-800' 
                                                 : 'bg-red-100 text-red-800'
                                         }`}>
-                                            {category.isActive ? 'Active' : 'Inactive'}
+                                            {(category.status || (category.isActive ? 'active' : 'inactive')) === 'active' ? 'Active' : 'Inactive'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -218,7 +226,7 @@ const Categories = () => {
                                                 <FiEdit className="h-4 w-4" />
                                             </button>
                                             <button
-                                                onClick={() => handleDelete(category.id)}
+                                                onClick={() => setConfirmDelete({ open: true, category })}
                                                 className="text-red-600 hover:text-red-900"
                                             >
                                                 <FiTrash2 className="h-4 w-4" />
@@ -230,7 +238,110 @@ const Categories = () => {
                         </tbody>
                     </table>
                 </div>
+                {/* Pagination footer (centered) */}
+                <div className="px-4 py-3 border-t border-gray-200 flex flex-col items-center gap-2">
+                    {/* Page info */}
+                    <div className="text-sm text-gray-600 text-center">
+                        {totalItems > 0 ? (
+                            <>Showing {(pagination.currentPage ? (pagination.currentPage - 1) * itemsPerPage : (currentPage - 1) * itemsPerPage) + 1} to {(pagination.currentPage ? (pagination.currentPage - 1) * itemsPerPage : (currentPage - 1) * itemsPerPage) + categories.length} of {totalItems}</>
+                        ) : (
+                            <>Showing 0 of 0</>
+                        )}
+                    </div>
+
+                    {/* Pager controls */}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={(pagination.currentPage || currentPage) <= 1}
+                            className="btn-outline px-3 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Prev
+                        </button>
+                        {/* Page numbers with compact window */}
+                        {(() => {
+                            const pages = []
+                            const cp = pagination.currentPage || currentPage
+                            const tp = totalPages
+                            const add = (p) => pages.push(p)
+                            if (tp <= 7) {
+                                for (let i = 1; i <= tp; i++) add(i)
+                            } else {
+                                add(1)
+                                const left = Math.max(2, cp - 1)
+                                const right = Math.min(tp - 1, cp + 1)
+                                if (left > 2) add('...')
+                                for (let i = left; i <= right; i++) add(i)
+                                if (right < tp - 1) add('...')
+                                add(tp)
+                            }
+                            return pages.map((p, i) => (
+                                typeof p === 'number' ? (
+                                    <button
+                                        key={`p-${p}-${i}`}
+                                        onClick={() => setCurrentPage(p)}
+                                        className={`px-3 py-1 text-sm rounded-md border ${p === cp ? 'bg-primary text-white border-primary' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        {p}
+                                    </button>
+                                ) : (
+                                    <span key={`e-${i}`} className="px-2 text-gray-500">{p}</span>
+                                )
+                            ))
+                        })()}
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={(pagination.currentPage || currentPage) >= totalPages}
+                            className="btn-outline px-3 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+                </>
+                )}
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {confirmDelete.open && (
+                <div className="fixed inset-0 z-50">
+                    <div className="absolute inset-0 bg-black/40" />
+                    <div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6">
+                        <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-4 sm:p-6">
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                                <FiAlertTriangle className="h-6 w-6 text-red-600" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900">Delete category?</h3>
+                        </div>
+                        <p className="mt-3 text-sm text-gray-600">Are you sure you want to delete "{confirmDelete.category?.name}"? This action cannot be undone.</p>
+                        <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                            <button
+                                onClick={() => setConfirmDelete({ open: false, category: null })}
+                                className="btn-outline"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        await deleteCategory.mutateAsync(confirmDelete.category?._id || confirmDelete.category?.id)
+                                        toast.success('Category deleted')
+                                    } catch (err) {
+                                        toast.error(err.response?.data?.message || 'Failed to delete')
+                                    } finally {
+                                        setConfirmDelete({ open: false, category: null })
+                                    }
+                                }}
+                                className="btn-primary bg-red-600 border-red-600 hover:bg-red-700 hover:border-red-700"
+                            >
+                                {deleteCategory.isPending ? 'Deleting...' : 'Delete'}
+                            </button>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
 
             {/* Add/Edit Modal */}

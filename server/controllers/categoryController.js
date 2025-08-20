@@ -7,7 +7,7 @@ import { generateUniqueSlug } from "../utils/slugGenerator.js"
 // @access  Private (Admin)
 export const createCategory = async (req, res, next) => {
     try {
-        const { name, description } = req.body
+        const { name, description, status } = req.body
 
         if (!name) {
             return next(errorHandler(400, "Category name is required"))
@@ -23,6 +23,7 @@ export const createCategory = async (req, res, next) => {
             name,
             slug,
             description,
+            status: status === 'inactive' ? 'inactive' : 'active',
             createdBy: req.user.userId
         })
 
@@ -37,6 +38,7 @@ export const createCategory = async (req, res, next) => {
                     name: category.name,
                     slug: category.slug,
                     description: category.description,
+                    status: category.status,
                     isActive: category.isActive,
                     createdAt: category.createdAt
                 }
@@ -54,7 +56,7 @@ export const createCategory = async (req, res, next) => {
 // @access  Public
 export const getAllCategories = async (req, res, next) => {
     try {
-        const { page = 1, limit = 10, search, isActive } = req.query
+        const { page = 1, limit = 10, search, isActive, status } = req.query
 
         const query = {}
 
@@ -66,6 +68,11 @@ export const getAllCategories = async (req, res, next) => {
         // Filter by active status
         if (isActive !== undefined) {
             query.isActive = isActive === 'true'
+        }
+
+        // Filter by status string
+        if (status) {
+            query.status = status
         }
 
         // Parent filtering removed
@@ -136,7 +143,7 @@ export const getCategoryById = async (req, res, next) => {
 export const updateCategory = async (req, res, next) => {
     try {
         const { categoryId } = req.params
-        const { name, description, isActive } = req.body
+        const { name, description, isActive, status } = req.body
 
         const category = await Category.findById(categoryId)
 
@@ -160,6 +167,7 @@ export const updateCategory = async (req, res, next) => {
         if (name) category.name = name
         if (description !== undefined) category.description = description
         if (isActive !== undefined) category.isActive = isActive
+        if (status !== undefined) category.status = status
 
         await category.save()
 
@@ -172,6 +180,7 @@ export const updateCategory = async (req, res, next) => {
                     name: category.name,
                     slug: category.slug,
                     description: category.description,
+                    status: category.status,
                     isActive: category.isActive,
                     updatedAt: category.updatedAt
                 }

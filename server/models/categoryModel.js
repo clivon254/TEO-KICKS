@@ -19,6 +19,13 @@ const categorySchema = new mongoose.Schema({
         lowercase: true
     },
 
+    // Status string kept alongside isActive for clarity in API
+    status: {
+        type: String,
+        enum: ['active', 'inactive'],
+        default: 'active'
+    },
+
     // Display settings
     isActive: { 
         type: Boolean, 
@@ -43,6 +50,7 @@ const categorySchema = new mongoose.Schema({
 // Indexes for better query performance
 // Note: slug index is automatically created due to unique: true
 categorySchema.index({ isActive: 1 })
+categorySchema.index({ status: 1 })
 
 
 
@@ -108,6 +116,19 @@ categorySchema.statics.getWithProductCount = function() {
     ])
 
 }
+
+// Sync status <-> isActive
+categorySchema.pre('save', function(next) {
+    if (this.isModified('status')) {
+        this.isActive = this.status === 'active'
+    } else if (this.isModified('isActive')) {
+        this.status = this.isActive ? 'active' : 'inactive'
+    } else {
+        // Ensure consistency on first save
+        this.isActive = this.status === 'active'
+    }
+    next()
+})
 
 
 

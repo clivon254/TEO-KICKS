@@ -15,6 +15,7 @@ import Dashboard from './pages/Dashboard'
 import NotFound from './pages/NotFound'
 import Categories from './pages/classifications/category/Categories'
 import AddCategory from './pages/classifications/category/AddCategory'
+import EditCategory from './pages/classifications/category/EditCategory'
 import Brands from './pages/classifications/Brand/Brands'
 import Collections from './pages/classifications/collections/Collections'
 import Tags from './pages/classifications/tags/Tags'
@@ -71,6 +72,7 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/categories" element={<Categories />} />
               <Route path="/categories/add" element={<AddCategory />} />
+              <Route path="/categories/:id/edit" element={<EditCategory />} />
               <Route path="/brands" element={<Brands />} />
               <Route path="/collections" element={<Collections />} />
               <Route path="/tags" element={<Tags />} />

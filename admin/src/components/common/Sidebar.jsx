@@ -53,7 +53,7 @@ const Sidebar = () => {
 
 
     return (
-        <div className="hidden md:flex md:flex-shrink-0">
+        <div className="hidden lg:flex lg:flex-shrink-0">
             <div className="flex flex-col w-64">
                 <div className="flex flex-col h-full bg-white border-r border-gray-200 relative">
                     {/* Main navigation area */}
