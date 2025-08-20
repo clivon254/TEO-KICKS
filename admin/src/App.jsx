@@ -33,9 +33,9 @@ function Layout() {
   return isAuthenticated ? (
     <div className="min-h-screen h-screen  flex flex-col">
       <Header />
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         <Sidebar />
-        <div className="flex-1 md:w-[70%] h-full overflow-y-auto relative">
+        <div className="flex-1 lg:w-[70%] h-full overflow-y-auto relative">
           <Outlet />
         </div>
       </div>

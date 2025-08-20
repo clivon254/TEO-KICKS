@@ -121,7 +121,7 @@ const Login = () => {
     }
 
     return (
-        <div className="min-h-screen flex flex-col md:flex-row justify-center md:justify-start md:items-start py-5 lg:py-10 sm:px-5  lg:px-8 gap-x-10 gap-y-5">
+        <div className="min-h-screen flex flex-col lg:flex-row justify-center  lg:items-center py-5 lg:py-10 px-5  md:gap-y-10 lg:px-8 gap-x-10  gap-y-5">
 
             {/* Left Side */}
             <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center justify-center gap-y-3">
@@ -144,7 +144,7 @@ const Login = () => {
             </div>
 
             {/* Right Side */}
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="sm:mx-auto sm:w-full sm:max-w-xl">
                 <div className="">
 
                     {/* Login Form */}
