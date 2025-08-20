@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useGetCategories, useDeleteCategory } from '../../../hooks/useCategories'
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiGrid, FiAlertTriangle } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiGrid, FiAlertTriangle, FiX } from 'react-icons/fi'
 import Pagination from '../../../components/common/Pagination'
 import toast from 'react-hot-toast'
+import StatusBadge from '../../../components/common/StatusBadge'
 
 
 const Categories = () => {
@@ -123,8 +124,18 @@ const Categories = () => {
                                 placeholder="Search categories..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                                className="w-full pl-10 pr-9 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                             />
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchTerm('')}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    aria-label="Clear search"
+                                >
+                                    <FiX className="h-4 w-4" />
+                                </button>
+                            )}
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -174,7 +185,36 @@ const Categories = () => {
                     </div>
                 ) : (
                 <>
-                <div className="overflow-x-auto">
+                {/* Mobile list (cards) */}
+                <div className="block lg:hidden divide-y divide-gray-100">
+                    {filteredCategories.map((category, index) => (
+                        <div key={category._id || category.id} className="p-4">
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <div className="text-sm font-semibold text-gray-900">{category.name}</div>
+                                    <div className="text-xs text-gray-500">{category.slug}</div>
+                                </div>
+                                <StatusBadge status={category.status || (category.isActive ? 'active' : 'inactive')} />
+                            </div>
+                            <div className="mt-2 flex items-center justify-between">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {category.productCount || 0} products
+                                </span>
+                                <div className="flex items-center gap-3">
+                                    <button onClick={() => handleEdit(category)} className="text-primary hover:text-secondary">
+                                        <FiEdit className="h-4 w-4" />
+                                    </button>
+                                    <button onClick={() => setConfirmDelete({ open: true, category })} className="text-red-600 hover:text-red-900">
+                                        <FiTrash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Table for lg+ */}
+                <div className="hidden lg:block overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
@@ -210,13 +250,7 @@ const Categories = () => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                            (category.status || (category.isActive ? 'active' : 'inactive')) === 'active'
-                                                ? 'bg-green-100 text-green-800' 
-                                                : 'bg-red-100 text-red-800'
-                                        }`}>
-                                            {(category.status || (category.isActive ? 'active' : 'inactive')) === 'active' ? 'Active' : 'Inactive'}
-                                        </span>
+                                        <StatusBadge status={category.status || (category.isActive ? 'active' : 'inactive')} />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div className="flex items-center justify-end space-x-2">

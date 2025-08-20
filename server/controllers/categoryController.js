@@ -127,7 +127,16 @@ export const getCategoryById = async (req, res, next) => {
         res.status(200).json({
             success: true,
             data: {
-                category
+                category: {
+                    id: category._id,
+                    name: category.name,
+                    slug: category.slug,
+                    description: category.description ?? '',
+                    status: category.status,
+                    isActive: category.isActive,
+                    createdAt: category.createdAt,
+                    updatedAt: category.updatedAt,
+                }
             }
         })
 
