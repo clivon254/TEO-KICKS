@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
 import { FiLock, FiEye, FiEyeOff, FiCheck } from 'react-icons/fi'
-import logo from '../assets/logo.png'
-import { resetPasswordSchema } from '../utils/validation'
+import logo from '../../assets/logo.png'
+import { resetPasswordSchema } from '../../utils/validation'
 
 const ResetPassword = () => {
     const [formData, setFormData] = useState({

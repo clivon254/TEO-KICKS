@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
 import { FiMail, FiArrowLeft, FiRefreshCw } from 'react-icons/fi'
-import logo from '../assets/logo.png'
-import { otpSchema } from '../utils/validation'
+import logo from '../../assets/logo.png'
+import { otpSchema } from '../../utils/validation'
 
 const OTPVerification = () => {
     const [otp, setOtp] = useState(['', '', '', '', '', ''])

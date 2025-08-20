@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
 import { FiMail, FiPhone, FiLock, FiEye, FiEyeOff, FiChevronDown } from 'react-icons/fi'
 import { FcGoogle } from 'react-icons/fc'
 import { FaApple, FaInstagram } from 'react-icons/fa'
-import logo from '../assets/logo.png'
-import { loginSchema } from '../utils/validation'
+import logo from '../../assets/logo.png'
+import { loginSchema } from '../../utils/validation'
 
 const Login = () => {
     const [formData, setFormData] = useState({

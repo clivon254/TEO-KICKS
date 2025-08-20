@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
 import { FiMail, FiArrowLeft } from 'react-icons/fi'
-import logo from '../assets/logo.png'
-import { forgotPasswordSchema } from '../utils/validation'
+import logo from '../../assets/logo.png'
+import { forgotPasswordSchema } from '../../utils/validation'
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('')

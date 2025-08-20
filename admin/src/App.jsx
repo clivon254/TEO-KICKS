@@ -7,16 +7,16 @@ import Header from './components/common/Header'
 import Sidebar from './components/common/Sidebar'
 
 // Pages
-import Login from './pages/Login'
-import OTPVerification from './pages/OTPVerification'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
+import Login from './pages/auth/Login'
+import OTPVerification from './pages/auth/OTPVerification'
+import ForgotPassword from './pages/auth/ForgotPassword'
+import ResetPassword from './pages/auth/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import NotFound from './pages/NotFound'
-import Categories from './pages/Categories'
-import Brands from './pages/Brands'
-import Collections from './pages/Collections'
-import Tags from './pages/Tags'
+import Categories from './pages/classifications/category/Categories'
+import Brands from './pages/classifications/Brand/Brands'
+import Collections from './pages/classifications/collections/Collections'
+import Tags from './pages/classifications/tags/Tags'
 
 
 // Main Layout - only for authenticated users
