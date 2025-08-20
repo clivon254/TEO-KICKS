@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useGetCategories, useDeleteCategory } from '../../../hooks/useCategories'
 import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiGrid, FiAlertTriangle } from 'react-icons/fi'
+import Pagination from '../../../components/common/Pagination'
 import toast from 'react-hot-toast'
 
 
@@ -238,66 +239,15 @@ const Categories = () => {
                         </tbody>
                     </table>
                 </div>
-                {/* Pagination footer (centered) */}
-                <div className="px-4 py-3 border-t border-gray-200 flex flex-col items-center gap-2">
-                    {/* Page info */}
-                    <div className="text-sm text-gray-600 text-center">
-                        {totalItems > 0 ? (
-                            <>Showing {(pagination.currentPage ? (pagination.currentPage - 1) * itemsPerPage : (currentPage - 1) * itemsPerPage) + 1} to {(pagination.currentPage ? (pagination.currentPage - 1) * itemsPerPage : (currentPage - 1) * itemsPerPage) + categories.length} of {totalItems}</>
-                        ) : (
-                            <>Showing 0 of 0</>
-                        )}
-                    </div>
-
-                    {/* Pager controls */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={(pagination.currentPage || currentPage) <= 1}
-                            className="btn-outline px-3 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Prev
-                        </button>
-                        {/* Page numbers with compact window */}
-                        {(() => {
-                            const pages = []
-                            const cp = pagination.currentPage || currentPage
-                            const tp = totalPages
-                            const add = (p) => pages.push(p)
-                            if (tp <= 7) {
-                                for (let i = 1; i <= tp; i++) add(i)
-                            } else {
-                                add(1)
-                                const left = Math.max(2, cp - 1)
-                                const right = Math.min(tp - 1, cp + 1)
-                                if (left > 2) add('...')
-                                for (let i = left; i <= right; i++) add(i)
-                                if (right < tp - 1) add('...')
-                                add(tp)
-                            }
-                            return pages.map((p, i) => (
-                                typeof p === 'number' ? (
-                                    <button
-                                        key={`p-${p}-${i}`}
-                                        onClick={() => setCurrentPage(p)}
-                                        className={`px-3 py-1 text-sm rounded-md border ${p === cp ? 'bg-primary text-white border-primary' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                                    >
-                                        {p}
-                                    </button>
-                                ) : (
-                                    <span key={`e-${i}`} className="px-2 text-gray-500">{p}</span>
-                                )
-                            ))
-                        })()}
-                        <button
-                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={(pagination.currentPage || currentPage) >= totalPages}
-                            className="btn-outline px-3 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Next
-                        </button>
-                    </div>
-                </div>
+                <Pagination
+                    currentPage={pagination.currentPage || currentPage}
+                    totalPages={totalPages}
+                    onPageChange={(p) => setCurrentPage(p)}
+                    totalItems={totalItems}
+                    pageSize={itemsPerPage}
+                    currentPageCount={categories.length}
+                    align="center"
+                />
                 </>
                 )}
             </div>
