@@ -19,6 +19,34 @@ const brandSchema = new mongoose.Schema({
         lowercase: true
     },
 
+    // Brand description
+    description: { 
+        type: String, 
+        trim: true 
+    },
+
+    // Brand logo URL
+    logo: { 
+        type: String 
+    },
+
+    // Brand website URL
+    website: { 
+        type: String 
+    },
+
+    // Brand features
+    features: [{ 
+        type: String,
+        trim: true
+    }],
+
+    // Sort order for display
+    sortOrder: { 
+        type: Number, 
+        default: 0 
+    },
+
     // Display settings
     isActive: { 
         type: Boolean, 

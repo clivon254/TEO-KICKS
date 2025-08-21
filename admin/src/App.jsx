@@ -19,6 +19,12 @@ import EditCategory from './pages/classifications/category/EditCategory'
 import Brands from './pages/classifications/Brand/Brands'
 import Collections from './pages/classifications/collections/Collections'
 import Tags from './pages/classifications/tags/Tags'
+import AddTag from './pages/classifications/tag/AddTag'
+import EditTag from './pages/classifications/tag/EditTag'
+import AddBrand from './pages/classifications/brand/AddBrand'
+import EditBrand from './pages/classifications/brand/EditBrand'
+import AddCollection from './pages/classifications/collection/AddCollection'
+import EditCollection from './pages/classifications/collection/EditCollection'
 
 
 // Main Layout - only for authenticated users
@@ -73,8 +79,14 @@ function App() {
               <Route path="/categories/add" element={<AddCategory />} />
               <Route path="/categories/:id/edit" element={<EditCategory />} />
               <Route path="/brands" element={<Brands />} />
+              <Route path="/brands/add" element={<AddBrand />} />
+              <Route path="/brands/:id/edit" element={<EditBrand />} />
               <Route path="/collections" element={<Collections />} />
+              <Route path="/collections/add" element={<AddCollection />} />
+              <Route path="/collections/:id/edit" element={<EditCollection />} />
               <Route path="/tags" element={<Tags />} />
+              <Route path="/tags/add" element={<AddTag />} />
+              <Route path="/tags/:id/edit" element={<EditTag />} />
             </Route>
 
             {/* Public Routes */}

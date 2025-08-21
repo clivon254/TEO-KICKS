@@ -18,6 +18,9 @@ import addressRoute from "./routes/addressRoute.js"
 import variantRoute from "./routes/variantRoute.js"
 import productRoute from "./routes/productRoute.js"
 import categoryRoute from "./routes/categoryRoute.js"
+import brandRoute from "./routes/brandRoute.js"
+import tagRoute from "./routes/tagRoute.js"
+import collectionRoute from "./routes/collectionRoute.js"
 // import orderRoute from "./routes/orderRoute.js"
 // import paymentRoute from "./routes/paymentRoute.js"
 // import cartRoute from "./routes/cartRoute.js"
@@ -59,6 +62,9 @@ app.use("/api/addresses", addressRoute)
 app.use("/api/variants", variantRoute)
 app.use("/api/products", productRoute)
 app.use("/api/categories", categoryRoute)
+app.use("/api/brands", brandRoute)
+app.use("/api/tags", tagRoute)
+app.use("/api/collections", collectionRoute)
 // app.use("/api/orders", orderRoute)
 // app.use("/api/payments", paymentRoute)
 // app.use("/api/cart", cartRoute)

@@ -19,7 +19,17 @@ const collectionSchema = new mongoose.Schema({
         lowercase: true
     },
 
+    // Collection description
+    description: { 
+        type: String, 
+        trim: true 
+    },
 
+    // Sort order for display
+    sortOrder: { 
+        type: Number, 
+        default: 0 
+    },
 
     // Collection type
     type: { 

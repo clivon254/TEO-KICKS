@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FiArrowLeft, FiSave } from 'react-icons/fi'
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
+import RichTextEditor from '../../../components/common/RichTextEditor'
 import { categorySchema } from '../../../utils/validation'
 import { useGetCategoryById, useUpdateCategory } from '../../../hooks/useCategories'
 import toast from 'react-hot-toast'
@@ -23,16 +22,11 @@ const EditCategory = () => {
 
     const [validationErrors, setValidationErrors] = useState({})
 
-    const editor = useEditor({
-        extensions: [StarterKit],
-        content: formData.description,
-        onUpdate: ({ editor }) => {
-            const html = editor.getHTML()
-            setFormData(prev => ({ ...prev, description: html }))
-            if (validationErrors.description) setValidationErrors(prev => ({ ...prev, description: '' }))
-        },
-        editorProps: { attributes: { class: 'ProseMirror prose prose-sm max-w-none focus:outline-none' } }
-    })
+    // Handle description change from RichTextEditor
+    const handleDescriptionChange = (html) => {
+        setFormData(prev => ({ ...prev, description: html }))
+        if (validationErrors.description) setValidationErrors(prev => ({ ...prev, description: '' }))
+    }
 
     useEffect(() => {
         if (category) {
@@ -45,16 +39,7 @@ const EditCategory = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [category])
 
-    // Ensure editor shows the fetched description once the editor instance is ready
-    useEffect(() => {
-        if (!editor) return
-        // When category arrives or description changes, ensure editor reflects it.
-        const next = (category?.description ?? formData.description ?? '').toString()
-        if (next && editor.getHTML() !== next) {
-            editor.commands.setContent(next)
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editor, category])
+
 
 
     const handleInputChange = (e) => {
@@ -132,48 +117,19 @@ const EditCategory = () => {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                        <div className={`${validationErrors.description ? 'border-red-500 focus-within:border-red-500 focus-within:ring-red-500/20' : 'border-gray-300 focus-within:border-primary focus-within:ring-primary/20'} border rounded-lg focus-within:ring-2 transition-all duration-200`}>
-                            {/* Simple Toolbar (same as Add Category) */}
-                            <div className="flex items-center gap-1 p-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                                <button
-                                    type="button"
-                                    onClick={() => editor?.chain().focus().toggleBold().run()}
-                                    className={`p-2 rounded-md transition-colors ${editor?.isActive('bold') ? 'bg-primary text-white' : 'text-gray-600 hover:text-primary hover:bg-gray-100'}`}
-                                    disabled={updateCategory.isPending}
-                                >
-                                    <strong>B</strong>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => editor?.chain().focus().toggleItalic().run()}
-                                    className={`p-2 rounded-md transition-colors ${editor?.isActive('italic') ? 'bg-primary text-white' : 'text-gray-600 hover:text-primary hover:bg-gray-100'}`}
-                                    disabled={updateCategory.isPending}
-                                >
-                                    <em>I</em>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => editor?.chain().focus().toggleBulletList().run()}
-                                    className={`p-2 rounded-md transition-colors ${editor?.isActive('bulletList') ? 'bg-primary text-white' : 'text-gray-600 hover:text-primary hover:bg-gray-100'}`}
-                                    disabled={updateCategory.isPending}
-                                >
-                                    •
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-                                    className={`p-2 rounded-md transition-colors ${editor?.isActive('orderedList') ? 'bg-primary text-white' : 'text-gray-600 hover:text-primary hover:bg-gray-100'}`}
-                                    disabled={updateCategory.isPending}
-                                >
-                                    1.
-                                </button>
-                            </div>
-                            {/* Editor Content */}
-                            <div className="p-4 min-h-[120px] max-h-[300px] overflow-y-auto">
-                                <EditorContent editor={editor} />
-                            </div>
-                        </div>
-                        {validationErrors.description && <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>}
+
+                        <RichTextEditor
+                            content={formData.description}
+                            onChange={handleDescriptionChange}
+                            placeholder="Enter category description..."
+                            disabled={updateCategory.isPending}
+                            className={validationErrors.description ? 'border-red-500' : ''}
+                            minHeight="150px"
+                        />
+
+                        {validationErrors.description && (
+                            <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
+                        )}
                     </div>
 
                     <div>

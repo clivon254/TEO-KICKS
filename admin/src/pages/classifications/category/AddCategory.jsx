@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiArrowLeft, FiSave, FiX } from 'react-icons/fi'
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
+import RichTextEditor from '../../../components/common/RichTextEditor'
 import { useCreateCategory } from '../../../hooks/useCategories'
 import { categorySchema } from '../../../utils/validation'
 import toast from 'react-hot-toast'
@@ -21,33 +20,21 @@ const AddCategory = () => {
     const [validationErrors, setValidationErrors] = useState({})
 
 
-    // TipTap editor configuration - simplified
-    const editor = useEditor({
-        extensions: [
-            StarterKit,
-        ],
-        content: formData.description,
-        onUpdate: ({ editor }) => {
-            const html = editor.getHTML()
-            setFormData(prev => ({
+    // Handle description change from RichTextEditor
+    const handleDescriptionChange = (html) => {
+        setFormData(prev => ({
+            ...prev,
+            description: html
+        }))
+        
+        // Clear validation error when user starts typing
+        if (validationErrors.description) {
+            setValidationErrors(prev => ({
                 ...prev,
-                description: html
+                description: ''
             }))
-            
-            // Clear validation error when user starts typing
-            if (validationErrors.description) {
-                setValidationErrors(prev => ({
-                    ...prev,
-                    description: ''
-                }))
-            }
-        },
-        editorProps: {
-            attributes: {
-                class: 'prose prose-sm max-w-none focus:outline-none',
-            },
-        },
-    })
+        }
+    }
 
 
     const handleInputChange = (e) => {
@@ -168,70 +155,20 @@ const AddCategory = () => {
                         <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
                             Description
                         </label>
-                        <div className={`${validationErrors.description ? 'border-red-500 focus-within:border-red-500 focus-within:ring-red-500/20' : 'border-gray-300 focus-within:border-primary focus-within:ring-primary/20'} border rounded-lg focus-within:ring-2 transition-all duration-200`}>
-                            {/* Simple Toolbar */}
-                            <div className="flex items-center gap-1 p-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                                <button
-                                    type="button"
-                                    onClick={() => editor?.chain().focus().toggleBold().run()}
-                                    className={`p-2 rounded-md transition-colors ${
-                                        editor?.isActive('bold') 
-                                            ? 'bg-primary text-white' 
-                                            : 'text-gray-600 hover:text-primary hover:bg-gray-100'
-                                    }`}
-                                    disabled={createCategoryMutation.isPending}
-                                >
-                                    <strong>B</strong>
-                                </button>
-                                
-                                <button
-                                    type="button"
-                                    onClick={() => editor?.chain().focus().toggleItalic().run()}
-                                    className={`p-2 rounded-md transition-colors ${
-                                        editor?.isActive('italic') 
-                                            ? 'bg-primary text-white' 
-                                            : 'text-gray-600 hover:text-primary hover:bg-gray-100'
-                                    }`}
-                                    disabled={createCategoryMutation.isPending}
-                                >
-                                    <em>I</em>
-                                </button>
-                                
-                                <button
-                                    type="button"
-                                    onClick={() => editor?.chain().focus().toggleBulletList().run()}
-                                    className={`p-2 rounded-md transition-colors ${
-                                        editor?.isActive('bulletList') 
-                                            ? 'bg-primary text-white' 
-                                            : 'text-gray-600 hover:text-primary hover:bg-gray-100'
-                                    }`}
-                                    disabled={createCategoryMutation.isPending}
-                                >
-                                    •
-                                </button>
-                                
-                                <button
-                                    type="button"
-                                    onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-                                    className={`p-2 rounded-md transition-colors ${
-                                        editor?.isActive('orderedList') 
-                                            ? 'bg-primary text-white' 
-                                            : 'text-gray-600 hover:text-primary hover:bg-gray-100'
-                                    }`}
-                                    disabled={createCategoryMutation.isPending}
-                                >
-                                    1.
-                                </button>
-                            </div>
-                            
-                            {/* Editor Content */}
-                            <div className="p-4 min-h-[120px] max-h-[300px] overflow-y-auto">
-                                <EditorContent editor={editor} />
-                            </div>
-                        </div>
+
+                        <RichTextEditor
+                            content={formData.description}
+                            onChange={handleDescriptionChange}
+                            placeholder="Enter category description..."
+                            disabled={createCategoryMutation.isPending}
+                            className={validationErrors.description ? 'border-red-500' : ''}
+                            minHeight="150px"
+                        />
+
                         {validationErrors.description && (
                             <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
                         )}
+
                         <p className="mt-1 text-xs text-gray-500">
                             {getPlainTextLength()}/500 characters
                         </p>

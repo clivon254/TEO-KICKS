@@ -43,7 +43,7 @@ const Categories = () => {
     // Real data now fetched via useGetCategories
 
 
-  
+
 
     const handleEdit = (category) => {
         navigate(`/categories/${category._id || category.id}/edit`)
@@ -139,16 +139,16 @@ const Categories = () => {
                          
                         <div className="relative">
                             <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
+                        <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
                                 className="border border-gray-300 rounded-lg pl-10 pr-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-white"
-                            >
-                                <option value="all">All Categories</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
-                        </div>
+                        >
+                            <option value="all">All Categories</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
 
                         {/* Items per page moved to top next to status filter */}
                         <div className="relative">
