@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useGetCategories, useDeleteCategory } from '../../../hooks/useCategories'
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiGrid, FiAlertTriangle, FiX } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiGrid, FiAlertTriangle, FiX, FiList } from 'react-icons/fi'
 import Pagination from '../../../components/common/Pagination'
 import toast from 'react-hot-toast'
 import StatusBadge from '../../../components/common/StatusBadge'
@@ -43,11 +43,7 @@ const Categories = () => {
     // Real data now fetched via useGetCategories
 
 
-    const handleInputChange = () => {}
-
-
-    const handleSubmit = async () => {}
-
+  
 
     const handleEdit = (category) => {
         navigate(`/categories/${category._id || category.id}/edit`)
@@ -96,16 +92,16 @@ const Categories = () => {
 
 
     return (
-        <div className="p-6">
+        <div className="p-3">
             {/* Header */}
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center space-y-4 sm:space-y-0 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
-                    <p className="text-gray-600">Manage your product categories</p>
+                    <h1 className="title">Categories</h1>
+                    <p className="text-gray-600 text-xs ">Manage your product categories</p>
                 </div>
                 <Link
                     to="/categories/add"
-                    className="btn-primary inline-flex items-center"
+                    className="btn-primary inline-flex items-center w-full sm:w-auto"
                 >
                     <FiPlus className="mr-2 h-4 w-4" />
                     Add Category
@@ -138,29 +134,36 @@ const Categories = () => {
                             )}
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <FiFilter className="text-gray-400 h-4 w-4" />
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
-                        >
-                            <option value="all">All Categories</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
+
+                    <div className="flex items-center justify-between gap-2 w-full sm:w-auto sm:justify-end">
+                         
+                        <div className="relative">
+                            <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                            <select
+                                value={filterStatus}
+                                onChange={(e) => setFilterStatus(e.target.value)}
+                                className="border border-gray-300 rounded-lg pl-10 pr-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-white"
+                            >
+                                <option value="all">All Categories</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+
+                        {/* Items per page moved to top next to status filter */}
+                        <div className="relative">
+                            <FiList className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                            <select
+                                value={itemsPerPage}
+                                onChange={(e) => { setItemsPerPage(parseInt(e.target.value)); setCurrentPage(1) }}
+                                className="border border-gray-300 rounded-lg pl-10 pr-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-white"
+                            >
+                                {[5, 10, 20, 50].map(n => (<option key={n} value={n}>{n}</option>))}
+                            </select>
+                        </div>
+
                     </div>
-                    {/* Items per page moved to top next to status filter */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Rows per page:</span>
-                        <select
-                            value={itemsPerPage}
-                            onChange={(e) => { setItemsPerPage(parseInt(e.target.value)); setCurrentPage(1) }}
-                            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
-                        >
-                            {[5, 10, 20, 50].map(n => (<option key={n} value={n}>{n}</option>))}
-                        </select>
-                    </div>
+
                 </div>
             </div>
 
