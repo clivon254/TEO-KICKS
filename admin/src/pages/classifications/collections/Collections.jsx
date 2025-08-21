@@ -213,7 +213,7 @@ const Collections = () => {
                                                     </div>
                                                     <div className="text-sm text-gray-500">
                                                         {collection.slug}
-                                                    </div>
+                                            </div>
                                             </div>
                                         </div>
                                     </td>

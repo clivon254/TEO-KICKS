@@ -292,7 +292,7 @@ const Tags = () => {
                                                     </div>
                                                     <div className="text-sm text-gray-500">
                                                         {tag.slug}
-                                                    </div>
+                                            </div>
                                             </div>
                                         </div>
                                     </td>

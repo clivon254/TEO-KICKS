@@ -1,27 +1,32 @@
 import React from 'react'
+import { FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight } from 'react-icons/fi'
 
 
+function getPageNumbers(current, total) {
+    const delta = 2
+    const range = []
+    const rangeWithDots = []
+    let l
 
-const buildPageWindow = (currentPage, totalPages) => {
-    const pages = []
-
-    const add = (p) => pages.push(p)
-
-    if (totalPages <= 7) {
-        for (let i = 1; i <= totalPages; i++) add(i)
-    } else {
-        add(1)
-        const left = Math.max(2, currentPage - 1)
-        const right = Math.min(totalPages - 1, currentPage + 1)
-        if (left > 2) add('...')
-        for (let i = left; i <= right; i++) add(i)
-        if (right < totalPages - 1) add('...')
-        add(totalPages)
+    for (let i = 1; i <= total; i++) {
+        if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+            range.push(i)
+        }
     }
 
-    return pages
+    for (let i of range) {
+        if (l) {
+            if (i - l === 2) {
+                rangeWithDots.push(l + 1)
+            } else if (i - l !== 1) {
+                rangeWithDots.push('...')
+            }
+        }
+        rangeWithDots.push(i)
+        l = i
+    }
+    return rangeWithDots
 }
-
 
 
 const Pagination = ({
@@ -38,11 +43,7 @@ const Pagination = ({
     const safeTotalPages = Math.max(1, Number(totalPages || 1))
     const safeCurrentPage = Math.min(Math.max(1, Number(currentPage || 1)), safeTotalPages)
 
-    const containerAlign = align === 'left'
-        ? 'items-center sm:items-center sm:justify-start'
-        : align === 'right'
-            ? 'items-center sm:items-center sm:justify-end'
-            : 'items-center'
+    if (safeTotalPages <= 1) return null
 
     const startIndex = totalItems && pageSize
         ? (safeCurrentPage - 1) * pageSize + 1
@@ -52,10 +53,8 @@ const Pagination = ({
         ? startIndex + (currentPageCount ?? 0) - 1
         : null
 
-    const pages = buildPageWindow(safeCurrentPage, safeTotalPages)
-
     return (
-        <div className={`px-4 py-3 border-t border-gray-200 flex flex-col gap-2 ${containerAlign} ${className}`}>
+        <div className={`flex flex-col gap-2 ${className}`}>
             {showPageInfo && (
                 <div className="text-sm text-gray-600 text-center">
                     {totalItems && pageSize && currentPageCount
@@ -68,41 +67,70 @@ const Pagination = ({
                 </div>
             )}
 
-            <div className="flex items-center gap-2">
+            <div className="flex justify-center items-center gap-2">
+                {/* First Page */}
                 <button
-                    onClick={() => onPageChange(Math.max(1, safeCurrentPage - 1))}
-                    disabled={safeCurrentPage <= 1}
-                    className="btn-outline px-3 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => onPageChange(1)}
+                    disabled={safeCurrentPage === 1}
+                    className="p-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-primary/10 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm"
+                    aria-label="First"
                 >
-                    Prev
+                    <FiChevronsLeft size={15} />
                 </button>
 
-                {pages.map((p, i) => (
-                    typeof p === 'number' ? (
-                        <button
-                            key={`p-${p}-${i}`}
-                            onClick={() => onPageChange(p)}
-                            className={`px-3 py-1 text-sm rounded-md border ${p === safeCurrentPage ? 'bg-primary text-white border-primary' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                        >
-                            {p}
-                        </button>
-                    ) : (
-                        <span key={`e-${i}`} className="px-2 text-gray-500">{p}</span>
-                    )
-                ))}
+                {/* Previous */}
+                <button
+                    onClick={() => onPageChange(Math.max(1, safeCurrentPage - 1))}
+                    disabled={safeCurrentPage === 1}
+                    className="p-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-primary/10 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    aria-label="Previous"
+                >
+                    <FiChevronLeft size={15} />
+                </button>
 
+                {/* Page numbers with ellipsis */}
+                {getPageNumbers(safeCurrentPage, safeTotalPages).map((pg, idx) =>
+                    pg === '...' ? (
+                        <span key={idx} className="px-2 text-gray-400 select-none">...</span>
+                    ) : (
+                        <button
+                            key={pg}
+                            onClick={() => onPageChange(pg)}
+                            className={`px-3 py-1 rounded-lg border transition cursor-pointer text-xs
+                                ${pg === safeCurrentPage
+                                    ? 'bg-primary text-white border-primary font-bold'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-primary/10 text-xs'
+                                }
+                            `}
+                        >
+                            {pg}
+                        </button>
+                    )
+                )}
+
+                {/* Next */}
                 <button
                     onClick={() => onPageChange(Math.min(safeTotalPages, safeCurrentPage + 1))}
-                    disabled={safeCurrentPage >= safeTotalPages}
-                    className="btn-outline px-3 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={safeCurrentPage === safeTotalPages}
+                    className="p-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-primary/10 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    aria-label="Next"
                 >
-                    Next
+                    <FiChevronRight size={15} />
+                </button>
+
+                {/* Last Page */}
+                <button
+                    onClick={() => onPageChange(safeTotalPages)}
+                    disabled={safeCurrentPage === safeTotalPages}
+                    className="p-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-primary/10 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    aria-label="Last"
+                >
+                    <FiChevronsRight size={15} />
                 </button>
             </div>
         </div>
     )
 }
-
 
 
 export default Pagination
