@@ -5,6 +5,7 @@
   --color-secondary: #E879F9;
   --color-primary-button: #3A1F66;
   --color-secondary-button: #FDE7FF;
+  --color-light: #F8F5FF;
 }
 
 @layer components {

@@ -102,8 +102,7 @@ const AddCategory = () => {
 
     // Get plain text length for character count
     const getPlainTextLength = () => {
-        if (!editor) return 0
-        return editor.getText().length
+        return formData.description.length
     }
 
 

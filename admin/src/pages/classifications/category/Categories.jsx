@@ -99,90 +99,95 @@ const Categories = () => {
                     </tbody>
                 </table>
             </div>
-        </div>
-    )
+            </div>
+        )
 
     return (
-        <div className="p-6">
-            {/* Header */}
-            <div className="mb-6">
+        <div className="p-4">
+
+            <header className="mb-4">
+
+                {/* title */}
                 <div className="mb-4">
-                    <h1 className="title2">Categories</h1>
+                    <div className="mb-4">
+                        <h1 className="title2">Categories</h1>
                     <p className="text-gray-600">Manage your product categories</p>
-                </div>
+                    </div>
             </div>
 
-            {/* Search Bar and Add Button */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="flex-1">
-                    <div className="relative">
-                        <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                        <input
-                            type="text"
-                            placeholder="Search categories..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-9 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                        />
-                        {searchTerm && (
-                            <button
-                                type="button"
-                                onClick={clearSearch}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                aria-label="Clear search"
-                            >
-                                <FiX className="h-4 w-4" />
-                            </button>
-                        )}
+                {/* Search Bar and Add Button */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                    <div className="flex-1">
+                        <div className="relative">
+                            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                            <input
+                                type="text"
+                                placeholder="Search categories..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-9 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                            />
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    onClick={clearSearch}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    aria-label="Clear search"
+                                >
+                                    <FiX className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    <div className="sm:w-auto">
+                        <Link
+                            to="/categories/add"
+                            className="btn-primary inline-flex items-center justify-center w-full sm:w-auto"
+                        >
+                            <FiPlus className="mr-2 h-4 w-4" />
+                            Add Category
+                        </Link>
                     </div>
                 </div>
-                <div className="sm:w-auto">
-                    <Link
-                        to="/categories/add"
-                        className="btn-primary inline-flex items-center justify-center w-full sm:w-auto"
-                    >
-                        <FiPlus className="mr-2 h-4 w-4" />
-                        Add Category
-                    </Link>
-                </div>
-            </div>
 
-            {/* Product Count and Filters */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-                <div className="mb-4 sm:mb-0">
-                    <p className="text-sm text-gray-600">Total {totalItems} categories</p>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-4">
-                    {/* Status Filter */}
-                    <div className="relative">
-                        <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                {/* Product Count and Filters */}
+                <div className="flex items-center justify-between">
+                    <div className="hidden lg:block">
+                        <p className="text-sm text-gray-600">Total {totalItems} categories</p>
+                    </div>
+                    <div className="flex gap-4">
+                        {/* Status Filter */}
+                        <div className="relative">
+                            <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-3 w-3" />
                         <select
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
-                            className="border border-gray-300 rounded-lg pl-10 pr-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-white"
+                                className="border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-white text-xs"
                         >
-                            <option value="all">Status: All</option>
+                                <option value="all">Status: All</option>
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
                         </select>
                     </div>
 
-                    {/* Rows per page */}
-                    <div className="relative">
-                        <FiList className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-                        <select
-                            value={itemsPerPage}
-                            onChange={(e) => { setItemsPerPage(parseInt(e.target.value)); setCurrentPage(1) }}
-                            className="border border-gray-300 rounded-lg pl-10 pr-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-white"
-                        >
-                            {[5, 10, 20, 50].map(n => (<option key={n} value={n}>Rows per page: {n}</option>))}
-                        </select>
-                    </div>
+                        {/* Rows per page */}
+                        <div className="relative">
+                            <FiList className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-3 w-3" />
+                            <select
+                                value={itemsPerPage}
+                                onChange={(e) => { setItemsPerPage(parseInt(e.target.value)); setCurrentPage(1) }}
+                                className="border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-white text-xs"
+                            >
+                                {[5, 10, 20, 50].map(n => (<option key={n} value={n}>Rows per page: {n}</option>))}
+                            </select>
+                        </div>
                 </div>
             </div>
 
+            </header>
+
             {/* Categories Table */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-light rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 {isLoading ? (
                     <LoadingSkeleton />
                 ) : categories.length === 0 ? (
@@ -200,11 +205,11 @@ const Categories = () => {
                         </div>
                     </div>
                 ) : (
-                    <>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
+                <>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-light">
+                            <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <input 
                                                 type="checkbox" 
@@ -213,23 +218,23 @@ const Categories = () => {
                                                 className="rounded border-gray-300 text-primary focus:ring-primary" 
                                             />
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Category
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Products
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Status
-                                        </th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Category
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Products
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
                                     {categories.map((category, index) => (
-                                        <tr key={category._id || category.id} className="hover:bg-gray-50">
+                                        <tr key={category._id || category.id} className="hover:bg-light">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <input 
                                                     type="checkbox" 
@@ -238,41 +243,41 @@ const Categories = () => {
                                                     className="rounded border-gray-300 text-primary focus:ring-primary" 
                                                 />
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div>
-                                                    <div className="text-sm font-medium text-gray-900">{category.name}</div>
-                                                    <div className="text-sm text-gray-500">{category.slug}</div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    {category.productCount || 0} products
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div>
+                                            <div className="text-sm font-medium text-gray-900">{category.name}</div>
+                                            <div className="text-sm text-gray-500">{category.slug}</div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            {category.productCount || 0} products
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
                                                 <StatusBadge status={category.status || (category.isActive ? 'active' : 'inactive')} />
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <div className="flex items-center justify-end space-x-2">
-                                                    <button
-                                                        onClick={() => handleEdit(category)}
-                                                        className="text-primary hover:text-secondary"
-                                                    >
-                                                        <FiEdit className="h-4 w-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setConfirmDelete({ open: true, category })}
-                                                        className="text-red-600 hover:text-red-900"
-                                                    >
-                                                        <FiTrash2 className="h-4 w-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div className="flex items-center justify-end space-x-2">
+                                            <button
+                                                onClick={() => handleEdit(category)}
+                                                className="text-primary hover:text-secondary"
+                                            >
+                                                <FiEdit className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => setConfirmDelete({ open: true, category })}
+                                                className="text-red-600 hover:text-red-900"
+                                            >
+                                                <FiTrash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
 
                         {/* Selection Info */}
                         {selectedCategories.length > 0 && (
@@ -280,7 +285,7 @@ const Categories = () => {
                                 <p className="text-sm text-gray-600">
                                     {selectedCategories.length} of {categories.length} selected
                                 </p>
-                            </div>
+                    </div>
                         )}
 
                         {/* Pagination */}
@@ -295,9 +300,9 @@ const Categories = () => {
                                     currentPageCount={categories.length}
                                     align="center"
                                 />
-                            </div>
+                    </div>
                         )}
-                    </>
+                </>
                 )}
             </div>
 
@@ -307,36 +312,36 @@ const Categories = () => {
                     <div className="absolute inset-0 bg-black/40" />
                     <div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6">
                         <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-4 sm:p-6">
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-                                    <FiAlertTriangle className="h-6 w-6 text-red-600" />
-                                </div>
-                                <h3 className="text-lg font-semibold text-gray-900">Delete category?</h3>
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                                <FiAlertTriangle className="h-6 w-6 text-red-600" />
                             </div>
-                            <p className="mt-3 text-sm text-gray-600">Are you sure you want to delete "{confirmDelete.category?.name}"? This action cannot be undone.</p>
-                            <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-                                <button
-                                    onClick={() => setConfirmDelete({ open: false, category: null })}
-                                    className="btn-outline"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={async () => {
-                                        try {
-                                            await deleteCategory.mutateAsync(confirmDelete.category?._id || confirmDelete.category?.id)
-                                            toast.success('Category deleted')
-                                        } catch (err) {
-                                            toast.error(err.response?.data?.message || 'Failed to delete')
-                                        } finally {
-                                            setConfirmDelete({ open: false, category: null })
-                                        }
-                                    }}
-                                    className="btn-primary bg-red-600 border-red-600 hover:bg-red-700 hover:border-red-700"
-                                >
-                                    {deleteCategory.isPending ? 'Deleting...' : 'Delete'}
-                                </button>
-                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900">Delete category?</h3>
+                        </div>
+                        <p className="mt-3 text-sm text-gray-600">Are you sure you want to delete "{confirmDelete.category?.name}"? This action cannot be undone.</p>
+                        <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                            <button
+                                onClick={() => setConfirmDelete({ open: false, category: null })}
+                                className="btn-outline"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        await deleteCategory.mutateAsync(confirmDelete.category?._id || confirmDelete.category?.id)
+                                        toast.success('Category deleted')
+                                    } catch (err) {
+                                        toast.error(err.response?.data?.message || 'Failed to delete')
+                                    } finally {
+                                        setConfirmDelete({ open: false, category: null })
+                                    }
+                                }}
+                                className="btn-primary bg-red-600 border-red-600 hover:bg-red-700 hover:border-red-700"
+                            >
+                                {deleteCategory.isPending ? 'Deleting...' : 'Delete'}
+                            </button>
+                        </div>
                         </div>
                     </div>
                 </div>
