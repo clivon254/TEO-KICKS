@@ -48,8 +48,7 @@ function Layout() {
     <div className="min-h-screen h-screen flex flex-col">
       <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* TODO: Implement mobile sidebar visibility */}
-        <Sidebar />
+        <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
         <div className="flex-1 lg:w-[70%] h-full overflow-y-auto relative">
           <Outlet />
         </div>

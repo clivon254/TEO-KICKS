@@ -185,36 +185,7 @@ const Categories = () => {
                     </div>
                 ) : (
                 <>
-                {/* Mobile list (cards) */}
-                <div className="block lg:hidden divide-y divide-gray-100">
-                    {filteredCategories.map((category, index) => (
-                        <div key={category._id || category.id} className="p-4">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <div className="text-sm font-semibold text-gray-900">{category.name}</div>
-                                    <div className="text-xs text-gray-500">{category.slug}</div>
-                                </div>
-                                <StatusBadge status={category.status || (category.isActive ? 'active' : 'inactive')} />
-                            </div>
-                            <div className="mt-2 flex items-center justify-between">
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    {category.productCount || 0} products
-                                </span>
-                                <div className="flex items-center gap-3">
-                                    <button onClick={() => handleEdit(category)} className="text-primary hover:text-secondary">
-                                        <FiEdit className="h-4 w-4" />
-                                    </button>
-                                    <button onClick={() => setConfirmDelete({ open: true, category })} className="text-red-600 hover:text-red-900">
-                                        <FiTrash2 className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Table for lg+ */}
-                <div className="hidden lg:block overflow-x-auto">
+                <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
