@@ -14,7 +14,7 @@ const AddCollection = () => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        type: 'manual',
+        isActive: true,
         features: [],
         isActive: true
     })

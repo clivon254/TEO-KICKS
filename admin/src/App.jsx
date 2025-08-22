@@ -17,12 +17,12 @@ import Categories from './pages/classifications/category/Categories'
 import AddCategory from './pages/classifications/category/AddCategory'
 import EditCategory from './pages/classifications/category/EditCategory'
 import Brands from './pages/classifications/Brand/Brands'
-import Collections from './pages/classifications/collections/Collections'
-import Tags from './pages/classifications/tags/Tags'
+import Collections from './pages/classifications/collection/Collections'
+import Tags from './pages/classifications/tag/Tags'
 import AddTag from './pages/classifications/tag/AddTag'
 import EditTag from './pages/classifications/tag/EditTag'
-import AddBrand from './pages/classifications/brand/AddBrand'
-import EditBrand from './pages/classifications/brand/EditBrand'
+import AddBrand from './pages/classifications/Brand/AddBrand'
+import EditBrand from './pages/classifications/Brand/EditBrand'
 import AddCollection from './pages/classifications/collection/AddCollection'
 import EditCollection from './pages/classifications/collection/EditCollection'
 
@@ -53,9 +53,9 @@ function Layout() {
   return isAuthenticated ? (
     <div className="min-h-screen h-screen flex flex-col">
       <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex-1 flex overflow-hidden">
         <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-        <div className="flex-1 lg:w-[70%] h-full overflow-y-auto relative">
+        <div className="flex-1 h-full overflow-y-auto relative">
           <Outlet />
         </div>
       </div>

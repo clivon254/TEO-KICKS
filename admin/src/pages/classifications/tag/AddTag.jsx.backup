@@ -28,10 +28,10 @@ const AddTag = () => {
     }
 
     const handleInputChange = (e) => {
-        const { name, value, type, checked } = e.target
+        const { name, value } = e.target
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: value
         }))
 
         // Clear validation error for this field

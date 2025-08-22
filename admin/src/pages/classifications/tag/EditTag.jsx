@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { FiEdit, FiLoader } from 'react-icons/fi'
+import { FiArrowLeft, FiEdit, FiLoader } from 'react-icons/fi'
 import RichTextEditor from '../../../components/common/RichTextEditor'
+import ToggleSwitch from '../../../components/common/ToggleSwitch'
 import { useGetTagById, useUpdateTag } from '../../../hooks/useTags'
 import toast from 'react-hot-toast'
 
@@ -16,9 +17,6 @@ const EditTag = () => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        color: '#3B82F6',
-        icon: '',
-        type: 'product',
         isActive: true
     })
 
@@ -37,9 +35,6 @@ const EditTag = () => {
             setFormData({
                 name: tag.name || '',
                 description: tag.description || '',
-                color: tag.color || '#3B82F6',
-                icon: tag.icon || '',
-                type: tag.type || 'product',
                 isActive: tag.isActive ?? true
             })
         }
@@ -245,23 +240,12 @@ const EditTag = () => {
                         </div>
 
                         {/* Status */}
-                        <div>
-                            <label className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    name="isActive"
-                                    checked={formData.isActive}
-                                    onChange={handleInputChange}
-                                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                                />
-                                <span className="ml-2 text-sm font-medium text-gray-700">
-                                    Active
-                                </span>
-                            </label>
-                            <p className="mt-1 text-sm text-gray-500">
-                                Active tags will be available for use in products
-                            </p>
-                        </div>
+                        <ToggleSwitch
+                            isActive={formData.isActive}
+                            onToggle={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}
+                            disabled={updateTagMutation.isPending}
+                            description="Active tags will be available for use in products"
+                        />
 
                         {/* Form Actions */}
                         <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">

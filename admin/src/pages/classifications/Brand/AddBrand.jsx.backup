@@ -3,18 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { FiPlus, FiLoader, FiX } from 'react-icons/fi'
 import RichTextEditor from '../../../components/common/RichTextEditor'
 import ToggleSwitch from '../../../components/common/ToggleSwitch'
-import { useCreateCollection } from '../../../hooks/useCollections'
+import { useCreateBrand } from '../../../hooks/useBrands'
 import toast from 'react-hot-toast'
 
 
-const AddCollection = () => {
+const AddBrand = () => {
     const navigate = useNavigate()
-    const createCollectionMutation = useCreateCollection()
+    const createBrandMutation = useCreateBrand()
 
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        type: 'manual',
+        logo: '',
+        website: '',
         features: [],
         isActive: true
     })
@@ -74,15 +75,28 @@ const AddCollection = () => {
         const errors = {}
 
         if (!formData.name.trim()) {
-            errors.name = 'Collection name is required'
+            errors.name = 'Brand name is required'
         }
 
-        if (!formData.type) {
-            errors.type = 'Collection type is required'
+        if (formData.website && !isValidUrl(formData.website)) {
+            errors.website = 'Please enter a valid website URL'
+        }
+
+        if (formData.logo && !isValidUrl(formData.logo)) {
+            errors.logo = 'Please enter a valid logo URL'
         }
 
         setValidationErrors(errors)
         return Object.keys(errors).length === 0
+    }
+
+    const isValidUrl = (string) => {
+        try {
+            new URL(string)
+            return true
+        } catch (_) {
+            return false
+        }
     }
 
     const handleSubmit = async (e) => {
@@ -94,16 +108,16 @@ const AddCollection = () => {
         }
 
         try {
-            const collectionData = {
+            const brandData = {
                 ...formData,
                 description: formData.description || ''
             }
 
-            await createCollectionMutation.mutateAsync(collectionData)
-            toast.success('Collection created successfully!')
-            navigate('/collections')
+            await createBrandMutation.mutateAsync(brandData)
+            toast.success('Brand created successfully!')
+            navigate('/brands')
         } catch (error) {
-            const errorMessage = error.response?.data?.message || 'Failed to create collection'
+            const errorMessage = error.response?.data?.message || 'Failed to create brand'
             toast.error(errorMessage)
             
             // Handle validation errors from server
@@ -120,8 +134,8 @@ const AddCollection = () => {
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h1 className="title2">Add New Collection</h1>
-                            <p className="text-gray-600">Create a new product collection</p>
+                            <h1 className="title2">Add New Brand</h1>
+                            <p className="text-gray-600">Create a new product brand</p>
                         </div>
                     </div>
 
@@ -130,7 +144,7 @@ const AddCollection = () => {
                         {/* Name */}
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                                Collection Name *
+                                Brand Name *
                             </label>
                             <input
                                 type="text"
@@ -139,34 +153,61 @@ const AddCollection = () => {
                                 value={formData.name}
                                 onChange={handleInputChange}
                                 className={`input ${validationErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                                placeholder="Enter collection name"
+                                placeholder="Enter brand name"
                             />
                             {validationErrors.name && (
                                 <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
                             )}
                         </div>
 
-                        {/* Type */}
+                        {/* Logo */}
                         <div>
-                            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
-                                Collection Type *
+                            <label htmlFor="logo" className="block text-sm font-medium text-gray-700 mb-2">
+                                Logo URL (Optional)
                             </label>
-                            <select
-                                id="type"
-                                name="type"
-                                value={formData.type}
+                            <input
+                                type="url"
+                                id="logo"
+                                name="logo"
+                                value={formData.logo}
                                 onChange={handleInputChange}
-                                className={`input ${validationErrors.type ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                            >
-                                <option value="manual">Manual</option>
-                                <option value="automatic">Automatic</option>
-                            </select>
-                            {validationErrors.type && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.type}</p>
+                                className={`input ${validationErrors.logo ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                                placeholder="https://example.com/logo.png"
+                            />
+                            {validationErrors.logo && (
+                                <p className="mt-1 text-sm text-red-600">{validationErrors.logo}</p>
                             )}
-                            <p className="mt-1 text-sm text-gray-500">
-                                Manual collections require you to add products manually. Automatic collections use rules to include products.
-                            </p>
+                            {formData.logo && (
+                                <div className="mt-2">
+                                    <img 
+                                        src={formData.logo} 
+                                        alt="Logo preview" 
+                                        className="h-16 w-16 object-cover rounded-lg border border-gray-200"
+                                        onError={(e) => {
+                                            e.target.style.display = 'none'
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Website */}
+                        <div>
+                            <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">
+                                Website URL (Optional)
+                            </label>
+                            <input
+                                type="url"
+                                id="website"
+                                name="website"
+                                value={formData.website}
+                                onChange={handleInputChange}
+                                className={`input ${validationErrors.website ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                                placeholder="https://example.com"
+                            />
+                            {validationErrors.website && (
+                                <p className="mt-1 text-sm text-red-600">{validationErrors.website}</p>
+                            )}
                         </div>
 
                         {/* Features */}
@@ -220,7 +261,7 @@ const AddCollection = () => {
                             <RichTextEditor
                                 content={formData.description}
                                 onChange={handleDescriptionChange}
-                                placeholder="Enter collection description..."
+                                placeholder="Enter brand description..."
                                 className={validationErrors.description ? 'border-red-500 focus-within:border-red-500 focus-within:ring-red-500/20' : ''}
                             />
                             {validationErrors.description && (
@@ -232,8 +273,8 @@ const AddCollection = () => {
                         <ToggleSwitch
                             isActive={formData.isActive}
                             onToggle={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}
-                            disabled={createCollectionMutation.isPending}
-                            description="Active collections will be visible to customers"
+                            disabled={createBrandMutation.isPending}
+                            description="Active brands will be available for use in products"
                         />
 
                         {/* Form Actions */}
@@ -241,9 +282,9 @@ const AddCollection = () => {
                             <button
                                 type="submit"
                                 className="btn-primary inline-flex items-center"
-                                disabled={createCollectionMutation.isPending}
+                                disabled={createBrandMutation.isPending}
                             >
-                                {createCollectionMutation.isPending ? (
+                                {createBrandMutation.isPending ? (
                                     <>
                                         <FiLoader className="animate-spin mr-2 h-4 w-4" />
                                         Adding...
@@ -251,7 +292,7 @@ const AddCollection = () => {
                                 ) : (
                                     <>
                                         <FiPlus className="mr-2 h-4 w-4" />
-                                        Add Collection
+                                        Add Brand
                                     </>
                                 )}
                             </button>
@@ -264,4 +305,4 @@ const AddCollection = () => {
 }
 
 
-export default AddCollection
+export default AddBrand

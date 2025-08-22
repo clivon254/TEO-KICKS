@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiArrowLeft, FiSave, FiX } from 'react-icons/fi'
 import RichTextEditor from '../../../components/common/RichTextEditor'
+import ToggleSwitch from '../../../components/common/ToggleSwitch'
 import { useCreateCategory } from '../../../hooks/useCategories'
 import { categorySchema } from '../../../utils/validation'
 import toast from 'react-hot-toast'
@@ -107,121 +108,93 @@ const AddCategory = () => {
 
 
     return (
-        <div className="p-6">
+        <div className="min-h-screen bg-gray-50 py-8">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-4">
-                    <button
-                        onClick={handleCancel}
-                        className="p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md"
-                    >
-                        <FiArrowLeft className="h-5 w-5" />
-                    </button>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Add New Category</h1>
-                        <p className="text-gray-600">Create a new product category</p>
-                    </div>
-                </div>
-            </div>
-
-
-            {/* Form */}
-            <div className="max-w-2xl">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Category Name */}
-                    <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                            Category Name <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="name"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleInputChange}
-                            className={`input ${validationErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                            placeholder="Enter category name"
-                            disabled={createCategoryMutation.isPending}
-                        />
-                        {validationErrors.name && (
-                            <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
-                        )}
+            <div className="max-w-4xl mx-auto px-6 mb-8">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h1 className="title2">Add New Category</h1>
+                            <p className="text-gray-600">Create a new product category</p>
+                        </div>
                     </div>
 
-
-                    {/* Description - Rich Text Editor */}
-                    <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                            Description
-                        </label>
-
-                        <RichTextEditor
-                            content={formData.description}
-                            onChange={handleDescriptionChange}
-                            placeholder="Enter category description..."
-                            disabled={createCategoryMutation.isPending}
-                            className={validationErrors.description ? 'border-red-500' : ''}
-                            minHeight="150px"
-                        />
-
-                        {validationErrors.description && (
-                            <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
-                        )}
-
-                        <p className="mt-1 text-xs text-gray-500">
-                            {getPlainTextLength()}/500 characters
-                        </p>
-                    </div>
-
-                    {/* Status (Toggle) */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                        <button
-                            type="button"
-                            onClick={() => setFormData(prev => ({ ...prev, status: prev.status === 'active' ? 'inactive' : 'active' }))}
-                            disabled={createCategoryMutation.isPending}
-                            className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 ${formData.status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`}
-                            aria-pressed={formData.status === 'active'}
-                        >
-                            <span className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow transform transition-transform ${formData.status === 'active' ? 'translate-x-7' : 'translate-x-0'}`} />
-                            <span className="sr-only">Toggle status</span>
-                        </button>
-                        <span className={`ml-3 text-sm font-medium ${formData.status === 'active' ? 'text-green-700' : 'text-gray-700'}`}>
-                            {formData.status === 'active' ? 'Active' : 'Inactive'}
-                        </span>
-                    </div>
-
-
-                    {/* Form Actions */}
-                    <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
-                        <button
-                            type="button"
-                            onClick={handleCancel}
-                            className="btn-outline inline-flex items-center"
-                            disabled={createCategoryMutation.isPending}
-                        >
-                            <FiX className="mr-2 h-4 w-4" />
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="btn-primary inline-flex items-center"
-                            disabled={createCategoryMutation.isPending}
-                        >
-                            {createCategoryMutation.isPending ? (
-                                <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                    Creating...
-                                </>
-                            ) : (
-                                <>
-                                    <FiSave className="mr-2 h-4 w-4" />
-                                    Create Category
-                                </>
+                    {/* Form */}
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Category Name */}
+                        <div>
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                                Category Name <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleInputChange}
+                                className={`input ${validationErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                                placeholder="Enter category name"
+                                disabled={createCategoryMutation.isPending}
+                            />
+                            {validationErrors.name && (
+                                <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
                             )}
-                        </button>
-                    </div>
-                </form>
+                        </div>
+
+                        {/* Description - Rich Text Editor */}
+                        <div>
+                            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                                Description
+                            </label>
+
+                            <RichTextEditor
+                                content={formData.description}
+                                onChange={handleDescriptionChange}
+                                placeholder="Enter category description..."
+                                disabled={createCategoryMutation.isPending}
+                                className={validationErrors.description ? 'border-red-500' : ''}
+                                minHeight="150px"
+                            />
+
+                            {validationErrors.description && (
+                                <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
+                            )}
+
+                            <p className="mt-1 text-xs text-gray-500">
+                                {getPlainTextLength()}/500 characters
+                            </p>
+                        </div>
+
+                        {/* Status (Toggle) */}
+                        <ToggleSwitch
+                            isActive={formData.status === 'active'}
+                            onToggle={() => setFormData(prev => ({ ...prev, status: prev.status === 'active' ? 'inactive' : 'active' }))}
+                            disabled={createCategoryMutation.isPending}
+                            description="Active categories will be available for use in products"
+                        />
+
+                        {/* Form Actions */}
+                        <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+                            <button
+                                type="submit"
+                                className="btn-primary inline-flex items-center"
+                                disabled={createCategoryMutation.isPending}
+                            >
+                                {createCategoryMutation.isPending ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                        Creating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FiSave className="mr-2 h-4 w-4" />
+                                        Create Category
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     )

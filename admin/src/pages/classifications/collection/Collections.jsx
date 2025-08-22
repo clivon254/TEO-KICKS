@@ -1,15 +1,16 @@
 import React, { useState } from 'react'
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiGrid, FiAlertTriangle, FiX, FiList, FiLoader, FiExternalLink } from 'react-icons/fi'
-import { useGetBrands, useDeleteBrand } from '../../../hooks/useBrands'
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiGrid, FiAlertTriangle, FiX, FiList, FiLoader } from 'react-icons/fi'
+import { useGetCollections, useDeleteCollection } from '../../../hooks/useCollections'
 import { Link } from 'react-router-dom'
 import StatusBadge from '../../../components/common/StatusBadge'
 import Pagination from '../../../components/common/Pagination'
 import toast from 'react-hot-toast'
 
 
-const Brands = () => {
+const Collections = () => {
     const [searchTerm, setSearchTerm] = useState('')
     const [filterStatus, setFilterStatus] = useState('all')
+    const [filterType, setFilterType] = useState('all')
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)
 
@@ -18,19 +19,20 @@ const Brands = () => {
         page: currentPage,
         limit: itemsPerPage,
         ...(searchTerm && { search: searchTerm }),
-        ...(filterStatus !== 'all' && { status: filterStatus })
+        ...(filterStatus !== 'all' && { status: filterStatus }),
+        ...(filterType !== 'all' && { type: filterType })
     }
 
-    const { data, isLoading, isError, error } = useGetBrands(queryParams)
-    const deleteBrandMutation = useDeleteBrand()
+    const { data, isLoading, isError, error } = useGetCollections(queryParams)
+    const deleteCollectionMutation = useDeleteCollection()
 
-    const handleDelete = async (brandId) => {
-        if (window.confirm('Are you sure you want to delete this brand? This action cannot be undone.')) {
+    const handleDelete = async (collectionId) => {
+        if (window.confirm('Are you sure you want to delete this collection? This action cannot be undone.')) {
             try {
-                await deleteBrandMutation.mutateAsync(brandId)
-                toast.success('Brand deleted successfully')
+                await deleteCollectionMutation.mutateAsync(collectionId)
+                toast.success('Collection deleted successfully')
             } catch (error) {
-                toast.error(error.response?.data?.message || 'Failed to delete brand')
+                toast.error(error.response?.data?.message || 'Failed to delete collection')
             }
         }
     }
@@ -40,83 +42,12 @@ const Brands = () => {
         setCurrentPage(1)
     }
 
-    const LoadingSkeleton = () => (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No.</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Website</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {[...Array(5)].map((_, index) => (
-                            <tr key={index}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center">
-                                        <div className="h-10 w-10 bg-gray-200 rounded-lg animate-pulse"></div>
-                                        <div className="ml-3">
-                                            <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="h-6 bg-gray-200 rounded-full w-16 animate-pulse"></div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right">
-                                    <div className="flex items-center justify-end space-x-2">
-                                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
-                                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    )
-
     if (isLoading) {
         return (
             <div className="p-6">
-                {/* Header Skeleton */}
-                <div className="flex justify-between items-center mb-6">
-                    <div>
-                        <div className="h-8 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
-                        <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
-                    </div>
-                    <div className="h-10 bg-gray-200 rounded w-24 animate-pulse"></div>
+                <div className="flex justify-center items-center h-64">
+                    <FiLoader className="animate-spin h-8 w-8 text-primary" />
                 </div>
-
-                {/* Filters Skeleton */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-1">
-                            <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-                        </div>
-                        <div className="flex gap-4">
-                            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
-                            <div className="h-10 bg-gray-200 rounded w-16 animate-pulse"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <LoadingSkeleton />
             </div>
         )
     }
@@ -128,9 +59,9 @@ const Brands = () => {
                     <div className="flex items-center">
                         <FiAlertTriangle className="h-5 w-5 text-red-400 mr-2" />
                         <div>
-                            <h3 className="text-sm font-medium text-red-800">Error loading brands</h3>
+                            <h3 className="text-sm font-medium text-red-800">Error loading collections</h3>
                             <p className="text-sm text-red-700 mt-1">
-                                {error?.response?.data?.message || 'Something went wrong while fetching brands.'}
+                                {error?.response?.data?.message || 'Something went wrong while fetching collections.'}
                             </p>
                         </div>
                     </div>
@@ -139,10 +70,10 @@ const Brands = () => {
         )
     }
 
-    const brands = data?.data?.data?.brands || []
-    const totalBrands = data?.data?.data?.total || 0
+    const collections = data?.data?.data?.collections || []
+    const totalCollections = data?.data?.data?.total || 0
     const totalPages = data?.data?.data?.totalPages || 1
-    const currentPageCount = brands.length
+    const currentPageCount = collections.length
 
     return (
         <div className="p-4">
@@ -152,8 +83,8 @@ const Brands = () => {
                 {/* title */}
                 <div className="mb-4">
                     <div className="mb-4">
-                        <h1 className="title2">Brands</h1>
-                        <p className="text-gray-600">Manage your product brands and manufacturers</p>
+                        <h1 className="title2">Collections</h1>
+                        <p className="text-gray-600">Manage your product collections</p>
                     </div>
                 </div>
 
@@ -164,7 +95,7 @@ const Brands = () => {
                             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                             <input
                                 type="text"
-                                placeholder="Search brands..."
+                                placeholder="Search collections..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full pl-10 pr-9 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
@@ -183,11 +114,11 @@ const Brands = () => {
                     </div>
                     <div className="sm:w-auto">
                         <Link
-                            to="/brands/add"
+                            to="/collections/add"
                             className="btn-primary inline-flex items-center justify-center w-full sm:w-auto"
                         >
                             <FiPlus className="mr-2 h-4 w-4" />
-                            Add Brand
+                            Add Collection
                         </Link>
                     </div>
                 </div>
@@ -195,7 +126,7 @@ const Brands = () => {
                 {/* Product Count and Filters */}
                 <div className="flex items-center justify-between">
                     <div className="hidden lg:block">
-                        <p className="text-sm text-gray-600">Total {totalBrands} brands</p>
+                        <p className="text-sm text-gray-600">Total {totalCollections} collections</p>
                     </div>
                     <div className="flex gap-4">
                         {/* Status Filter */}
@@ -209,6 +140,20 @@ const Brands = () => {
                                 <option value="all">Status: All</option>
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+
+                        {/* Type Filter */}
+                        <div className="relative">
+                            <FiGrid className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-3 w-3" />
+                            <select
+                                value={filterType}
+                                onChange={(e) => setFilterType(e.target.value)}
+                                className="border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-white text-xs"
+                            >
+                                <option value="all">Type: All</option>
+                                <option value="manual">Manual</option>
+                                <option value="automatic">Automatic</option>
                             </select>
                         </div>
 
@@ -228,21 +173,21 @@ const Brands = () => {
 
             </header>
 
-            {/* Brands Table */}
+            {/* Collections Table */}
             <div className="bg-light rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 {isLoading ? (
                     <LoadingSkeleton />
-                ) : brands.length === 0 ? (
+                ) : collections.length === 0 ? (
                     <div className="py-16 px-6 text-center">
                         <div className="mx-auto h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
                             <FiGrid className="h-7 w-7 text-primary" />
                         </div>
-                        <h3 className="mt-4 text-lg font-semibold text-gray-900">No brands yet</h3>
-                        <p className="mt-1 text-sm text-gray-500">Get started by creating your first brand.</p>
+                        <h3 className="mt-4 text-lg font-semibold text-gray-900">No collections yet</h3>
+                        <p className="mt-1 text-sm text-gray-500">Get started by creating your first collection.</p>
                         <div className="mt-6">
-                            <Link to="/brands/add" className="btn-primary inline-flex items-center">
+                            <Link to="/collections/add" className="btn-primary inline-flex items-center">
                                 <FiPlus className="mr-2 h-4 w-4" />
-                                Add Brand
+                                Add Collection
                             </Link>
                         </div>
                     </div>
@@ -256,10 +201,10 @@ const Brands = () => {
                                             No.
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Brand
+                                            Collection
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Website
+                                            Type
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Products
@@ -273,85 +218,52 @@ const Brands = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {brands.map((brand, index) => {
+                                    {collections.map((collection, index) => {
                                         const globalIndex = (currentPage - 1) * itemsPerPage + index + 1
                                         return (
-                                            <tr key={brand.id} className="hover:bg-light">
+                                            <tr key={collection.id} className="hover:bg-light">
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {globalIndex}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex items-center">
-                                                        <div className="h-10 w-10 flex-shrink-0 mr-3">
-                                                            {brand.logo ? (
-                                                                <img 
-                                                                    className="h-10 w-10 rounded-lg object-cover" 
-                                                                    src={brand.logo} 
-                                                                    alt={brand.name}
-                                                                    onError={(e) => {
-                                                                        e.target.style.display = 'none'
-                                                                        e.target.nextSibling.style.display = 'flex'
-                                                                    }}
-                                                                />
-                                                            ) : null}
-                                                            <div 
-                                                                className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center"
-                                                                style={{ display: brand.logo ? 'none' : 'flex' }}
-                                                            >
-                                                                <span className="text-sm font-medium text-gray-500">
-                                                                    {brand.name?.charAt(0)?.toUpperCase() || 'B'}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-sm font-medium text-gray-900">
-                                                                {brand.name}
-                                                            </div>
-                                                            <div className="text-sm text-gray-500">
-                                                                {brand.slug}
-                                                            </div>
-                                                        </div>
+                                                    <div>
+                                                        <div className="text-sm font-medium text-gray-900">{collection.name}</div>
+                                                        <div className="text-sm text-gray-500">{collection.slug}</div>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    {brand.website ? (
-                                                        <a 
-                                                            href={brand.website} 
-                                                            target="_blank" 
-                                                            rel="noopener noreferrer"
-                                                            className="text-sm text-primary hover:text-secondary inline-flex items-center"
-                                                        >
-                                                            Visit Website
-                                                            <FiExternalLink className="ml-1 h-3 w-3" />
-                                                        </a>
-                                                    ) : (
-                                                        <span className="text-sm text-gray-400">—</span>
-                                                    )}
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                        collection.type === 'automatic' 
+                                                            ? 'bg-green-100 text-green-800' 
+                                                            : 'bg-blue-100 text-blue-800'
+                                                    }`}>
+                                                        {collection.type || 'Manual'}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                        {brand.productCount || 0} products
+                                                        {collection.productCount || 0} products
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <StatusBadge status={brand.isActive ? 'active' : 'inactive'} />
+                                                    <StatusBadge status={collection.isActive ? 'active' : 'inactive'} />
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <div className="flex items-center justify-end space-x-2">
                                                         <Link
-                                                            to={`/brands/${brand.id}/edit`}
+                                                            to={`/collections/${collection.id}/edit`}
                                                             className="text-primary hover:text-secondary p-1 rounded"
-                                                            title="Edit brand"
+                                                            title="Edit collection"
                                                         >
                                                             <FiEdit className="h-4 w-4" />
                                                         </Link>
                                                         <button
-                                                            onClick={() => handleDelete(brand.id)}
+                                                            onClick={() => handleDelete(collection.id)}
                                                             className="text-red-600 hover:text-red-900 p-1 rounded"
-                                                            title="Delete brand"
-                                                            disabled={deleteBrandMutation.isPending}
+                                                            title="Delete collection"
+                                                            disabled={deleteCollectionMutation.isPending}
                                                         >
-                                                            {deleteBrandMutation.isPending ? (
+                                                            {deleteCollectionMutation.isPending ? (
                                                                 <FiLoader className="h-4 w-4 animate-spin" />
                                                             ) : (
                                                                 <FiTrash2 className="h-4 w-4" />
@@ -373,9 +285,9 @@ const Brands = () => {
                                     currentPage={currentPage}
                                     totalPages={totalPages}
                                     onPageChange={setCurrentPage}
-                                    totalItems={totalBrands}
+                                    totalItems={totalCollections}
                                     pageSize={itemsPerPage}
-                                    currentPageCount={brands.length}
+                                    currentPageCount={collections.length}
                                     align="center"
                                 />
                             </div>
@@ -388,4 +300,4 @@ const Brands = () => {
 }
 
 
-export default Brands 
+export default Collections 
