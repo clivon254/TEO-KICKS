@@ -20,46 +20,17 @@ export const validateVariant = (data) => {
                 'string.max': 'Variant name cannot exceed 50 characters'
             }),
 
-        description: Joi.string()
-            .trim()
-            .max(200)
-            .optional()
-            .messages({
-                'string.max': 'Description cannot exceed 200 characters'
-            }),
-
         options: Joi.array()
             .items(Joi.object({
-                value: Joi.string().trim().min(1).max(50).required(),
-                sortOrder: Joi.number().integer().min(0).optional(),
-                isActive: Joi.boolean().optional()
+                value: Joi.string().trim().min(1).max(50).required()
             }))
-            .optional(),
-
-        displayType: Joi.string()
-            .valid('dropdown', 'radio', 'checkbox', 'swatch')
-            .default('dropdown')
-            .optional(),
-
-        colorHex: Joi.string()
-            .pattern(/^#[0-9A-F]{6}$/i)
-            .optional()
+            .min(1)
+            .required()
             .messages({
-                'string.pattern.base': 'Color hex must be a valid hex color (e.g., #FF0000)'
-            }),
-
-        measurement: Joi.string()
-            .trim()
-            .max(50)
-            .optional(),
-
-        isActive: Joi.boolean()
-            .optional(),
-
-        sortOrder: Joi.number()
-            .integer()
-            .min(0)
-            .optional()
+                'array.base': 'Options must be an array',
+                'array.min': 'At least one option is required',
+                'any.required': 'Options are required'
+            })
 
     })
 
@@ -371,6 +342,29 @@ export const validateSKU = (data) => {
 }
 
 
+
+
+
+// Validation schema for variant attachment/detachment
+export const validateVariantAttachment = (data) => {
+
+    const schema = Joi.object({
+
+        variantId: Joi.string()
+            .hex()
+            .length(24)
+            .required()
+            .messages({
+                'string.empty': 'Variant ID is required',
+                'string.hex': 'Invalid variant ID format',
+                'string.length': 'Invalid variant ID length'
+            })
+
+    })
+
+    return schema.validate(data)
+
+}
 
 
 

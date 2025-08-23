@@ -32,46 +32,14 @@ const optionSchema = new mongoose.Schema({
 
 const variantSchema = new mongoose.Schema({
 
-    name: { 
-        type: String, 
+    name: {
+        type: String,
         required: true,
         trim: true,
         unique: true
     },
 
-    description: { 
-        type: String,
-        trim: true
-    },
-
-    options: [optionSchema],
-
-    isActive: { 
-        type: Boolean, 
-        default: true 
-    },
-
-    sortOrder: { 
-        type: Number, 
-        default: 0 
-    },
-
-    // Metadata for UI display
-    displayType: { 
-        type: String, 
-        enum: ["dropdown", "radio", "checkbox", "swatch"],
-        default: "dropdown"
-    },
-
-    // For color variants, store hex codes
-    colorHex: { 
-        type: String 
-    },
-
-    // For size variants, store measurements
-    measurement: { 
-        type: String 
-    }
+    options: [optionSchema]
 
 }, {
     timestamps: true
@@ -83,8 +51,6 @@ const variantSchema = new mongoose.Schema({
 
 // Indexes for better query performance
 // Note: name index is automatically created due to unique: true
-variantSchema.index({ isActive: 1 })
-variantSchema.index({ sortOrder: 1 })
 
 
 
@@ -162,25 +128,19 @@ variantSchema.methods.updateOption = function(optionId, updateData) {
 
 
 
-// Static method to get active variants
-variantSchema.statics.getActive = function() {
-
-    return this.find({ isActive: true }).sort({ sortOrder: 1, name: 1 })
-
-}
-
-
-
-
-
-// Static method to get variants with their options
+// Static method to get all variants with their options
 variantSchema.statics.getWithOptions = function() {
 
-    return this.find({ isActive: true })
-        .select('name description options displayType colorHex measurement')
-        .sort({ sortOrder: 1, name: 1 })
+    return this.find()
+        .select('name options')
+        .sort({ name: 1 })
 
 }
+
+
+
+
+
 
 
 

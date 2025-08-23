@@ -59,12 +59,7 @@ const Categories = () => {
         navigate(`/categories/${category._id || category.id}/edit`)
     }
 
-    const handleDelete = async (categoryId) => {
-        if (window.confirm('Are you sure you want to delete this category?')) {
-            // TODO: Implement API call to delete category
-            setCategories(prev => prev.filter(cat => cat.id !== categoryId))
-        }
-    }
+
 
     const clearSearch = () => {
         setSearchTerm('')
@@ -233,7 +228,7 @@ const Categories = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                                    {categories.map((category, index) => (
+                                    {categories.map((category) => (
                                         <tr key={category._id || category.id} className="hover:bg-light">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <input 

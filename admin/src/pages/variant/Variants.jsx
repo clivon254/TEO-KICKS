@@ -28,11 +28,13 @@ const Variants = () => {
     params.page = currentPage
     params.limit = itemsPerPage
 
-    const { data, isLoading } = useGetVariants(params)
-    const variants = data?.data?.data?.variants || []
-    const pagination = data?.data?.data?.pagination || {}
-    const totalItems = pagination.totalVariants || pagination.totalItems || 0
-    const totalPages = pagination.totalPages || Math.max(1, Math.ceil((totalItems || 0) / (itemsPerPage || 1)))
+    const { data, isLoading, error } = useGetVariants(params)
+    
+    // The API returns { data: { success: true, data: [...], pagination: {...} } }
+    const variants = Array.isArray(data?.data?.data) ? data?.data?.data : []
+    const pagination = data?.data?.pagination || {}
+    const totalItems = pagination.total || 0
+    const totalPages = pagination.pages || Math.max(1, Math.ceil((totalItems || 0) / (itemsPerPage || 1)))
     const [confirmDelete, setConfirmDelete] = useState({ open: false, variant: null })
     const navigate = useNavigate()
     const deleteVariant = useDeleteVariant()
@@ -51,20 +53,15 @@ const Variants = () => {
         if (selectedVariants.length === variants.length) {
             setSelectedVariants([])
         } else {
-            setSelectedVariants(variants.map(variant => variant._id || variant.id))
+            setSelectedVariants(variants.map(variant => variant._id))
         }
     }
 
     const handleEdit = (variant) => {
-        navigate(`/variants/${variant._id || variant.id}/edit`)
+        navigate(`/variants/${variant._id}/edit`)
     }
 
-    const handleDelete = async (variantId) => {
-        if (window.confirm('Are you sure you want to delete this variant?')) {
-            // TODO: Implement API call to delete variant
-            setSelectedVariants(prev => prev.filter(id => id !== variantId))
-        }
-    }
+
 
     const clearSearch = () => {
         setSearchTerm('')
@@ -188,24 +185,61 @@ const Variants = () => {
 
             </header>
 
+            {/* Error Display */}
+            {error && (
+                <div className="bg-red-50 border border-red-200 p-4 rounded-lg mb-4">
+                    <div className="flex">
+                        <div className="flex-shrink-0">
+                            <FiAlertTriangle className="h-5 w-5 text-red-400" />
+                        </div>
+                        <div className="ml-3">
+                            <h3 className="text-sm font-medium text-red-800">Error loading variants</h3>
+                            <div className="mt-2 text-sm text-red-700">
+                                <p>{error.message || 'An error occurred while loading variants.'}</p>
+                                {import.meta.env.DEV && (
+                                    <details className="mt-2">
+                                        <summary className="cursor-pointer">Error details</summary>
+                                        <pre className="mt-2 text-xs bg-red-100 p-2 rounded overflow-auto">
+                                            {JSON.stringify(error, null, 2)}
+                                        </pre>
+                                    </details>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Variants Table */}
             <div className="bg-light rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 {isLoading ? (
                     <LoadingSkeleton />
+                ) : error ? (
+                    <div className="py-16 px-6 text-center">
+                        <FiAlertTriangle className="mx-auto h-12 w-12 text-red-400" />
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">Failed to load variants</h3>
+                        <p className="mt-1 text-sm text-gray-500">Please try refreshing the page.</p>
+                    </div>
                 ) : variants.length === 0 ? (
                     <div className="py-16 px-6 text-center">
                         <FiGrid className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-2 text-sm font-medium text-gray-900">No variants</h3>
-                        <p className="mt-1 text-sm text-gray-500">Get started by creating a new variant.</p>
-                        <div className="mt-6">
-                            <Link
-                                to="/variants/add"
-                                className="btn-primary inline-flex items-center"
-                            >
-                                <FiPlus className="mr-2 h-4 w-4" />
-                                Add Variant
-                            </Link>
-                        </div>
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">
+                            {data ? 'No variants found' : 'Loading variants...'}
+                        </h3>
+                        <p className="mt-1 text-sm text-gray-500">
+                            {data ? 'Get started by creating a new variant.' : 'Please wait while we fetch your variants.'}
+                        </p>
+                        {data && (
+                            <div className="mt-6">
+                                <Link
+                                    to="/variants/add"
+                                    className="btn-primary inline-flex items-center"
+                                >
+                                    <FiPlus className="mr-2 h-4 w-4" />
+                                    Add Variant
+                                </Link>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <>
@@ -230,35 +264,38 @@ const Variants = () => {
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {variants.map((variant) => (
-                                        <tr key={variant.id} className="hover:bg-light">
+                                        <tr key={variant._id} className="hover:bg-light">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <input
                                                     type="checkbox"
-                                                    checked={selectedVariants.includes(variant._id || variant.id)}
-                                                    onChange={() => handleSelectVariant(variant._id || variant.id)}
+                                                    checked={selectedVariants.includes(variant._id)}
+                                                    onChange={() => handleSelectVariant(variant._id)}
                                                     className="rounded border-gray-300 text-primary focus:ring-primary"
                                                 />
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div>
                                                     <div className="text-sm font-medium text-gray-900">{variant.name}</div>
-                                                    {variant.description && (
-                                                        <div className="text-sm text-gray-500 truncate max-w-xs">{variant.description}</div>
-                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm text-gray-900">
                                                     {variant.options?.length || 0} options
                                                 </div>
+                                                {variant.options?.length > 0 && (
+                                                    <div className="text-xs text-gray-500 mt-1">
+                                                        {variant.options.slice(0, 3).map(opt => opt.value).join(', ')}
+                                                        {variant.options.length > 3 && ` +${variant.options.length - 3} more`}
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="text-sm text-gray-900 capitalize">
-                                                    {variant.displayType || 'dropdown'}
+                                                <span className="text-sm text-gray-900">Simple</span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    Active
                                                 </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <StatusBadge status={variant.isActive ? 'active' : 'inactive'} />
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <div className="flex items-center justify-end space-x-2">

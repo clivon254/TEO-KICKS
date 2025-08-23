@@ -107,9 +107,17 @@ export const variantSchema = yup.object().shape({
     name: yup.string()
         .required('Variant name is required')
         .min(2, 'Variant name must be at least 2 characters')
-        .max(100, 'Variant name must be less than 100 characters'),
-    description: yup.string()
-        .max(500, 'Description must be less than 500 characters'),
-    status: yup.string().oneOf(['active', 'inactive']).optional(),
+        .max(50, 'Variant name must be less than 50 characters'),
+    options: yup.array()
+        .of(
+            yup.object().shape({
+                value: yup.string()
+                    .required('Option value is required')
+                    .min(1, 'Option value must be at least 1 character')
+                    .max(50, 'Option value must be less than 50 characters')
+            })
+        )
+        .min(1, 'At least one option is required')
+        .required('Options are required')
 
 }) 

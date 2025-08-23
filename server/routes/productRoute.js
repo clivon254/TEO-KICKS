@@ -1,19 +1,21 @@
 import express from "express"
 import { verifyBearerToken, requireAdmin } from "../utils/verify.js"
 import { uploadProductImage } from "../utils/cloudinary.js"
-import { 
-    createProduct, 
-    getAllProducts, 
-    getProductById, 
-    updateProduct, 
-    deleteProduct, 
-    generateSKUs, 
-    updateSKU, 
+import {
+    createProduct,
+    getAllProducts,
+    getProductById,
+    updateProduct,
+    deleteProduct,
+    generateSKUs,
+    updateSKU,
     deleteSKU,
     uploadProductImages,
     deleteProductImage,
     setPrimaryImage,
-    getOptimizedImages
+    getOptimizedImages,
+    attachVariant,
+    detachVariant
 } from "../controllers/productController.js"
 
 
@@ -44,5 +46,9 @@ router.put("/:productId/images/:imageId/primary", requireAdmin, setPrimaryImage)
 router.post("/:productId/generate-skus", requireAdmin, generateSKUs)
 router.patch("/:productId/skus/:skuId", requireAdmin, updateSKU)
 router.delete("/:productId/skus/:skuId", requireAdmin, deleteSKU)
+
+// Variant management routes
+router.post("/:productId/attach-variant", requireAdmin, attachVariant)
+router.post("/:productId/detach-variant", requireAdmin, detachVariant)
 
 export default router 

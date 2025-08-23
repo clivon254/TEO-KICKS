@@ -37,7 +37,6 @@ const EditCategory = () => {
                 status: category.status || (category.isActive ? 'active' : 'inactive')
             })
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [category])
 
 

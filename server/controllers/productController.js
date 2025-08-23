@@ -1,5 +1,5 @@
 import Product from "../models/productModel.js"
-import { validateProduct, validateSKU } from "../utils/validation.js"
+import { validateProduct, validateSKU, validateVariantAttachment } from "../utils/validation.js"
 import { errorHandler } from "../utils/error.js"
 import { generateUniqueSlug } from "../utils/slugGenerator.js"
 import { 
@@ -71,6 +71,11 @@ export const createProduct = async (req, res, next) => {
 
         await product.save()
 
+        // Auto-generate SKUs if variants are attached
+        if (product.variants && product.variants.length > 0) {
+            await product.generateSKUs()
+        }
+
         res.status(201).json({
             success: true,
             message: "Product created successfully",
@@ -86,6 +91,8 @@ export const createProduct = async (req, res, next) => {
                     tags: product.tags,
                     basePrice: product.basePrice,
                     comparePrice: product.comparePrice,
+                    variants: product.variants,
+                    skus: product.skus,
                     images: product.images,
                     status: product.status,
                     createdAt: product.createdAt
@@ -624,6 +631,111 @@ export const deleteSKU = async (req, res, next) => {
         next(errorHandler(500, "Server error while deleting SKU"))
     }
 }
+
+
+
+// Attach variant to product
+export const attachVariant = async (req, res, next) => {
+    try {
+        const { productId } = req.params
+        const { variantId } = req.body
+
+        // Validate request data
+        const { error } = validateVariantAttachment(req.body)
+        if (error) {
+            return next(errorHandler(400, error.details[0].message))
+        }
+
+        const product = await Product.findById(productId)
+        if (!product) {
+            return next(errorHandler(404, "Product not found"))
+        }
+
+        // Check if variant already attached
+        if (product.variants.includes(variantId)) {
+            return next(errorHandler(400, "Variant already attached to product"))
+        }
+
+        // Add variant and regenerate SKUs
+        product.variants.push(variantId)
+        await product.generateSKUs()
+
+        res.status(200).json({
+            success: true,
+            message: "Variant attached successfully",
+            data: {
+                product: {
+                    id: product._id,
+                    variants: product.variants,
+                    skus: product.skus
+                }
+            }
+        })
+
+    } catch (error) {
+        console.error("Attach variant error:", error)
+        next(errorHandler(500, "Server error while attaching variant"))
+    }
+}
+
+
+
+// Detach variant from product
+export const detachVariant = async (req, res, next) => {
+    try {
+        const { productId } = req.params
+        const { variantId } = req.body
+
+        // Validate request data
+        const { error } = validateVariantAttachment(req.body)
+        if (error) {
+            return next(errorHandler(400, error.details[0].message))
+        }
+
+        const product = await Product.findById(productId)
+        if (!product) {
+            return next(errorHandler(404, "Product not found"))
+        }
+
+        // Remove variant
+        product.variants = product.variants.filter(id => id.toString() !== variantId)
+
+        // Remove SKUs that contain this variant
+        product.skus = product.skus.filter(sku =>
+            !sku.attributes.some(attr => attr.variantId.toString() === variantId)
+        )
+
+        // If no variants left, create default SKU
+        if (product.variants.length === 0) {
+            product.skus = [{
+                attributes: [],
+                price: product.basePrice,
+                stock: 0,
+                skuCode: `${product.slug.toUpperCase()}-DEFAULT`
+            }]
+        }
+
+        await product.save()
+
+        res.status(200).json({
+            success: true,
+            message: "Variant detached successfully",
+            data: {
+                product: {
+                    id: product._id,
+                    variants: product.variants,
+                    skus: product.skus
+                }
+            }
+        })
+
+    } catch (error) {
+        console.error("Detach variant error:", error)
+        next(errorHandler(500, "Server error while detaching variant"))
+    }
+}
+
+
 
 // Upload product images
 export const uploadProductImages = async (req, res, next) => {

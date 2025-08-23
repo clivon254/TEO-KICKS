@@ -27,7 +27,7 @@ export const createVariant = async (req, res) => {
 
         }
 
-        const { name, description, options, displayType, colorHex, measurement } = req.body
+        const { name, options } = req.body
 
         // Check if variant with same name already exists
         const existingVariant = await Variant.findOne({ name })
@@ -48,17 +48,7 @@ export const createVariant = async (req, res) => {
 
             name,
 
-            description,
-
-            options: options || [],
-
-            displayType,
-
-            colorHex,
-
-            measurement,
-
-            createdBy: req.user._id
+            options: options || []
 
         })
 

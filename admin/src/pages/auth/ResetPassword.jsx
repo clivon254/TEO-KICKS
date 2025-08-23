@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { FiLock, FiEye, FiEyeOff, FiCheck } from 'react-icons/fi'
 import logo from '../../assets/logo.png'
@@ -18,7 +18,6 @@ const ResetPassword = () => {
 
     const { token } = useParams()
     const { resetPassword } = useAuth()
-    const navigate = useNavigate()
 
     const handleInputChange = (e) => {
         const { name, value } = e.target
@@ -26,23 +25,6 @@ const ResetPassword = () => {
             ...prev,
             [name]: value
         }))
-    }
-
-    const validatePassword = (password) => {
-        const minLength = 6
-        const hasUpperCase = /[A-Z]/.test(password)
-        const hasLowerCase = /[a-z]/.test(password)
-        const hasNumbers = /\d/.test(password)
-        
-        return {
-            isValid: password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers,
-            errors: {
-                length: password.length < minLength,
-                uppercase: !hasUpperCase,
-                lowercase: !hasLowerCase,
-                numbers: !hasNumbers
-            }
-        }
     }
 
     const handleSubmit = async (e) => {

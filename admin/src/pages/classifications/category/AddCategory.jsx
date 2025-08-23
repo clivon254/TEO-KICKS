@@ -176,6 +176,14 @@ const AddCategory = () => {
                         {/* Form Actions */}
                         <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
                             <button
+                                type="button"
+                                onClick={handleCancel}
+                                className="btn-outline"
+                                disabled={createCategoryMutation.isPending}
+                            >
+                                Cancel
+                            </button>
+                            <button
                                 type="submit"
                                 className="btn-primary inline-flex items-center"
                                 disabled={createCategoryMutation.isPending}

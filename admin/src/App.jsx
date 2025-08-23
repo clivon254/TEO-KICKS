@@ -28,6 +28,9 @@ import EditCollection from './pages/classifications/collection/EditCollection'
 import Variants from './pages/variant/Variants'
 import AddVariant from './pages/variant/AddVariant'
 import EditVariant from './pages/variant/EditVariant'
+import Products from './pages/products/Products'
+import AddProduct from './pages/products/AddProduct'
+import EditProduct from './pages/products/EditProduct'
 
 // Settings Pages
 import Settings from './pages/settings/Settings'
@@ -84,6 +87,9 @@ function App() {
             {/* Main authenticated layout */}
             <Route element={<Layout />}>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/products/add" element={<AddProduct />} />
+              <Route path="/products/:id/edit" element={<EditProduct />} />
               <Route path="/categories" element={<Categories />} />
               <Route path="/categories/add" element={<AddCategory />} />
               <Route path="/categories/:id/edit" element={<EditCategory />} />

@@ -25,7 +25,6 @@ const EditVariant = () => {
     })
 
     const [validationErrors, setValidationErrors] = useState({})
-    const [optionInput, setOptionInput] = useState('')
 
     // Handle description change from RichTextEditor
     const handleDescriptionChange = (html) => {
@@ -35,34 +34,9 @@ const EditVariant = () => {
         }
     }
 
-    // Handle options management
-    const addOption = () => {
-        if (optionInput.trim()) {
-            setFormData(prev => ({
-                ...prev,
-                options: [...prev.options, {
-                    value: optionInput.trim(),
-                    isActive: true,
-                    sortOrder: prev.options.length
-                }]
-            }))
-            setOptionInput('')
-        }
-    }
 
-    const removeOption = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            options: prev.options.filter((_, i) => i !== index)
-        }))
-    }
 
-    const handleOptionKeyPress = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault()
-            addOption()
-        }
-    }
+
 
     // Populate form when variant data is loaded
     useEffect(() => {

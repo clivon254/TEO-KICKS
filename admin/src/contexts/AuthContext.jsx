@@ -76,7 +76,7 @@ const AuthContext = createContext()
 
 // Auth Provider component
 export const AuthProvider = ({ children }) => {
-    const [state, dispatch] = useReducer(authReducer, initialState)
+    const [, dispatch] = useReducer(authReducer, initialState)
     const reduxDispatch = useDispatch()
     const authState = useSelector((s) => s.auth)
     const navigate = useNavigate()
@@ -137,7 +137,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         refreshUserInBackground()
-    }, [])
+    }, [reduxDispatch])
 
     // Login function
     const login = async (credentials) => {

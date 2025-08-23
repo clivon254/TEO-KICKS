@@ -36,7 +36,6 @@ const Pagination = ({
     totalItems,
     pageSize,
     currentPageCount,
-    align = 'center',
     showPageInfo = true,
     className = '',
 }) => {
