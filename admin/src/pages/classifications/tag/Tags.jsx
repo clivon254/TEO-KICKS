@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiGrid, FiAlertTriangle, FiX, FiList, FiLoader } from 'react-icons/fi'
+import React, { useState, useEffect } from 'react'
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiGrid, FiAlertTriangle, FiX, FiList, FiLoader, FiTag } from 'react-icons/fi'
 import { useGetTags, useDeleteTag } from '../../../hooks/useTags'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import StatusBadge from '../../../components/common/StatusBadge'
 import Pagination from '../../../components/common/Pagination'
 import toast from 'react-hot-toast'
@@ -9,32 +9,55 @@ import toast from 'react-hot-toast'
 
 const Tags = () => {
     const [searchTerm, setSearchTerm] = useState('')
+    const [debouncedSearch, setDebouncedSearch] = useState('')
     const [filterStatus, setFilterStatus] = useState('all')
-    const [filterType, setFilterType] = useState('all')
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)
+    const [selectedTags, setSelectedTags] = useState([])
+    const [confirmDelete, setConfirmDelete] = useState({ open: false, tag: null })
 
-    // Build query parameters
-    const queryParams = {
-        page: currentPage,
-        limit: itemsPerPage,
-        ...(searchTerm && { search: searchTerm }),
-        ...(filterStatus !== 'all' && { status: filterStatus }),
-        ...(filterType !== 'all' && { type: filterType })
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(searchTerm), 300)
+        return () => clearTimeout(t)
+    }, [searchTerm])
+
+    const params = {}
+    if (filterStatus === 'active') params.isActive = 'true'
+    if (filterStatus === 'inactive') params.isActive = 'false'
+    if (filterStatus === 'all') delete params.isActive
+    if (debouncedSearch) params.search = debouncedSearch
+    params.page = currentPage
+    params.limit = itemsPerPage
+
+    const { data, isLoading, isError, error } = useGetTags(params)
+    const deleteTagMutation = useDeleteTag()
+    const navigate = useNavigate()
+
+    const tags = data?.data?.data?.tags || []
+    const pagination = data?.data?.data?.pagination || {}
+    const totalItems = pagination.totalTags || pagination.totalItems || 0
+    const totalPages = pagination.totalPages || Math.max(1, Math.ceil((totalItems || 0) / (itemsPerPage || 1)))
+
+    // Handle tag selection
+    const handleSelectTag = (tagId) => {
+        setSelectedTags(prev =>
+            prev.includes(tagId)
+                ? prev.filter(id => id !== tagId)
+                : [...prev, tagId]
+        )
     }
 
-    const { data, isLoading, isError, error } = useGetTags(queryParams)
-    const deleteTagMutation = useDeleteTag()
-
-    const handleDelete = async (tagId) => {
-        if (window.confirm('Are you sure you want to delete this tag? This action cannot be undone.')) {
-            try {
-                await deleteTagMutation.mutateAsync(tagId)
-                toast.success('Tag deleted successfully')
-            } catch (error) {
-                toast.error(error.response?.data?.message || 'Failed to delete tag')
-            }
+    // Handle select all
+    const handleSelectAll = () => {
+        if (selectedTags.length === tags.length) {
+            setSelectedTags([])
+        } else {
+            setSelectedTags(tags.map(tag => tag._id || tag.id))
         }
+    }
+
+    const handleEdit = (tag) => {
+        navigate(`/tags/${tag._id || tag.id}/edit`)
     }
 
     const clearSearch = () => {
@@ -48,10 +71,10 @@ const Tags = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No.</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <input type="checkbox" className="rounded border-gray-300 text-primary focus:ring-primary" />
+                            </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tag</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Color</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -61,7 +84,7 @@ const Tags = () => {
                         {[...Array(5)].map((_, index) => (
                             <tr key={index}>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                                    <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
@@ -70,12 +93,6 @@ const Tags = () => {
                                             <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
                                         </div>
                                     </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
@@ -117,7 +134,6 @@ const Tags = () => {
                         </div>
                         <div className="flex gap-4">
                             <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
-                            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
                             <div className="h-10 bg-gray-200 rounded w-16 animate-pulse"></div>
                         </div>
                     </div>
@@ -146,10 +162,7 @@ const Tags = () => {
         )
     }
 
-    const tags = data?.data?.data?.tags || []
-    const totalTags = data?.data?.data?.total || 0
-    const totalPages = data?.data?.data?.totalPages || 1
-    const currentPageCount = tags.length
+
 
     return (
         <div className="p-4">
@@ -202,7 +215,7 @@ const Tags = () => {
                 {/* Product Count and Filters */}
                 <div className="flex items-center justify-between">
                     <div className="hidden lg:block">
-                        <p className="text-sm text-gray-600">Total {totalTags} tags</p>
+                        <p className="text-sm text-gray-600">Total {totalItems} tags</p>
                     </div>
                     <div className="flex gap-4">
                         {/* Status Filter */}
@@ -260,13 +273,15 @@ const Tags = () => {
                                 <thead className="bg-light">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            No.
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedTags.length === tags.length && tags.length > 0}
+                                                onChange={handleSelectAll}
+                                                className="rounded border-gray-300 text-primary focus:ring-primary"
+                                            />
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Tag
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Type
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Products
@@ -280,26 +295,27 @@ const Tags = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {tags.map((tag, index) => {
-                                        const globalIndex = (currentPage - 1) * itemsPerPage + index + 1
+                                    {tags.map((tag) => {
                                         return (
                                             <tr key={tag.id} className="hover:bg-light">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {globalIndex}
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedTags.includes(tag._id || tag.id)}
+                                                        onChange={() => handleSelectTag(tag._id || tag.id)}
+                                                        className="rounded border-gray-300 text-primary focus:ring-primary"
+                                                    />
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center">
-                                                        <div className="h-8 w-8 rounded-full mr-3" style={{ backgroundColor: tag.color || '#6B7280' }}></div>
+                                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                                                            <FiTag className="h-4 w-4 text-primary" />
+                                                        </div>
                                                         <div>
                                                             <div className="text-sm font-medium text-gray-900">{tag.name}</div>
                                                             <div className="text-sm text-gray-500">{tag.slug}</div>
                                                         </div>
                                                     </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                        {tag.type || 'General'}
-                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -311,24 +327,19 @@ const Tags = () => {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <div className="flex items-center justify-end space-x-2">
-                                                        <Link
-                                                            to={`/tags/${tag.id}/edit`}
+                                                        <button
+                                                            onClick={() => handleEdit(tag)}
                                                             className="text-primary hover:text-secondary p-1 rounded"
                                                             title="Edit tag"
                                                         >
                                                             <FiEdit className="h-4 w-4" />
-                                                        </Link>
+                                                        </button>
                                                         <button
-                                                            onClick={() => handleDelete(tag.id)}
+                                                            onClick={() => setConfirmDelete({ open: true, tag })}
                                                             className="text-red-600 hover:text-red-900 p-1 rounded"
                                                             title="Delete tag"
-                                                            disabled={deleteTagMutation.isPending}
                                                         >
-                                                            {deleteTagMutation.isPending ? (
-                                                                <FiLoader className="h-4 w-4 animate-spin" />
-                                                            ) : (
-                                                                <FiTrash2 className="h-4 w-4" />
-                                                            )}
+                                                            <FiTrash2 className="h-4 w-4" />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -339,14 +350,23 @@ const Tags = () => {
                             </table>
                         </div>
 
+                        {/* Selection Info */}
+                        {selectedTags.length > 0 && (
+                            <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+                                <p className="text-sm text-gray-600">
+                                    {selectedTags.length} of {tags.length} selected
+                                </p>
+                            </div>
+                        )}
+
                         {/* Pagination */}
                         {totalPages > 1 && (
                             <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
                                 <Pagination
-                                    currentPage={currentPage}
+                                    currentPage={pagination.currentPage || currentPage}
                                     totalPages={totalPages}
-                                    onPageChange={setCurrentPage}
-                                    totalItems={totalTags}
+                                    onPageChange={(p) => setCurrentPage(p)}
+                                    totalItems={totalItems}
                                     pageSize={itemsPerPage}
                                     currentPageCount={tags.length}
                                     align="center"
@@ -356,6 +376,47 @@ const Tags = () => {
                     </>
                 )}
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {confirmDelete.open && (
+                <div className="fixed inset-0 z-50">
+                    <div className="absolute inset-0 bg-black/40" />
+                    <div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6">
+                        <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-4 sm:p-6">
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                                    <FiAlertTriangle className="h-6 w-6 text-red-600" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-900">Delete tag?</h3>
+                            </div>
+                            <p className="mt-3 text-sm text-gray-600">Are you sure you want to delete "{confirmDelete.tag?.name}"? This action cannot be undone.</p>
+                            <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                                <button
+                                    onClick={() => setConfirmDelete({ open: false, tag: null })}
+                                    className="btn-outline"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            await deleteTagMutation.mutateAsync(confirmDelete.tag?._id || confirmDelete.tag?.id)
+                                            toast.success('Tag deleted successfully')
+                                        } catch (err) {
+                                            toast.error(err.response?.data?.message || 'Failed to delete tag')
+                                        } finally {
+                                            setConfirmDelete({ open: false, tag: null })
+                                        }
+                                    }}
+                                    className="btn-primary bg-red-600 border-red-600 hover:bg-red-700 hover:border-red-700"
+                                >
+                                    {deleteTagMutation.isPending ? 'Deleting...' : 'Delete'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

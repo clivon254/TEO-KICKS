@@ -39,8 +39,7 @@ const roleSchema = new mongoose.Schema({
 
 
 // Index for better query performance
-roleSchema.index({ name: 1 })
-
+// Note: name index is automatically created due to unique: true
 roleSchema.index({ isActive: 1 })
 
 

@@ -7,26 +7,25 @@ import { generateUniqueSlug } from "../utils/slugGenerator.js"
 // @access  Private (Admin)
 export const createTag = async (req, res, next) => {
     try {
-        const { name, description, color, icon, type, sortOrder } = req.body
+        const { name, description, isActive = true } = req.body
 
         if (!name) {
-            return next(errorHandler(400, "Tag name is required"))
+            return next(errorHandler(400, 'Tag name is required'))
         }
 
-        // Generate unique slug
-        const slug = await generateUniqueSlug(name, async (slug) => {
-            const existingTag = await Tag.findOne({ slug })
-            return !!existingTag
-        })
+        // Check if tag already exists
+        const existingTag = await Tag.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } })
+        if (existingTag) {
+            return next(errorHandler(400, 'Tag with this name already exists'))
+        }
+
+        const slug = await generateUniqueSlug(name, (slug) => Tag.findOne({ slug }))
 
         const tag = new Tag({
             name,
             slug,
             description,
-            color,
-            icon,
-            type,
-            sortOrder,
+            isActive,
             createdBy: req.user.userId
         })
 
@@ -34,26 +33,19 @@ export const createTag = async (req, res, next) => {
 
         res.status(201).json({
             success: true,
-            message: "Tag created successfully",
+            message: 'Tag created successfully',
             data: {
-                tag: {
-                    id: tag._id,
-                    name: tag.name,
-                    slug: tag.slug,
-                    description: tag.description,
-                    color: tag.color,
-                    icon: tag.icon,
-                    type: tag.type,
-                    sortOrder: tag.sortOrder,
-                    isActive: tag.isActive,
-                    createdAt: tag.createdAt
-                }
+                id: tag._id,
+                name: tag.name,
+                slug: tag.slug,
+                description: tag.description,
+                isActive: tag.isActive,
+                createdAt: tag.createdAt,
+                updatedAt: tag.updatedAt
             }
         })
-
     } catch (error) {
-        console.error('Create tag error:', error)
-        next(errorHandler(500, "Server error while creating tag"))
+        next(error)
     }
 }
 
@@ -62,7 +54,7 @@ export const createTag = async (req, res, next) => {
 // @access  Public
 export const getAllTags = async (req, res, next) => {
     try {
-        const { page = 1, limit = 10, search, isActive, type } = req.query
+        const { page = 1, limit = 10, search, isActive } = req.query
 
         const query = {}
 
@@ -76,15 +68,10 @@ export const getAllTags = async (req, res, next) => {
             query.isActive = isActive === 'true'
         }
 
-        // Filter by type
-        if (type) {
-            query.type = type
-        }
-
         const options = {
             page: parseInt(page),
             limit: parseInt(limit),
-            sort: { sortOrder: 1, name: 1 }
+            sort: { name: 1 }
         }
 
         const tags = await Tag.find(query)
@@ -147,7 +134,7 @@ export const getTagById = async (req, res, next) => {
 export const updateTag = async (req, res, next) => {
     try {
         const { tagId } = req.params
-        const { name, description, color, icon, type, sortOrder, isActive } = req.body
+        const { name, description, isActive } = req.body
 
         const tag = await Tag.findById(tagId)
 
@@ -170,10 +157,7 @@ export const updateTag = async (req, res, next) => {
         // Update fields
         if (name) tag.name = name
         if (description !== undefined) tag.description = description
-        if (color !== undefined) tag.color = color
-        if (icon !== undefined) tag.icon = icon
-        if (type !== undefined) tag.type = type
-        if (sortOrder !== undefined) tag.sortOrder = sortOrder
+
         if (isActive !== undefined) tag.isActive = isActive
 
         await tag.save()
@@ -187,10 +171,9 @@ export const updateTag = async (req, res, next) => {
                     name: tag.name,
                     slug: tag.slug,
                     description: tag.description,
-                    color: tag.color,
-                    icon: tag.icon,
-                    type: tag.type,
-                    sortOrder: tag.sortOrder,
+
+
+
                     isActive: tag.isActive,
                     updatedAt: tag.updatedAt
                 }
@@ -229,26 +212,11 @@ export const deleteTag = async (req, res, next) => {
     }
 }
 
-// @desc    Get tags by type
+// @desc    Get tags by type (DEPRECATED - type field removed)
 // @route   GET /api/tags/type/:type
 // @access  Public
 export const getTagsByType = async (req, res, next) => {
-    try {
-        const { type } = req.params
-
-        const tags = await Tag.getByType(type)
-
-        res.status(200).json({
-            success: true,
-            data: {
-                tags
-            }
-        })
-
-    } catch (error) {
-        console.error('Get tags by type error:', error)
-        next(errorHandler(500, "Server error while fetching tags by type"))
-    }
+    return next(errorHandler(400, "Tags by type is no longer supported - type field has been removed"))
 }
 
 // @desc    Get popular tags
@@ -256,9 +224,9 @@ export const getTagsByType = async (req, res, next) => {
 // @access  Public
 export const getPopularTags = async (req, res, next) => {
     try {
-        const { limit = 10, type } = req.query
+        const { limit = 10 } = req.query
 
-        const tags = await Tag.getPopular(parseInt(limit), type)
+        const tags = await Tag.getPopular(parseInt(limit))
 
         res.status(200).json({
             success: true,
@@ -298,7 +266,7 @@ export const getTagsWithProducts = async (req, res, next) => {
 // @access  Private (Admin)
 export const findOrCreateTag = async (req, res, next) => {
     try {
-        const { name, description, color, icon, type } = req.body
+        const { name, description } = req.body
 
         if (!name) {
             return next(errorHandler(400, "Tag name is required"))
@@ -307,9 +275,6 @@ export const findOrCreateTag = async (req, res, next) => {
         const tagData = {
             name,
             description,
-            color,
-            icon,
-            type,
             createdBy: req.user.userId
         }
 
@@ -324,9 +289,6 @@ export const findOrCreateTag = async (req, res, next) => {
                     name: tag.name,
                     slug: tag.slug,
                     description: tag.description,
-                    color: tag.color,
-                    icon: tag.icon,
-                    type: tag.type,
                     isActive: tag.isActive,
                     isNew: tag.isNew
                 }

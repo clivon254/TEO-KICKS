@@ -7,7 +7,7 @@ import { generateUniqueSlug } from "../utils/slugGenerator.js"
 // @access  Private (Admin)
 export const createCollection = async (req, res, next) => {
     try {
-        const { name, description, type, products, features, sortOrder } = req.body
+        const { name, description, isActive } = req.body
 
         if (!name) {
             return next(errorHandler(400, "Collection name is required"))
@@ -23,10 +23,7 @@ export const createCollection = async (req, res, next) => {
             name,
             slug,
             description,
-            type,
-            products,
-            features,
-            sortOrder,
+            isActive: isActive !== undefined ? isActive : true,
             createdBy: req.user.userId
         })
 
@@ -41,10 +38,6 @@ export const createCollection = async (req, res, next) => {
                     name: collection.name,
                     slug: collection.slug,
                     description: collection.description,
-                    type: collection.type,
-                    products: collection.products,
-                    features: collection.features,
-                    sortOrder: collection.sortOrder,
                     isActive: collection.isActive,
                     createdAt: collection.createdAt
                 }
@@ -62,7 +55,7 @@ export const createCollection = async (req, res, next) => {
 // @access  Public
 export const getAllCollections = async (req, res, next) => {
     try {
-        const { page = 1, limit = 10, search, isActive, type } = req.query
+        const { page = 1, limit = 10, search, isActive } = req.query
 
         const query = {}
 
@@ -76,19 +69,13 @@ export const getAllCollections = async (req, res, next) => {
             query.isActive = isActive === 'true'
         }
 
-        // Filter by type
-        if (type) {
-            query.type = type
-        }
-
         const options = {
             page: parseInt(page),
             limit: parseInt(limit),
-            sort: { sortOrder: 1, name: 1 }
+            sort: { name: 1 }
         }
 
         const collections = await Collection.find(query)
-            .populate('products', 'title slug images')
             .sort(options.sort)
             .limit(options.limit * 1)
             .skip((options.page - 1) * options.limit)
@@ -149,7 +136,7 @@ export const getCollectionById = async (req, res, next) => {
 export const updateCollection = async (req, res, next) => {
     try {
         const { collectionId } = req.params
-        const { name, description, type, products, features, sortOrder, isActive } = req.body
+        const { name, description, isActive } = req.body
 
         const collection = await Collection.findById(collectionId)
 
@@ -172,10 +159,6 @@ export const updateCollection = async (req, res, next) => {
         // Update fields
         if (name) collection.name = name
         if (description !== undefined) collection.description = description
-        if (type !== undefined) collection.type = type
-        if (products !== undefined) collection.products = products
-        if (features !== undefined) collection.features = features
-        if (sortOrder !== undefined) collection.sortOrder = sortOrder
         if (isActive !== undefined) collection.isActive = isActive
 
         await collection.save()
@@ -189,10 +172,6 @@ export const updateCollection = async (req, res, next) => {
                     name: collection.name,
                     slug: collection.slug,
                     description: collection.description,
-                    type: collection.type,
-                    products: collection.products,
-                    features: collection.features,
-                    sortOrder: collection.sortOrder,
                     isActive: collection.isActive,
                     updatedAt: collection.updatedAt
                 }
@@ -231,61 +210,18 @@ export const deleteCollection = async (req, res, next) => {
     }
 }
 
-// @desc    Add product to collection
+// @desc    Add product to collection (DEPRECATED - products field removed)
 // @route   POST /api/collections/:collectionId/products
 // @access  Private (Admin)
 export const addProductToCollection = async (req, res, next) => {
-    try {
-        const { collectionId } = req.params
-        const { productId } = req.body
-
-        if (!productId) {
-            return next(errorHandler(400, "Product ID is required"))
-        }
-
-        const collection = await Collection.findById(collectionId)
-
-        if (!collection) {
-            return next(errorHandler(404, "Collection not found"))
-        }
-
-        await collection.addProduct(productId)
-
-        res.status(200).json({
-            success: true,
-            message: "Product added to collection successfully"
-        })
-
-    } catch (error) {
-        console.error('Add product to collection error:', error)
-        next(errorHandler(500, "Server error while adding product to collection"))
-    }
+    return next(errorHandler(400, "Adding products to collections is no longer supported - products field has been removed"))
 }
 
-// @desc    Remove product from collection
+// @desc    Remove product from collection (DEPRECATED - products field removed)
 // @route   DELETE /api/collections/:collectionId/products/:productId
 // @access  Private (Admin)
 export const removeProductFromCollection = async (req, res, next) => {
-    try {
-        const { collectionId, productId } = req.params
-
-        const collection = await Collection.findById(collectionId)
-
-        if (!collection) {
-            return next(errorHandler(404, "Collection not found"))
-        }
-
-        await collection.removeProduct(productId)
-
-        res.status(200).json({
-            success: true,
-            message: "Product removed from collection successfully"
-        })
-
-    } catch (error) {
-        console.error('Remove product from collection error:', error)
-        next(errorHandler(500, "Server error while removing product from collection"))
-    }
+    return next(errorHandler(400, "Removing products from collections is no longer supported - products field has been removed"))
 }
 
 // @desc    Get collections with product count

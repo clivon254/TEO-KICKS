@@ -55,13 +55,13 @@ const Sidebar = ({ isSidebarOpen = false, toggleSidebar = () => {} }) => {
     return (
         <>
             {/* Overlay for mobile */}
-            <div
-                className={`fixed inset-0 bg-black/10 backdrop-blur-sm z-40 transition-opacity duration-300 md:hidden ${
+                <div 
+                className={`fixed inset-0 bg-black/10 backdrop-blur-sm z-40 transition-opacity duration-300 lg:hidden ${
                     isSidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                 }`}
-                onClick={toggleSidebar}
-            />
-            
+                    onClick={toggleSidebar}
+                />
+
             {/* Sidebar */}
             <aside
                 className={`
@@ -69,20 +69,20 @@ const Sidebar = ({ isSidebarOpen = false, toggleSidebar = () => {} }) => {
                     transform transition-transform duration-300
                     flex flex-col
                     ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-                    md:static md:translate-x-0 md:w-[25%] md:max-w-56 md:h-full md:shadow-none md:border-none
+                    lg:static lg:translate-x-0 lg:w-[25%] lg:max-w-56 lg:h-full lg:shadow-none lg:border-r-4 lg:bg-light
                     overflow-hidden
                 `}
                 style={{ minWidth: "180px", maxWidth: "280px" }}
             >
                 {/* Close button for mobile */}
-                <div className="flex items-center justify-end md:hidden p-4">
-                    <button
-                        onClick={toggleSidebar}
+                <div className="flex items-center justify-end lg:hidden p-4">
+                            <button
+                                onClick={toggleSidebar}
                         className="text-red-600 hover:bg-red-50 rounded-lg p-1 transition"
                         aria-label="Close sidebar"
-                    >
+                            >
                         <FiX className="h-7 w-7" />
-                    </button>
+                            </button>
                 </div>
 
                 {/* Friendly heading */}
@@ -92,54 +92,8 @@ const Sidebar = ({ isSidebarOpen = false, toggleSidebar = () => {} }) => {
                 </div>
 
                 {/* Main navigation area - scrollable */}
-                <nav className="flex flex-col gap-1 px-3 pb-20 flex-1 overflow-y-auto">
-                    {navigation.map((item) => {
-                        const Icon = item.icon
-                        return (
-                            <NavLink
-                                key={item.name}
-                                to={item.href}
-                                onClick={() => {
-                                    // Close sidebar on mobile when navigating
-                                    if (window.innerWidth < 768) {
-                                        toggleSidebar()
-                                    }
-                                }}
-                                className={({ isActive }) =>
-                                    `flex items-center gap-3 px-3 py-2 rounded-lg font-small text-xs transition ${
-                                        isActive
-                                            ? "bg-secondary-button text-primary"
-                                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                                    }`
-                                }
-                            >
-                                <Icon className="h-5 w-5" />
-                                {item.name}
-                            </NavLink>
-                        )
-                    })}
-
-                    {/* Classification Section */}
-                    <div className="mt-2">
-                        <button
-                            onClick={toggleClassification}
-                            className="flex items-center justify-between w-full px-3 py-2 rounded-lg font-small text-xs transition text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                        >
-                            <div className="flex items-center gap-3">
-                                <FiLayers className="h-5 w-5" />
-                                Classification
-                            </div>
-                            {isClassificationOpen ? (
-                                <FiChevronDown className="h-4 w-4" />
-                            ) : (
-                                <FiChevronRight className="h-4 w-4" />
-                            )}
-                        </button>
-
-                        {/* Classification Sub-items */}
-                        {isClassificationOpen && (
-                            <div className="ml-6 mt-1 space-y-1">
-                                {classificationItems.map((item) => {
+                <nav className="flex flex-col gap-1 px-3 pb-32 flex-1 overflow-y-auto">
+                                {navigation.map((item) => {
                                     const Icon = item.icon
                                     return (
                                         <NavLink
@@ -147,54 +101,100 @@ const Sidebar = ({ isSidebarOpen = false, toggleSidebar = () => {} }) => {
                                             to={item.href}
                                             onClick={() => {
                                                 // Close sidebar on mobile when navigating
-                                                if (window.innerWidth < 768) {
+                                    if (window.innerWidth < 1024) {
                                                     toggleSidebar()
                                                 }
                                             }}
                                             className={({ isActive }) =>
-                                                `flex items-center gap-3 px-3 py-2 rounded-lg font-small text-xs transition ${
+                                    `flex items-center gap-3 px-3 py-2 rounded-lg font-small text-xs transition ${
                                                     isActive
+                                            ? "bg-secondary-button text-primary"
+                                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                    }`
+                                }
+                            >
+                                <Icon className="h-5 w-5" />
+                                            {item.name}
+                                        </NavLink>
+                                    )
+                                })}
+
+                                {/* Classification Section */}
+                    <div className="mt-2">
+                                    <button
+                                        onClick={toggleClassification}
+                            className="flex items-center justify-between w-full px-3 py-2 rounded-lg font-small text-xs transition text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                    >
+                            <div className="flex items-center gap-3">
+                                <FiLayers className="h-5 w-5" />
+                                            Classification
+                                        </div>
+                                        {isClassificationOpen ? (
+                                <FiChevronDown className="h-4 w-4" />
+                                        ) : (
+                                <FiChevronRight className="h-4 w-4" />
+                                        )}
+                                    </button>
+
+                                    {/* Classification Sub-items */}
+                                    {isClassificationOpen && (
+                                        <div className="ml-6 mt-1 space-y-1">
+                                            {classificationItems.map((item) => {
+                                                const Icon = item.icon
+                                                return (
+                                                    <NavLink
+                                                        key={item.name}
+                                                        to={item.href}
+                                                        onClick={() => {
+                                                            // Close sidebar on mobile when navigating
+                                                if (window.innerWidth < 1024) {
+                                                                toggleSidebar()
+                                                            }
+                                                        }}
+                                                        className={({ isActive }) =>
+                                                `flex items-center gap-3 px-3 py-2 rounded-lg font-small text-xs transition ${
+                                                                isActive
                                                         ? "bg-secondary-button text-primary"
                                                         : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                                 }`
                                             }
                                         >
                                             <Icon className="h-4 w-4" />
-                                            {item.name}
-                                        </NavLink>
-                                    )
-                                })}
-                            </div>
-                        )}
-                    </div>
-                </nav>
+                                                        {item.name}
+                                                    </NavLink>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </nav>
 
                 {/* Bottom section - absolutely positioned */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
-                    <div className="space-y-2">
-                        {/* Settings button */}
-                        <NavLink
-                            to="/settings"
-                            onClick={() => {
-                                // Close sidebar on mobile when navigating
-                                if (window.innerWidth < 768) {
-                                    toggleSidebar()
-                                }
-                            }}
+                        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
+                            <div className="space-y-2">
+                                {/* Settings button */}
+                                <NavLink
+                                    to="/settings"
+                                    onClick={() => {
+                                        // Close sidebar on mobile when navigating
+                                if (window.innerWidth < 1024) {
+                                            toggleSidebar()
+                                        }
+                                    }}
                             className="flex items-center gap-2 w-full px-3 py-2 rounded-lg font-medium text-sm text-gray-700 hover:bg-gray-50 transition"
-                        >
+                                >
                             <FiSettings className="h-5 w-5" />
-                            Settings
-                        </NavLink>
-                        
-                        {/* Logout button */}
-                        <button
-                            onClick={handleLogout}
+                                    Settings
+                                </NavLink>
+                                
+                                {/* Logout button */}
+                                <button
+                                    onClick={handleLogout}
                             className="flex items-center gap-2 w-full px-3 py-2 rounded-lg font-medium text-sm text-red-600 hover:bg-red-50 transition"
-                        >
+                                >
                             <FiLogOut className="h-5 w-5" />
-                            Logout
-                        </button>
+                                    Logout
+                                </button>
                     </div>
                 </div>
             </aside>

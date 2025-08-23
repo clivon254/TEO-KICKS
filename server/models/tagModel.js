@@ -25,30 +25,10 @@ const tagSchema = new mongoose.Schema({
         trim: true 
     },
 
-    // Tag color for UI display
-    color: { 
-        type: String,
-        default: "#3B82F6" // Default blue color
-    },
-
-    // Tag icon (optional)
-    icon: { 
-        type: String 
-    },
-
-    // Display settings
+    // Active status
     isActive: { 
         type: Boolean, 
         default: true 
-    },
-
-  
-
-    // Tag type (e.g., "product", "blog", "general")
-    type: { 
-        type: String, 
-        enum: ["product", "blog", "general"],
-        default: "product"
     },
 
     // Created by
@@ -69,8 +49,6 @@ const tagSchema = new mongoose.Schema({
 // Indexes for better query performance
 // Note: slug index is automatically created due to unique: true
 tagSchema.index({ isActive: 1 })
-tagSchema.index({ sortOrder: 1 })
-tagSchema.index({ type: 1 })
 
 
 
@@ -99,21 +77,7 @@ tagSchema.methods.getProducts = function() {
 // Static method to get active tags
 tagSchema.statics.getActive = function() {
 
-    return this.find({ isActive: true }).sort({ sortOrder: 1, name: 1 })
-
-}
-
-
-
-
-
-// Static method to get tags by type
-tagSchema.statics.getByType = function(type) {
-
-    return this.find({ 
-        isActive: true, 
-        type: type 
-    }).sort({ sortOrder: 1, name: 1 })
+    return this.find({ isActive: true }).sort({ name: 1 })
 
 }
 
@@ -144,7 +108,7 @@ tagSchema.statics.getWithProductCount = function() {
             }
         },
         {
-            $sort: { sortOrder: 1, name: 1 }
+            $sort: { name: 1 }
         }
     ])
 
@@ -155,7 +119,7 @@ tagSchema.statics.getWithProductCount = function() {
 
 
 // Static method to get popular tags (by product count)
-tagSchema.statics.getPopular = function(limit = 10, type = "product") {
+tagSchema.statics.getPopular = function(limit = 10) {
 
     return this.aggregate([
         {
@@ -174,7 +138,6 @@ tagSchema.statics.getPopular = function(limit = 10, type = "product") {
         {
             $match: {
                 isActive: true,
-                type: type,
                 productCount: { $gt: 0 }
             }
         },

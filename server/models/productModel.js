@@ -223,7 +223,7 @@ productSchema.index({ categories: 1 })
 productSchema.index({ collections: 1 })
 productSchema.index({ brand: 1 })
 productSchema.index({ tags: 1 })
-productSchema.index({ 'skus.skuCode': 1 })
+// Note: skuCode index is automatically created due to unique: true in skuSchema
 productSchema.index({ createdAt: -1 })
 
 

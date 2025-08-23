@@ -7,26 +7,25 @@ import { generateUniqueSlug } from "../utils/slugGenerator.js"
 // @access  Private (Admin)
 export const createBrand = async (req, res, next) => {
     try {
-        const { name, description, logo, website, features, sortOrder } = req.body
+        const { name, description, isActive = true } = req.body
 
         if (!name) {
-            return next(errorHandler(400, "Brand name is required"))
+            return next(errorHandler(400, 'Brand name is required'))
         }
 
-        // Generate unique slug
-        const slug = await generateUniqueSlug(name, async (slug) => {
-            const existingBrand = await Brand.findOne({ slug })
-            return !!existingBrand
-        })
+        // Check if brand already exists
+        const existingBrand = await Brand.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } })
+        if (existingBrand) {
+            return next(errorHandler(400, 'Brand with this name already exists'))
+        }
+
+        const slug = await generateUniqueSlug(name, (slug) => Brand.findOne({ slug }))
 
         const brand = new Brand({
             name,
             slug,
             description,
-            logo,
-            website,
-            features,
-            sortOrder,
+            isActive,
             createdBy: req.user.userId
         })
 
@@ -34,26 +33,21 @@ export const createBrand = async (req, res, next) => {
 
         res.status(201).json({
             success: true,
-            message: "Brand created successfully",
+            message: 'Brand created successfully',
             data: {
-                brand: {
-                    id: brand._id,
-                    name: brand.name,
-                    slug: brand.slug,
-                    description: brand.description,
-                    logo: brand.logo,
-                    website: brand.website,
-                    features: brand.features,
-                    sortOrder: brand.sortOrder,
-                    isActive: brand.isActive,
-                    createdAt: brand.createdAt
-                }
+                id: brand._id,
+                name: brand.name,
+                slug: brand.slug,
+                description: brand.description,
+                isActive: brand.isActive,
+                createdAt: brand.createdAt,
+                updatedAt: brand.updatedAt
             }
         })
 
     } catch (error) {
         console.error('Create brand error:', error)
-        next(errorHandler(500, "Server error while creating brand"))
+        next(errorHandler(500, 'Server error while creating brand'))
     }
 }
 
@@ -142,7 +136,7 @@ export const getBrandById = async (req, res, next) => {
 export const updateBrand = async (req, res, next) => {
     try {
         const { brandId } = req.params
-        const { name, description, logo, website, features, sortOrder, isActive } = req.body
+        const { name, description, isActive } = req.body
 
         const brand = await Brand.findById(brandId)
 

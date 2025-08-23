@@ -25,39 +25,11 @@ const collectionSchema = new mongoose.Schema({
         trim: true 
     },
 
-    // Sort order for display
-    sortOrder: { 
-        type: Number, 
-        default: 0 
-    },
-
-    // Collection type
-    type: { 
-        type: String, 
-        enum: ["manual", "automatic"],
-        default: "manual"
-    },
-
-
-
-    // Manual product selection
-    products: [{ 
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Product'
-    }],
-
     // Display settings
     isActive: { 
         type: Boolean, 
         default: true 
     },
-
- 
-    // Collection features
-    features: [{ 
-        type: String,
-        trim: true
-    }],
 
     
     // Created by
@@ -78,8 +50,6 @@ const collectionSchema = new mongoose.Schema({
 // Indexes for better query performance
 // Note: slug index is automatically created due to unique: true
 collectionSchema.index({ isActive: 1 })
-collectionSchema.index({ sortOrder: 1 })
-collectionSchema.index({ type: 1 })
 
 
 
@@ -91,101 +61,19 @@ collectionSchema.index({ type: 1 })
 
 
 
-// Instance method to get products in collection
-collectionSchema.methods.getProducts = function() {
-
-    if (this.type === "manual") {
-
-        return mongoose.model('Product').find({
-            _id: { $in: this.products },
-            status: "active"
-        }).sort({ createdAt: -1 })
-
-    } else {
-
-        // Build query based on conditions
-        const query = { status: "active" }
-        const conditions = []
-
-        this.conditions.forEach(condition => {
-
-            let fieldQuery = {}
-
-            switch (condition.operator) {
-
-                case "equals":
-                    fieldQuery[condition.field] = condition.value
-                    break
-
-                case "contains":
-                    fieldQuery[condition.field] = { $regex: condition.value, $options: 'i' }
-                    break
-
-                case "starts_with":
-                    fieldQuery[condition.field] = { $regex: `^${condition.value}`, $options: 'i' }
-                    break
-
-                case "ends_with":
-                    fieldQuery[condition.field] = { $regex: `${condition.value}$`, $options: 'i' }
-                    break
-
-                case "greater_than":
-                    fieldQuery[condition.field] = { $gt: parseFloat(condition.value) }
-                    break
-
-                case "less_than":
-                    fieldQuery[condition.field] = { $lt: parseFloat(condition.value) }
-                    break
-
-            }
-
-            conditions.push(fieldQuery)
-
-        })
-
-        if (conditions.length > 0) {
-
-            query.$and = conditions
-
-        }
-
-        return mongoose.model('Product').find(query).sort({ createdAt: -1 })
-
-    }
-
-}
 
 
 
 
 
-// Instance method to add product to collection
-collectionSchema.methods.addProduct = function(productId) {
-
-    if (!this.products.includes(productId)) {
-
-        this.products.push(productId)
-
-        return this.save()
-
-    }
-
-    return Promise.resolve(this)
-
-}
 
 
 
 
 
-// Instance method to remove product from collection
-collectionSchema.methods.removeProduct = function(productId) {
 
-    this.products = this.products.filter(id => id.toString() !== productId.toString())
 
-    return this.save()
 
-}
 
 
 
@@ -194,7 +82,7 @@ collectionSchema.methods.removeProduct = function(productId) {
 // Static method to get active collections
 collectionSchema.statics.getActive = function() {
 
-    return this.find({ isActive: true }).sort({ sortOrder: 1, name: 1 })
+    return this.find({ isActive: true }).sort({ name: 1 })
 
 }
 
@@ -207,25 +95,12 @@ collectionSchema.statics.getWithProductCount = function() {
 
     return this.aggregate([
         {
-            $lookup: {
-                from: 'products',
-                localField: 'products',
-                foreignField: '_id',
-                as: 'collectionProducts'
-            }
-        },
-        {
             $addFields: {
-                productCount: { $size: '$collectionProducts' }
+                productCount: 0
             }
         },
         {
-            $project: {
-                collectionProducts: 0
-            }
-        },
-        {
-            $sort: { sortOrder: 1, name: 1 }
+            $sort: { name: 1 }
         }
     ])
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FiPlus, FiLoader, FiX } from 'react-icons/fi'
+import { FiPlus, FiLoader } from 'react-icons/fi'
 import RichTextEditor from '../../../components/common/RichTextEditor'
 import ToggleSwitch from '../../../components/common/ToggleSwitch'
 import { useCreateCollection } from '../../../hooks/useCollections'
@@ -14,13 +14,10 @@ const AddCollection = () => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        type: 'manual',
-        features: [],
         isActive: true
     })
 
     const [validationErrors, setValidationErrors] = useState({})
-    const [featureInput, setFeatureInput] = useState('')
 
     // Handle description change from RichTextEditor
     const handleDescriptionChange = (html) => {
@@ -46,39 +43,11 @@ const AddCollection = () => {
         }
     }
 
-    const addFeature = () => {
-        if (featureInput.trim()) {
-            setFormData(prev => ({
-                ...prev,
-                features: [...prev.features, featureInput.trim()]
-            }))
-            setFeatureInput('')
-        }
-    }
-
-    const removeFeature = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            features: prev.features.filter((_, i) => i !== index)
-        }))
-    }
-
-    const handleFeatureKeyPress = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault()
-            addFeature()
-        }
-    }
-
     const validateForm = () => {
         const errors = {}
 
         if (!formData.name.trim()) {
             errors.name = 'Collection name is required'
-        }
-
-        if (!formData.type) {
-            errors.type = 'Collection type is required'
         }
 
         setValidationErrors(errors)
@@ -146,72 +115,6 @@ const AddCollection = () => {
                             )}
                         </div>
 
-                        {/* Type */}
-                        <div>
-                            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
-                                Collection Type *
-                            </label>
-                            <select
-                                id="type"
-                                name="type"
-                                value={formData.type}
-                                onChange={handleInputChange}
-                                className={`input ${validationErrors.type ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                            >
-                                <option value="manual">Manual</option>
-                                <option value="automatic">Automatic</option>
-                            </select>
-                            {validationErrors.type && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.type}</p>
-                            )}
-                            <p className="mt-1 text-sm text-gray-500">
-                                Manual collections require you to add products manually. Automatic collections use rules to include products.
-                            </p>
-                        </div>
-
-                        {/* Features */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Features (Optional)
-                            </label>
-                            <div className="flex gap-2 mb-2">
-                                <input
-                                    type="text"
-                                    value={featureInput}
-                                    onChange={(e) => setFeatureInput(e.target.value)}
-                                    onKeyPress={handleFeatureKeyPress}
-                                    className="input flex-1"
-                                    placeholder="Add a feature and press Enter"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={addFeature}
-                                    className="btn-outline px-4"
-                                >
-                                    Add
-                                </button>
-                            </div>
-                            {formData.features.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                    {formData.features.map((feature, index) => (
-                                        <span
-                                            key={index}
-                                            className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
-                                        >
-                                            {feature}
-                                            <button
-                                                type="button"
-                                                onClick={() => removeFeature(index)}
-                                                className="ml-2 text-blue-600 hover:text-blue-800"
-                                            >
-                                                <FiX className="h-3 w-3" />
-                                            </button>
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
                         {/* Description - Rich Text Editor */}
                         <div>
                             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
@@ -233,7 +136,7 @@ const AddCollection = () => {
                             isActive={formData.isActive}
                             onToggle={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}
                             disabled={createCollectionMutation.isPending}
-                            description="Active collections will be visible to customers"
+                            description="Active collections will be available for use in products"
                         />
 
                         {/* Form Actions */}
