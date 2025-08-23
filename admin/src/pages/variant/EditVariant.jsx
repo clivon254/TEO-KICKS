@@ -1,36 +1,31 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FiEdit, FiLoader } from 'react-icons/fi'
-import RichTextEditor from '../../../components/common/RichTextEditor'
-import ToggleSwitch from '../../../components/common/ToggleSwitch'
-import { useGetCollectionById, useUpdateCollection } from '../../../hooks/useCollections'
+import RichTextEditor from '../../components/common/RichTextEditor'
+import ToggleSwitch from '../../components/common/ToggleSwitch'
+import { useGetVariantById, useUpdateVariant } from '../../hooks/useVariants'
 import toast from 'react-hot-toast'
 
-const EditCollection = () => {
-    const navigate = useNavigate()
+
+const EditVariant = () => {
     const { id } = useParams()
-    const updateCollectionMutation = useUpdateCollection()
-    const { data: collectionData, isLoading: isLoadingCollection } = useGetCollectionById(id)
+    const navigate = useNavigate()
+
+    const { data, isLoading, isError } = useGetVariantById(id)
+    const updateVariantMutation = useUpdateVariant()
 
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        isActive: true
+        displayType: 'dropdown',
+        options: [],
+        colorHex: '',
+        measurement: '',
+        status: 'active'
     })
 
     const [validationErrors, setValidationErrors] = useState({})
-
-    // Load collection data when available
-    useEffect(() => {
-        if (collectionData?.data?.data?.collection) {
-            const collection = collectionData.data.data.collection
-            setFormData({
-                name: collection.name || '',
-                description: collection.description || '',
-                isActive: collection.isActive !== undefined ? collection.isActive : true
-            })
-        }
-    }, [collectionData])
+    const [optionInput, setOptionInput] = useState('')
 
     // Handle description change from RichTextEditor
     const handleDescriptionChange = (html) => {
@@ -39,6 +34,51 @@ const EditCollection = () => {
             setValidationErrors(prev => ({ ...prev, description: '' }))
         }
     }
+
+    // Handle options management
+    const addOption = () => {
+        if (optionInput.trim()) {
+            setFormData(prev => ({
+                ...prev,
+                options: [...prev.options, {
+                    value: optionInput.trim(),
+                    isActive: true,
+                    sortOrder: prev.options.length
+                }]
+            }))
+            setOptionInput('')
+        }
+    }
+
+    const removeOption = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            options: prev.options.filter((_, i) => i !== index)
+        }))
+    }
+
+    const handleOptionKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            addOption()
+        }
+    }
+
+    // Populate form when variant data is loaded
+    useEffect(() => {
+        if (data?.data?.data?.variant) {
+            const variant = data.data.data.variant
+            setFormData({
+                name: variant.name || '',
+                description: variant.description || '',
+                displayType: variant.displayType || 'dropdown',
+                options: variant.options || [],
+                colorHex: variant.colorHex || '',
+                measurement: variant.measurement || '',
+                status: variant.isActive ? 'active' : 'inactive'
+            })
+        }
+    }, [data])
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target
@@ -56,53 +96,44 @@ const EditCollection = () => {
         }
     }
 
-    const validateForm = () => {
-        const errors = {}
-
-        if (!formData.name.trim()) {
-            errors.name = 'Collection name is required'
-        }
-
-        setValidationErrors(errors)
-        return Object.keys(errors).length === 0
-    }
-
     const handleSubmit = async (e) => {
         e.preventDefault()
 
-        if (!validateForm()) {
-            toast.error('Please fix the validation errors')
-            return
-        }
-
         try {
-            const collectionData = {
-                ...formData,
-                description: formData.description || ''
+            // Prepare payload
+            const payload = {
+                name: formData.name.trim(),
+                description: formData.description.trim() || undefined,
+                options: formData.options,
+                displayType: formData.displayType,
+                colorHex: formData.colorHex || undefined,
+                measurement: formData.measurement || undefined,
+                isActive: formData.status === 'active'
             }
 
-            await updateCollectionMutation.mutateAsync({ collectionId: id, ...collectionData })
-            toast.success('Collection updated successfully!')
-            navigate('/collections')
+            await updateVariantMutation.mutateAsync({ variantId: id, ...payload })
+            toast.success('Variant updated successfully!')
+            navigate('/variants')
         } catch (error) {
-            const errorMessage = error.response?.data?.message || 'Failed to update collection'
-            toast.error(errorMessage)
+            console.error('Error updating variant:', error)
 
-            // Handle validation errors from server
-            if (error.response?.data?.errors) {
-                setValidationErrors(error.response.data.errors)
+            if (error.response?.data?.message) {
+                toast.error(error.response.data.message)
+            } else if (error.message) {
+                toast.error(error.message)
+            } else {
+                toast.error('Failed to update variant. Please try again.')
             }
         }
     }
 
-    if (isLoadingCollection) {
+    if (isLoading) {
         return (
             <div className="min-h-screen bg-gray-50 py-8">
                 <div className="max-w-4xl mx-auto px-6">
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                        <div className="flex items-center justify-center">
+                        <div className="flex justify-center items-center h-32">
                             <FiLoader className="animate-spin h-8 w-8 text-primary" />
-                            <span className="ml-2 text-gray-600">Loading collection...</span>
                         </div>
                     </div>
                 </div>
@@ -110,15 +141,12 @@ const EditCollection = () => {
         )
     }
 
-    if (isLoadingCollection) {
+    if (isError) {
         return (
             <div className="min-h-screen bg-gray-50 py-8">
                 <div className="max-w-4xl mx-auto px-6">
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                        <div className="flex items-center justify-center">
-                            <FiLoader className="animate-spin h-8 w-8 text-primary" />
-                            <span className="ml-2 text-gray-600">Loading collection...</span>
-                        </div>
+                        <div className="text-center text-red-500">Error loading variant.</div>
                     </div>
                 </div>
             </div>
@@ -132,17 +160,17 @@ const EditCollection = () => {
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h1 className="title2">Edit Collection</h1>
-                            <p className="text-gray-600">Update collection details</p>
+                            <h1 className="title2">Edit Variant</h1>
+                            <p className="text-gray-600">Update variant details</p>
                         </div>
                     </div>
 
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Name */}
+                        {/* Variant Name */}
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                                Collection Name *
+                                Variant Name <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
@@ -151,7 +179,8 @@ const EditCollection = () => {
                                 value={formData.name}
                                 onChange={handleInputChange}
                                 className={`input ${validationErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                                placeholder="Enter collection name"
+                                placeholder="Enter variant name"
+                                disabled={updateVariantMutation.isPending}
                             />
                             {validationErrors.name && (
                                 <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
@@ -163,23 +192,31 @@ const EditCollection = () => {
                             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
                                 Description
                             </label>
+
                             <RichTextEditor
                                 content={formData.description}
                                 onChange={handleDescriptionChange}
-                                placeholder="Enter collection description..."
-                                className={validationErrors.description ? 'border-red-500 focus-within:border-red-500 focus-within:ring-red-500/20' : ''}
+                                placeholder="Enter variant description..."
+                                disabled={updateVariantMutation.isPending}
+                                className={validationErrors.description ? 'border-red-500' : ''}
+                                minHeight="150px"
                             />
+
                             {validationErrors.description && (
                                 <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
                             )}
+
+                            <p className="mt-1 text-xs text-gray-500">
+                                {formData.description.length}/500 characters
+                            </p>
                         </div>
 
-                        {/* Status */}
+                        {/* Status (Toggle) */}
                         <ToggleSwitch
-                            isActive={formData.isActive}
-                            onToggle={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}
-                            disabled={updateCollectionMutation.isPending}
-                            description="Active collections will be available for use in products"
+                            isActive={formData.status === 'active'}
+                            onToggle={() => setFormData(prev => ({ ...prev, status: prev.status === 'active' ? 'inactive' : 'active' }))}
+                            disabled={updateVariantMutation.isPending}
+                            description="Active variants will be available for use in products"
                         />
 
                         {/* Form Actions */}
@@ -187,9 +224,9 @@ const EditCollection = () => {
                             <button
                                 type="submit"
                                 className="btn-primary inline-flex items-center"
-                                disabled={updateCollectionMutation.isPending}
+                                disabled={updateVariantMutation.isPending}
                             >
-                                {updateCollectionMutation.isPending ? (
+                                {updateVariantMutation.isPending ? (
                                     <>
                                         <FiLoader className="animate-spin mr-2 h-4 w-4" />
                                         Updating...
@@ -197,7 +234,7 @@ const EditCollection = () => {
                                 ) : (
                                     <>
                                         <FiEdit className="mr-2 h-4 w-4" />
-                                        Update Collection
+                                        Update Variant
                                     </>
                                 )}
                             </button>
@@ -209,4 +246,5 @@ const EditCollection = () => {
     )
 }
 
-export default EditCollection
+
+export default EditVariant

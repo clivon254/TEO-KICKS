@@ -99,5 +99,17 @@ export const categorySchema = yup.object().shape({
     description: yup.string()
         .max(500, 'Description must be less than 500 characters'),
     status: yup.string().oneOf(['active', 'inactive']).optional(),
-    
+
+})
+
+// Variant validation schema
+export const variantSchema = yup.object().shape({
+    name: yup.string()
+        .required('Variant name is required')
+        .min(2, 'Variant name must be at least 2 characters')
+        .max(100, 'Variant name must be less than 100 characters'),
+    description: yup.string()
+        .max(500, 'Description must be less than 500 characters'),
+    status: yup.string().oneOf(['active', 'inactive']).optional(),
+
 }) 

@@ -27,6 +27,7 @@ const Sidebar = ({ isSidebarOpen = false, toggleSidebar = () => {} }) => {
     const navigation = [
         { name: 'Dashboard', href: '/', icon: FiHome },
         { name: 'Products', href: '/products', icon: FiPackage },
+        { name: 'Variants', href: '/variants', icon: FiGrid },
         { name: 'Orders', href: '/orders', icon: FiShoppingBag },
         { name: 'Customers', href: '/customers', icon: FiUsers },
         { name: 'Inventory', href: '/inventory', icon: FiTruck },

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { FiArrowLeft, FiEdit, FiLoader, FiX } from 'react-icons/fi'
+import { FiEdit, FiLoader } from 'react-icons/fi'
 import RichTextEditor from '../../../components/common/RichTextEditor'
 import ToggleSwitch from '../../../components/common/ToggleSwitch'
 import { useGetBrandById, useUpdateBrand } from '../../../hooks/useBrands'
@@ -10,26 +10,24 @@ import toast from 'react-hot-toast'
 const EditBrand = () => {
     const { id } = useParams()
     const navigate = useNavigate()
-    
+
     const { data, isLoading, isError } = useGetBrandById(id)
     const updateBrandMutation = useUpdateBrand()
 
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        logo: '',
-        website: '',
-        features: [],
         isActive: true
     })
 
     const [validationErrors, setValidationErrors] = useState({})
-    const [featureInput, setFeatureInput] = useState('')
 
     // Handle description change from RichTextEditor
     const handleDescriptionChange = (html) => {
         setFormData(prev => ({ ...prev, description: html }))
-        if (validationErrors.description) setValidationErrors(prev => ({ ...prev, description: '' }))
+        if (validationErrors.description) {
+            setValidationErrors(prev => ({ ...prev, description: '' }))
+        }
     }
 
     // Populate form when brand data is loaded
@@ -39,10 +37,7 @@ const EditBrand = () => {
             setFormData({
                 name: brand.name || '',
                 description: brand.description || '',
-                logo: brand.logo || '',
-                website: brand.website || '',
-                features: brand.features || [],
-                isActive: brand.isActive ?? true
+                isActive: brand.isActive !== undefined ? brand.isActive : true
             })
         }
     }, [data])
@@ -53,30 +48,13 @@ const EditBrand = () => {
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }))
-        if (validationErrors[name]) setValidationErrors(prev => ({ ...prev, [name]: '' }))
-    }
 
-    const addFeature = () => {
-        if (featureInput.trim()) {
-            setFormData(prev => ({
+        // Clear validation error for this field
+        if (validationErrors[name]) {
+            setValidationErrors(prev => ({
                 ...prev,
-                features: [...prev.features, featureInput.trim()]
+                [name]: ''
             }))
-            setFeatureInput('')
-        }
-    }
-
-    const removeFeature = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            features: prev.features.filter((_, i) => i !== index)
-        }))
-    }
-
-    const handleFeatureKeyPress = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault()
-            addFeature()
         }
     }
 
@@ -87,25 +65,8 @@ const EditBrand = () => {
             errors.name = 'Brand name is required'
         }
 
-        if (formData.website && !isValidUrl(formData.website)) {
-            errors.website = 'Please enter a valid website URL'
-        }
-
-        if (formData.logo && !isValidUrl(formData.logo)) {
-            errors.logo = 'Please enter a valid logo URL'
-        }
-
         setValidationErrors(errors)
         return Object.keys(errors).length === 0
-    }
-
-    const isValidUrl = (string) => {
-        try {
-            new URL(string)
-            return true
-        } catch (_) {
-            return false
-        }
     }
 
     const handleSubmit = async (e) => {
@@ -129,7 +90,8 @@ const EditBrand = () => {
         } catch (error) {
             const errorMessage = error.response?.data?.message || 'Failed to update brand'
             toast.error(errorMessage)
-            
+
+            // Handle validation errors from server
             if (error.response?.data?.errors) {
                 setValidationErrors(error.response.data.errors)
             }
@@ -192,99 +154,6 @@ const EditBrand = () => {
                             />
                             {validationErrors.name && (
                                 <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
-                            )}
-                        </div>
-
-                        {/* Logo */}
-                        <div>
-                            <label htmlFor="logo" className="block text-sm font-medium text-gray-700 mb-2">
-                                Logo URL (Optional)
-                            </label>
-                            <input
-                                type="url"
-                                id="logo"
-                                name="logo"
-                                value={formData.logo}
-                                onChange={handleInputChange}
-                                className={`input ${validationErrors.logo ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                                placeholder="https://example.com/logo.png"
-                            />
-                            {validationErrors.logo && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.logo}</p>
-                            )}
-                            {formData.logo && (
-                                <div className="mt-2">
-                                    <img 
-                                        src={formData.logo} 
-                                        alt="Logo preview" 
-                                        className="h-16 w-16 object-cover rounded-lg border border-gray-200"
-                                        onError={(e) => {
-                                            e.target.style.display = 'none'
-                                        }}
-                                    />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Website */}
-                        <div>
-                            <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">
-                                Website URL (Optional)
-                            </label>
-                            <input
-                                type="url"
-                                id="website"
-                                name="website"
-                                value={formData.website}
-                                onChange={handleInputChange}
-                                className={`input ${validationErrors.website ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                                placeholder="https://example.com"
-                            />
-                            {validationErrors.website && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.website}</p>
-                            )}
-                        </div>
-
-                        {/* Features */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Features (Optional)
-                            </label>
-                            <div className="flex gap-2 mb-2">
-                                <input
-                                    type="text"
-                                    value={featureInput}
-                                    onChange={(e) => setFeatureInput(e.target.value)}
-                                    onKeyPress={handleFeatureKeyPress}
-                                    className="input flex-1"
-                                    placeholder="Add a feature and press Enter"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={addFeature}
-                                    className="btn-outline px-4"
-                                >
-                                    Add
-                                </button>
-                            </div>
-                            {formData.features.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                    {formData.features.map((feature, index) => (
-                                        <span
-                                            key={index}
-                                            className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
-                                        >
-                                            {feature}
-                                            <button
-                                                type="button"
-                                                onClick={() => removeFeature(index)}
-                                                className="ml-2 text-blue-600 hover:text-blue-800"
-                                            >
-                                                <FiX className="h-3 w-3" />
-                                            </button>
-                                        </span>
-                                    ))}
-                                </div>
                             )}
                         </div>
 

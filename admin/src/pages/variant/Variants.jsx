@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react'
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiGrid, FiAlertTriangle, FiX, FiList, FiLoader } from 'react-icons/fi'
-import { useGetCollections, useDeleteCollection } from '../../../hooks/useCollections'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import StatusBadge from '../../../components/common/StatusBadge'
-import Pagination from '../../../components/common/Pagination'
+import { useGetVariants, useDeleteVariant } from '../../hooks/useVariants'
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiGrid, FiAlertTriangle, FiX, FiList } from 'react-icons/fi'
+import Pagination from '../../components/common/Pagination'
 import toast from 'react-hot-toast'
+import StatusBadge from '../../components/common/StatusBadge'
 
 
-const Collections = () => {
+const Variants = () => {
     const [searchTerm, setSearchTerm] = useState('')
     const [debouncedSearch, setDebouncedSearch] = useState('')
     const [filterStatus, setFilterStatus] = useState('all')
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(5)
-    const [selectedCollections, setSelectedCollections] = useState([])
+    const [selectedVariants, setSelectedVariants] = useState([])
 
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(searchTerm), 300)
@@ -28,35 +28,42 @@ const Collections = () => {
     params.page = currentPage
     params.limit = itemsPerPage
 
-    const { data, isLoading } = useGetCollections(params)
-    const collections = data?.data?.data?.collections || []
+    const { data, isLoading } = useGetVariants(params)
+    const variants = data?.data?.data?.variants || []
     const pagination = data?.data?.data?.pagination || {}
-    const totalItems = pagination.totalCollections || pagination.totalItems || 0
+    const totalItems = pagination.totalVariants || pagination.totalItems || 0
     const totalPages = pagination.totalPages || Math.max(1, Math.ceil((totalItems || 0) / (itemsPerPage || 1)))
-    const [confirmDelete, setConfirmDelete] = useState({ open: false, collection: null })
+    const [confirmDelete, setConfirmDelete] = useState({ open: false, variant: null })
     const navigate = useNavigate()
-    const deleteCollectionMutation = useDeleteCollection()
+    const deleteVariant = useDeleteVariant()
 
-    // Handle collection selection
-    const handleSelectCollection = (collectionId) => {
-        setSelectedCollections(prev =>
-            prev.includes(collectionId)
-                ? prev.filter(id => id !== collectionId)
-                : [...prev, collectionId]
+    // Handle variant selection
+    const handleSelectVariant = (variantId) => {
+        setSelectedVariants(prev =>
+            prev.includes(variantId)
+                ? prev.filter(id => id !== variantId)
+                : [...prev, variantId]
         )
     }
 
     // Handle select all
     const handleSelectAll = () => {
-        if (selectedCollections.length === collections.length) {
-            setSelectedCollections([])
+        if (selectedVariants.length === variants.length) {
+            setSelectedVariants([])
         } else {
-            setSelectedCollections(collections.map(collection => collection._id || collection.id))
+            setSelectedVariants(variants.map(variant => variant._id || variant.id))
         }
     }
 
-    const handleEdit = (collection) => {
-        navigate(`/collections/${collection._id || collection.id}/edit`)
+    const handleEdit = (variant) => {
+        navigate(`/variants/${variant._id || variant.id}/edit`)
+    }
+
+    const handleDelete = async (variantId) => {
+        if (window.confirm('Are you sure you want to delete this variant?')) {
+            // TODO: Implement API call to delete variant
+            setSelectedVariants(prev => prev.filter(id => id !== variantId))
+        }
     }
 
     const clearSearch = () => {
@@ -73,8 +80,9 @@ const Collections = () => {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <input type="checkbox" className="rounded border-gray-300 text-primary focus:ring-primary" />
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Collection</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variant</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Options</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
@@ -83,14 +91,10 @@ const Collections = () => {
                         {Array.from({ length: 5 }).map((_, i) => (
                             <tr key={i}>
                                 <td className="px-6 py-4"><div className="h-4 w-4 bg-gray-200 rounded animate-pulse" /></td>
-                                <td className="px-6 py-4">
-                                    <div>
-                                        <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-1"></div>
-                                        <div className="h-3 w-24 bg-gray-200 rounded animate-pulse"></div>
-                                    </div>
-                                </td>
+                                <td className="px-6 py-4"><div className="h-4 w-40 bg-gray-200 rounded animate-pulse" /></td>
+                                <td className="px-6 py-4"><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></td>
                                 <td className="px-6 py-4"><div className="h-4 w-20 bg-gray-200 rounded animate-pulse" /></td>
-                                <td className="px-6 py-4"><div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse" /></td>
+                                <td className="px-6 py-4"><div className="h-4 w-16 bg-gray-200 rounded animate-pulse" /></td>
                                 <td className="px-6 py-4 text-right"><div className="h-8 w-24 bg-gray-200 rounded animate-pulse ml-auto" /></td>
                             </tr>
                         ))}
@@ -108,8 +112,8 @@ const Collections = () => {
                 {/* title */}
                 <div className="mb-4">
                     <div className="mb-4">
-                        <h1 className="title2">Collections</h1>
-                        <p className="text-gray-600">Manage your product collections</p>
+                        <h1 className="title2">Variants</h1>
+                        <p className="text-gray-600">Manage your product variants and options</p>
                     </div>
                 </div>
 
@@ -120,7 +124,7 @@ const Collections = () => {
                             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                             <input
                                 type="text"
-                                placeholder="Search collections..."
+                                placeholder="Search variants..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full pl-10 pr-9 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
@@ -139,11 +143,11 @@ const Collections = () => {
                     </div>
                     <div className="sm:w-auto">
                         <Link
-                            to="/collections/add"
+                            to="/variants/add"
                             className="btn-primary inline-flex items-center justify-center w-full sm:w-auto"
                         >
                             <FiPlus className="mr-2 h-4 w-4" />
-                            Add Collection
+                            Add Variant
                         </Link>
                     </div>
                 </div>
@@ -151,7 +155,7 @@ const Collections = () => {
                 {/* Product Count and Filters */}
                 <div className="flex items-center justify-between">
                     <div className="hidden lg:block">
-                        <p className="text-sm text-gray-600">Total {totalItems} collections</p>
+                        <p className="text-sm text-gray-600">Total {totalItems} variants</p>
                     </div>
                     <div className="flex gap-4">
                         {/* Status Filter */}
@@ -167,8 +171,6 @@ const Collections = () => {
                                 <option value="inactive">Inactive</option>
                             </select>
                         </div>
-
-
 
                         {/* Rows per page */}
                         <div className="relative">
@@ -186,21 +188,22 @@ const Collections = () => {
 
             </header>
 
-            {/* Collections Table */}
+            {/* Variants Table */}
             <div className="bg-light rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 {isLoading ? (
                     <LoadingSkeleton />
-                ) : collections.length === 0 ? (
+                ) : variants.length === 0 ? (
                     <div className="py-16 px-6 text-center">
-                        <div className="mx-auto h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-                            <FiGrid className="h-7 w-7 text-primary" />
-                        </div>
-                        <h3 className="mt-4 text-lg font-semibold text-gray-900">No collections yet</h3>
-                        <p className="mt-1 text-sm text-gray-500">Get started by creating your first collection.</p>
+                        <FiGrid className="mx-auto h-12 w-12 text-gray-400" />
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">No variants</h3>
+                        <p className="mt-1 text-sm text-gray-500">Get started by creating a new variant.</p>
                         <div className="mt-6">
-                            <Link to="/collections/add" className="btn-primary inline-flex items-center">
+                            <Link
+                                to="/variants/add"
+                                className="btn-primary inline-flex items-center"
+                            >
                                 <FiPlus className="mr-2 h-4 w-4" />
-                                Add Collection
+                                Add Variant
                             </Link>
                         </div>
                     </div>
@@ -208,86 +211,84 @@ const Collections = () => {
                     <>
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-light">
+                                <thead className="bg-gray-50">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedCollections.length === collections.length && collections.length > 0}
+                                                checked={selectedVariants.length === variants.length && variants.length > 0}
                                                 onChange={handleSelectAll}
                                                 className="rounded border-gray-300 text-primary focus:ring-primary"
                                             />
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Collection
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Products
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Status
-                                        </th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Actions
-                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variant</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Options</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {collections.map((collection) => {
-                                        return (
-                                            <tr key={collection.id} className="hover:bg-light">
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedCollections.includes(collection._id || collection.id)}
-                                                        onChange={() => handleSelectCollection(collection._id || collection.id)}
-                                                        className="rounded border-gray-300 text-primary focus:ring-primary"
-                                                    />
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div>
-                                                        <div className="text-sm font-medium text-gray-900">{collection.name}</div>
-                                                        <div className="text-sm text-gray-500">{collection.slug}</div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                        {collection.productCount || 0} products
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <StatusBadge status={collection.isActive ? 'active' : 'inactive'} />
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <div className="flex items-center justify-end space-x-2">
-                                                        <button
-                                                            onClick={() => handleEdit(collection)}
-                                                            className="text-primary hover:text-secondary p-1 rounded"
-                                                            title="Edit collection"
-                                                        >
-                                                            <FiEdit className="h-4 w-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setConfirmDelete({ open: true, collection })}
-                                                            className="text-red-600 hover:text-red-900 p-1 rounded"
-                                                            title="Delete collection"
-                                                        >
-                                                            <FiTrash2 className="h-4 w-4" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )
-                                    })}
+                                    {variants.map((variant) => (
+                                        <tr key={variant.id} className="hover:bg-light">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedVariants.includes(variant._id || variant.id)}
+                                                    onChange={() => handleSelectVariant(variant._id || variant.id)}
+                                                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                                                />
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div>
+                                                    <div className="text-sm font-medium text-gray-900">{variant.name}</div>
+                                                    {variant.description && (
+                                                        <div className="text-sm text-gray-500 truncate max-w-xs">{variant.description}</div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900">
+                                                    {variant.options?.length || 0} options
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className="text-sm text-gray-900 capitalize">
+                                                    {variant.displayType || 'dropdown'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <StatusBadge status={variant.isActive ? 'active' : 'inactive'} />
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <div className="flex items-center justify-end space-x-2">
+                                                    <button
+                                                        onClick={() => handleEdit(variant)}
+                                                        className="text-primary hover:text-secondary p-1 rounded"
+                                                        title="Edit variant"
+                                                    >
+                                                        <FiEdit className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setConfirmDelete({ open: true, variant })}
+                                                        className="text-red-600 hover:text-red-900 p-1 rounded"
+                                                        title="Delete variant"
+                                                    >
+                                                        <FiTrash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
 
                         {/* Selection Info */}
-                        {selectedCollections.length > 0 && (
+                        {selectedVariants.length > 0 && (
                             <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
                                 <p className="text-sm text-gray-600">
-                                    {selectedCollections.length} of {collections.length} selected
+                                    {selectedVariants.length} of {variants.length} selected
                                 </p>
                             </div>
                         )}
@@ -301,7 +302,7 @@ const Collections = () => {
                                     onPageChange={(p) => setCurrentPage(p)}
                                     totalItems={totalItems}
                                     pageSize={itemsPerPage}
-                                    currentPageCount={collections.length}
+                                    currentPageCount={variants.length}
                                     align="center"
                                 />
                             </div>
@@ -320,12 +321,12 @@ const Collections = () => {
                                 <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
                                     <FiAlertTriangle className="h-6 w-6 text-red-600" />
                                 </div>
-                                <h3 className="text-lg font-semibold text-gray-900">Delete collection?</h3>
+                                <h3 className="text-lg font-semibold text-gray-900">Delete variant?</h3>
                             </div>
-                            <p className="mt-3 text-sm text-gray-600">Are you sure you want to delete "{confirmDelete.collection?.name}"? This action cannot be undone.</p>
+                            <p className="mt-3 text-sm text-gray-600">Are you sure you want to delete "{confirmDelete.variant?.name}"? This action cannot be undone.</p>
                             <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                                 <button
-                                    onClick={() => setConfirmDelete({ open: false, collection: null })}
+                                    onClick={() => setConfirmDelete({ open: false, variant: null })}
                                     className="btn-outline"
                                 >
                                     Cancel
@@ -333,17 +334,17 @@ const Collections = () => {
                                 <button
                                     onClick={async () => {
                                         try {
-                                            await deleteCollectionMutation.mutateAsync(confirmDelete.collection?._id || confirmDelete.collection?.id)
-                                            toast.success('Collection deleted successfully')
+                                            await deleteVariant.mutateAsync(confirmDelete.variant?._id || confirmDelete.variant?.id)
+                                            toast.success('Variant deleted successfully')
                                         } catch (err) {
-                                            toast.error(err.response?.data?.message || 'Failed to delete collection')
+                                            toast.error(err.response?.data?.message || 'Failed to delete variant')
                                         } finally {
-                                            setConfirmDelete({ open: false, collection: null })
+                                            setConfirmDelete({ open: false, variant: null })
                                         }
                                     }}
                                     className="btn-primary bg-red-600 border-red-600 hover:bg-red-700 hover:border-red-700"
                                 >
-                                    {deleteCollectionMutation.isPending ? 'Deleting...' : 'Delete'}
+                                    {deleteVariant.isPending ? 'Deleting...' : 'Delete'}
                                 </button>
                             </div>
                         </div>
@@ -355,4 +356,4 @@ const Collections = () => {
 }
 
 
-export default Collections 
+export default Variants

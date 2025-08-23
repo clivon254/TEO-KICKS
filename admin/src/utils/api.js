@@ -198,24 +198,54 @@ export const tagAPI = {
 export const collectionAPI = {
     // Get all collections
     getAllCollections: (params) => api.get('/collections', { params }),
-    
+
     // Get collection by ID
     getCollectionById: (id) => api.get(`/collections/${id}`),
-    
+
     // Create collection
     createCollection: (collectionData) => api.post('/collections', collectionData),
-    
+
     // Update collection
     updateCollection: (id, collectionData) => api.put(`/collections/${id}`, collectionData),
-    
+
     // Delete collection
     deleteCollection: (id) => api.delete(`/collections/${id}`),
-    
+
     // Add product to collection
     addProduct: (id, productId) => api.post(`/collections/${id}/products`, { productId }),
-    
+
     // Remove product from collection
     removeProduct: (id, productId) => api.delete(`/collections/${id}/products/${productId}`),
+}
+
+// Variant API calls
+export const variantAPI = {
+    // Get all variants
+    getAllVariants: (params) => api.get('/variants', { params }),
+
+    // Get variant by ID
+    getVariantById: (id) => api.get(`/variants/${id}`),
+
+    // Create variant
+    createVariant: (variantData) => api.post('/variants', variantData),
+
+    // Update variant
+    updateVariant: (id, variantData) => api.put(`/variants/${id}`, variantData),
+
+    // Delete variant
+    deleteVariant: (id) => api.delete(`/variants/${id}`),
+
+    // Get active variants
+    getActiveVariants: () => api.get('/variants/active'),
+
+    // Add option to variant
+    addOption: (variantId, optionData) => api.post(`/variants/${variantId}/options`, optionData),
+
+    // Update variant option
+    updateOption: (variantId, optionId, optionData) => api.put(`/variants/${variantId}/options/${optionId}`, optionData),
+
+    // Remove option from variant
+    removeOption: (variantId, optionId) => api.delete(`/variants/${variantId}/options/${optionId}`),
 }
 
 export default api 

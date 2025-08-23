@@ -25,48 +25,57 @@ import AddBrand from './pages/classifications/Brand/AddBrand'
 import EditBrand from './pages/classifications/Brand/EditBrand'
 import AddCollection from './pages/classifications/collection/AddCollection'
 import EditCollection from './pages/classifications/collection/EditCollection'
+import Variants from './pages/variant/Variants'
+import AddVariant from './pages/variant/AddVariant'
+import EditVariant from './pages/variant/EditVariant'
+
+// Settings Pages
+import Settings from './pages/settings/Settings'
+import Profile from './pages/settings/Profile'
+import Address from './pages/settings/Address'
+import ChangePassword from './pages/settings/ChangePassword'
+import StoreConfigurations from './pages/settings/StoreConfigurations'
 
 
-// Main Layout - only for authenticated users
-function Layout() {
-  const { isAuthenticated, isLoading } = useAuth()
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen)
-  }
-
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-
-  return isAuthenticated ? (
-    <div className="min-h-screen h-screen flex flex-col">
-      <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-      <div className="flex-1 flex overflow-hidden">
-        <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-        <div className="flex-1 h-full overflow-y-auto relative">
-          <Outlet />
-        </div>
-      </div>
-    </div>
-  ) : (
-    <Navigate to="/login" replace />
-  )
-}
 
 
 function App() {
+  // Main Layout - only for authenticated users
+  function Layout() {
+    const { isAuthenticated, isLoading } = useAuth()
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+    const toggleSidebar = () => {
+      setIsSidebarOpen(!isSidebarOpen)
+    }
+
+    if (isLoading) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      )
+    }
+
+    return isAuthenticated ? (
+      <div className="min-h-screen h-screen flex flex-col">
+        <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+        <div className="flex-1 flex overflow-hidden">
+          <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+          <div className="flex-1 h-full overflow-y-auto relative">
+            <Outlet />
+          </div>
+        </div>
+      </div>
+    ) : (
+      <Navigate to="/login" replace />
+    )
+  }
+
   return (
     <Router>
       <AuthProvider>
@@ -87,6 +96,16 @@ function App() {
               <Route path="/tags" element={<Tags />} />
               <Route path="/tags/add" element={<AddTag />} />
               <Route path="/tags/:id/edit" element={<EditTag />} />
+              <Route path="/variants" element={<Variants />} />
+              <Route path="/variants/add" element={<AddVariant />} />
+              <Route path="/variants/:id/edit" element={<EditVariant />} />
+
+              {/* Settings Routes */}
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/profile" element={<Profile />} />
+              <Route path="/settings/address" element={<Address />} />
+              <Route path="/settings/change-password" element={<ChangePassword />} />
+              <Route path="/settings/store-configurations" element={<StoreConfigurations />} />
             </Route>
 
             {/* Public Routes */}
@@ -94,7 +113,7 @@ function App() {
             <Route path="/otp-verification" element={<OTPVerification />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
-            
+
             {/* 404 Page */}
             <Route path="*" element={<NotFound />} />
           </Routes>

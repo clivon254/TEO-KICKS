@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { FiArrowLeft, FiEdit, FiLoader } from 'react-icons/fi'
+import { FiEdit, FiLoader } from 'react-icons/fi'
 import RichTextEditor from '../../../components/common/RichTextEditor'
 import ToggleSwitch from '../../../components/common/ToggleSwitch'
 import { useGetTagById, useUpdateTag } from '../../../hooks/useTags'
@@ -10,7 +10,7 @@ import toast from 'react-hot-toast'
 const EditTag = () => {
     const { id } = useParams()
     const navigate = useNavigate()
-    
+
     const { data, isLoading, isError } = useGetTagById(id)
     const updateTagMutation = useUpdateTag()
 
@@ -25,7 +25,9 @@ const EditTag = () => {
     // Handle description change from RichTextEditor
     const handleDescriptionChange = (html) => {
         setFormData(prev => ({ ...prev, description: html }))
-        if (validationErrors.description) setValidationErrors(prev => ({ ...prev, description: '' }))
+        if (validationErrors.description) {
+            setValidationErrors(prev => ({ ...prev, description: '' }))
+        }
     }
 
     // Populate form when tag data is loaded
@@ -35,7 +37,7 @@ const EditTag = () => {
             setFormData({
                 name: tag.name || '',
                 description: tag.description || '',
-                isActive: tag.isActive ?? true
+                isActive: tag.isActive !== undefined ? tag.isActive : true
             })
         }
     }, [data])
@@ -46,7 +48,14 @@ const EditTag = () => {
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }))
-        if (validationErrors[name]) setValidationErrors(prev => ({ ...prev, [name]: '' }))
+
+        // Clear validation error for this field
+        if (validationErrors[name]) {
+            setValidationErrors(prev => ({
+                ...prev,
+                [name]: ''
+            }))
+        }
     }
 
     const validateForm = () => {
@@ -54,14 +63,6 @@ const EditTag = () => {
 
         if (!formData.name.trim()) {
             errors.name = 'Tag name is required'
-        }
-
-        if (!formData.type) {
-            errors.type = 'Tag type is required'
-        }
-
-        if (!formData.color) {
-            errors.color = 'Tag color is required'
         }
 
         setValidationErrors(errors)
@@ -89,11 +90,26 @@ const EditTag = () => {
         } catch (error) {
             const errorMessage = error.response?.data?.message || 'Failed to update tag'
             toast.error(errorMessage)
-            
+
+            // Handle validation errors from server
             if (error.response?.data?.errors) {
                 setValidationErrors(error.response.data.errors)
             }
         }
+    }
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50 py-8">
+                <div className="max-w-4xl mx-auto px-6">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                        <div className="flex justify-center items-center h-32">
+                            <FiLoader className="animate-spin h-8 w-8 text-primary" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
     }
 
     if (isLoading) {
@@ -153,74 +169,6 @@ const EditTag = () => {
                             {validationErrors.name && (
                                 <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
                             )}
-                        </div>
-
-                        {/* Type */}
-                        <div>
-                            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
-                                Tag Type *
-                            </label>
-                            <select
-                                id="type"
-                                name="type"
-                                value={formData.type}
-                                onChange={handleInputChange}
-                                className={`input ${validationErrors.type ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                            >
-                                <option value="product">Product</option>
-                                <option value="blog">Blog</option>
-                                <option value="general">General</option>
-                            </select>
-                            {validationErrors.type && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.type}</p>
-                            )}
-                        </div>
-
-                        {/* Color */}
-                        <div>
-                            <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-2">
-                                Tag Color *
-                            </label>
-                            <div className="flex items-center space-x-3">
-                                <input
-                                    type="color"
-                                    id="color"
-                                    name="color"
-                                    value={formData.color}
-                                    onChange={handleInputChange}
-                                    className="h-10 w-16 border border-gray-300 rounded-lg cursor-pointer"
-                                />
-                                <input
-                                    type="text"
-                                    name="color"
-                                    value={formData.color}
-                                    onChange={handleInputChange}
-                                    className={`input flex-1 ${validationErrors.color ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                                    placeholder="#3B82F6"
-                                />
-                            </div>
-                            {validationErrors.color && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.color}</p>
-                            )}
-                        </div>
-
-                        {/* Icon */}
-                        <div>
-                            <label htmlFor="icon" className="block text-sm font-medium text-gray-700 mb-2">
-                                Icon (Optional)
-                            </label>
-                            <input
-                                type="text"
-                                id="icon"
-                                name="icon"
-                                value={formData.icon}
-                                onChange={handleInputChange}
-                                className="input"
-                                placeholder="e.g., star, heart, tag"
-                            />
-                            <p className="mt-1 text-sm text-gray-500">
-                                Enter an icon name from Feather Icons or leave empty
-                            </p>
                         </div>
 
                         {/* Description - Rich Text Editor */}

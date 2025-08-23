@@ -12,9 +12,8 @@ const Tags = () => {
     const [debouncedSearch, setDebouncedSearch] = useState('')
     const [filterStatus, setFilterStatus] = useState('all')
     const [currentPage, setCurrentPage] = useState(1)
-    const [itemsPerPage, setItemsPerPage] = useState(10)
+    const [itemsPerPage, setItemsPerPage] = useState(5)
     const [selectedTags, setSelectedTags] = useState([])
-    const [confirmDelete, setConfirmDelete] = useState({ open: false, tag: null })
 
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(searchTerm), 300)
@@ -22,21 +21,21 @@ const Tags = () => {
     }, [searchTerm])
 
     const params = {}
-    if (filterStatus === 'active') params.isActive = 'true'
-    if (filterStatus === 'inactive') params.isActive = 'false'
-    if (filterStatus === 'all') delete params.isActive
+    if (filterStatus === 'active') params.status = 'active'
+    if (filterStatus === 'inactive') params.status = 'inactive'
+    if (filterStatus === 'all') delete params.status
     if (debouncedSearch) params.search = debouncedSearch
     params.page = currentPage
     params.limit = itemsPerPage
 
-    const { data, isLoading, isError, error } = useGetTags(params)
-    const deleteTagMutation = useDeleteTag()
-    const navigate = useNavigate()
-
+    const { data, isLoading } = useGetTags(params)
     const tags = data?.data?.data?.tags || []
     const pagination = data?.data?.data?.pagination || {}
     const totalItems = pagination.totalTags || pagination.totalItems || 0
     const totalPages = pagination.totalPages || Math.max(1, Math.ceil((totalItems || 0) / (itemsPerPage || 1)))
+    const [confirmDelete, setConfirmDelete] = useState({ open: false, tag: null })
+    const navigate = useNavigate()
+    const deleteTagMutation = useDeleteTag()
 
     // Handle tag selection
     const handleSelectTag = (tagId) => {
@@ -144,23 +143,7 @@ const Tags = () => {
         )
     }
 
-    if (isError) {
-        return (
-            <div className="p-6">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <div className="flex items-center">
-                        <FiAlertTriangle className="h-5 w-5 text-red-400 mr-2" />
-                        <div>
-                            <h3 className="text-sm font-medium text-red-800">Error loading tags</h3>
-                            <p className="text-sm text-red-700 mt-1">
-                                {error?.response?.data?.message || 'Something went wrong while fetching tags.'}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )
-    }
+
 
 
 
@@ -339,7 +322,7 @@ const Tags = () => {
                                                             className="text-red-600 hover:text-red-900 p-1 rounded"
                                                             title="Delete tag"
                                                         >
-                                                            <FiTrash2 className="h-4 w-4" />
+                                                                <FiTrash2 className="h-4 w-4" />
                                                         </button>
                                                     </div>
                                                 </td>
