@@ -1,9 +1,9 @@
 import { useAuth } from '../../contexts/AuthContext'
 import { FiUser, FiBell, FiSearch, FiMenu, FiX, FiLogOut, FiShoppingCart } from 'react-icons/fi'
+import { useGetCart } from '../../hooks/useCart'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import logo from '../../assets/logo.png'
-import { useGetCart } from '../../hooks/useCart'
 
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
@@ -14,8 +14,8 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
     // Get cart data for count
     const { data: cartData } = useGetCart()
-    const cartItems = cartData?.data?.items || []
-    const cartCount = cartItems.length
+    const cartItems = cartData?.data?.data?.items || []
+    const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0)
 
 
     const handleLogout = async () => {
@@ -76,7 +76,14 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                             onClick={() => navigate('/cart')}
                             className="p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md relative"
                         >
+                            <div className="relative">
                             <FiShoppingCart className="h-6 w-6" />
+                            {cartItemCount > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                    {cartItemCount > 99 ? '99+' : cartItemCount}
+                                </span>
+                            )}
+                        </div>
                         </button>
 
                         {/* Notifications */}

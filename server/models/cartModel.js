@@ -78,8 +78,14 @@ cartSchema.methods.addItem = function(productId, skuId, quantity, price, variant
     )
 
     if (existingItemIndex > -1) {
+        // Update existing item quantity
         this.items[existingItemIndex].quantity += quantity
+        // Update variant options if provided
+        if (Object.keys(variantOptions).length > 0) {
+            this.items[existingItemIndex].variantOptions = variantOptions
+        }
     } else {
+        // Add new item
         this.items.push({
             productId,
             skuId,

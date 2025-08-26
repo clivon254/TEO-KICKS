@@ -137,7 +137,10 @@ const ProductDetailDemo = () => {
                                 {/* Quantity Selector */}
                                 <div className="space-y-2">
                                     <label className="block text-sm font-medium text-gray-700">
-                                        Quantity
+                                        {Object.keys(selectedOptions).length > 0 
+                                            ? `Quantity for Size ${realProductVariants[0].options.find(opt => opt._id === selectedOptions[realProductVariants[0]._id])?.value}:`
+                                            : 'Quantity:'
+                                        }
                                     </label>
                                     <div className="flex items-center space-x-3">
                                         <button

@@ -71,8 +71,36 @@ export const addToCart = async (req, res, next) => {
             return next(errorHandler(400, `Cannot add ${quantity} items. Total quantity would exceed available stock of ${sku.stock}`))
         }
 
-        // Add item to cart
-        cart.addItem(productId, skuId, quantity, sku.price, variantOptions)
+        // Format variant options for display (e.g., "Size: X, Color: Red")
+        const formattedVariantOptions = {}
+        if (Object.keys(variantOptions).length > 0) {
+            // Get variant names from the product
+            const variantNames = {}
+            if (product.variants && Array.isArray(product.variants)) {
+                product.variants.forEach(variant => {
+                    if (variant.options) {
+                        variant.options.forEach(option => {
+                            variantNames[option._id.toString()] = {
+                                variantName: variant.name,
+                                optionValue: option.value
+                            }
+                        })
+                    }
+                })
+            }
+
+            // Format the variant options
+            Object.keys(variantOptions).forEach(variantId => {
+                const optionId = variantOptions[variantId]
+                const variantInfo = variantNames[optionId]
+                if (variantInfo) {
+                    formattedVariantOptions[variantInfo.variantName] = variantInfo.optionValue
+                }
+            })
+        }
+
+        // Add item to cart with formatted variant options
+        cart.addItem(productId, skuId, quantity, sku.price, formattedVariantOptions)
         await cart.save()
 
         // Populate details for response
