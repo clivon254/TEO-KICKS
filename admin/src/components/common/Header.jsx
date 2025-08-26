@@ -1,13 +1,21 @@
 import { useAuth } from '../../contexts/AuthContext'
-import { FiUser, FiBell, FiSearch, FiMenu, FiX, FiLogOut } from 'react-icons/fi'
+import { FiUser, FiBell, FiSearch, FiMenu, FiX, FiLogOut, FiShoppingCart } from 'react-icons/fi'
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import logo from '../../assets/logo.png'
+import { useGetCart } from '../../hooks/useCart'
 
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
     const { user, logout } = useAuth()
+    const navigate = useNavigate()
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
     const dropdownRef = useRef(null)
+
+    // Get cart data for count
+    const { data: cartData } = useGetCart()
+    const cartItems = cartData?.data?.items || []
+    const cartCount = cartItems.length
 
 
     const handleLogout = async () => {
@@ -63,6 +71,14 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                     {/* Right side - User menu and notifications */}
                     <div className="flex items-center space-x-4">
                         
+                        {/* Cart */}
+                        <button 
+                            onClick={() => navigate('/cart')}
+                            className="p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md relative"
+                        >
+                            <FiShoppingCart className="h-6 w-6" />
+                        </button>
+
                         {/* Notifications */}
                         <button className="p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md">
                             <FiBell className="h-6 w-6" />

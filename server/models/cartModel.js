@@ -26,7 +26,7 @@ const cartItemSchema = new mongoose.Schema({
         of: String,
         default: {}
     }
-}, { timestamps: true })
+}, { timestamps: true, _id: true })
 
 
 const cartSchema = new mongoose.Schema({

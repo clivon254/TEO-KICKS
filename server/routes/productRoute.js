@@ -26,7 +26,7 @@ const router = express.Router()
 
 // Public routes
 router.get("/", getAllProducts)
-router.get("/:productId", getProductById)
+router.get("/:id", getProductById)
 router.get("/:productId/optimized-images", getOptimizedImages)
 
 // Protected routes (require authentication)

@@ -123,6 +123,15 @@ export const productAPI = {
     
     // Set primary image
     setPrimaryImage: (productId, imageId) => api.put(`/products/${productId}/images/${imageId}/primary`),
+    
+    // Update SKU
+    updateSKU: (productId, skuId, skuData) => api.patch(`/products/${productId}/skus/${skuId}`, skuData),
+    
+    // Delete SKU
+    deleteSKU: (productId, skuId) => api.delete(`/products/${productId}/skus/${skuId}`),
+    
+    // Generate SKUs
+    generateSKUs: (productId) => api.post(`/products/${productId}/generate-skus`),
 }
 
 // Category API calls

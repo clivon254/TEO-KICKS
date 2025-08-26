@@ -613,7 +613,7 @@ export const getMe = async (req, res, next) => {
 
     try {
 
-        const user = await User.findById(req.user.userId).select('-password -otpCode -resetPasswordToken')
+        const user = await User.findById(req.user._id).select('-password -otpCode -resetPasswordToken')
 
 
         if (!user) {

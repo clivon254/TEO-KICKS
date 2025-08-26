@@ -4,7 +4,7 @@ import { useGetProducts, useDeleteProduct } from '../../hooks/useProducts'
 import { useGetBrands } from '../../hooks/useBrands'
 import { useGetCategories } from '../../hooks/useCategories'
 
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiPackage, FiAlertTriangle, FiX, FiList, FiImage, FiDollarSign, FiGrid } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiPackage, FiAlertTriangle, FiX, FiList, FiImage, FiDollarSign, FiGrid, FiEye } from 'react-icons/fi'
 import Pagination from '../../components/common/Pagination'
 
 import StatusBadge from '../../components/common/StatusBadge'
@@ -43,12 +43,27 @@ const Products = () => {
     const { data: brandsData } = useGetBrands({ limit: 100 })
     const { data: categoriesData } = useGetCategories({ limit: 100 })
 
-    const products = data?.data?.products || []
-    const pagination = data?.data?.pagination || {}
-    const totalItems = pagination.totalProducts || pagination.totalItems || 0
+    // Debug: Log the data structure
+    console.log('Products API Response:', data)
+
+    const products = data?.data || []
+    const pagination = data?.pagination || {}
+    const totalItems = pagination.totalDocs || pagination.totalProducts || pagination.totalItems || products.length
     const totalPages = pagination.totalPages || Math.max(1, Math.ceil((totalItems || 0) / (itemsPerPage || 1)))
     const brands = brandsData?.data?.data?.brands || []
     const categories = categoriesData?.data?.data?.categories || []
+
+    // Debug: Log the processed data
+    console.log('Processed products:', products)
+    console.log('Products length:', products.length)
+    console.log('Is loading:', isLoading)
+    console.log('Data structure check:', {
+        hasData: !!data,
+        dataType: typeof data,
+        hasDataProperty: !!(data && data.data),
+        dataPropertyType: data && data.data ? typeof data.data : 'undefined',
+        isArray: Array.isArray(data?.data)
+    })
 
     // Handle product selection
     const handleSelectProduct = (productId) => {
@@ -70,6 +85,10 @@ const Products = () => {
 
     const handleEdit = (product) => {
         navigate(`/products/${product._id || product.id}/edit`)
+    }
+
+    const handleViewDetails = (product) => {
+        navigate(`/products/${product._id || product.id}/details`)
     }
 
     const handleDelete = async (product) => {
@@ -387,7 +406,7 @@ const Products = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className="text-sm text-gray-900">
-                                            {product.brand?.name || 'No brand'}
+                                            {brands.find(brand => brand._id === product.brand)?.name || 'No brand'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -404,9 +423,24 @@ const Products = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         {product.skus && product.skus.length > 0 ? (
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                {product.skus.reduce((total, sku) => total + (sku.stock || 0), 0)} units
-                                            </span>
+                                            <div className="flex flex-col">
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                    product.skus.reduce((total, sku) => total + (sku.stock || 0), 0) > 10
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : product.skus.reduce((total, sku) => total + (sku.stock || 0), 0) > 0
+                                                        ? 'bg-yellow-100 text-yellow-800'
+                                                        : 'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {product.skus.reduce((total, sku) => total + (sku.stock || 0), 0)} units
+                                                </span>
+                                                <span className="text-xs text-gray-500 mt-1">
+                                                    {product.skus.reduce((total, sku) => total + (sku.stock || 0), 0) > 10
+                                                        ? 'In Stock'
+                                                        : product.skus.reduce((total, sku) => total + (sku.stock || 0), 0) > 0
+                                                        ? 'Low Stock'
+                                                        : 'Out of Stock'}
+                                                </span>
+                                            </div>
                                         ) : (
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                                 No variants
@@ -418,6 +452,13 @@ const Products = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div className="flex items-center justify-end space-x-2">
+                                            <button
+                                                onClick={() => handleViewDetails(product)}
+                                                className="text-blue-600 hover:text-blue-900"
+                                                title="View product details"
+                                            >
+                                                <FiEye className="h-4 w-4" />
+                                            </button>
                                             <button
                                                 onClick={() => handleEdit(product)}
                                                 className="text-primary hover:text-secondary"
@@ -453,7 +494,7 @@ const Products = () => {
                     {totalPages > 1 && (
                         <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
                             <Pagination
-                                currentPage={pagination.currentPage || currentPage}
+                                currentPage={pagination.page || currentPage}
                                 totalPages={totalPages}
                                 onPageChange={(p) => setCurrentPage(p)}
                                 totalItems={totalItems}

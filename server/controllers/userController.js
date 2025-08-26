@@ -11,7 +11,7 @@ export const getUserProfile = async (req, res, next) => {
 
     try {
 
-        const user = await User.findById(req.user.userId)
+        const user = await User.findById(req.user._id)
             .select('-password -otpCode -resetPasswordToken')
             .populate('roles', 'name description')
 
@@ -64,7 +64,7 @@ export const updateUserProfile = async (req, res, next) => {
 
         const { name, phone, avatar, country, timezone } = req.body
 
-        const user = await User.findById(req.user.userId)
+        const user = await User.findById(req.user._id)
 
         if (!user) {
 
@@ -127,7 +127,7 @@ export const changePassword = async (req, res, next) => {
 
         }
 
-        const user = await User.findById(req.user.userId)
+        const user = await User.findById(req.user._id)
 
         if (!user) {
 
@@ -175,7 +175,7 @@ export const getNotificationPreferences = async (req, res, next) => {
 
     try {
 
-        const user = await User.findById(req.user.userId).select('notificationPreferences')
+        const user = await User.findById(req.user._id).select('notificationPreferences')
 
         if (!user) {
 
@@ -210,7 +210,7 @@ export const updateNotificationPreferences = async (req, res, next) => {
 
         const { email, sms, inApp, orderUpdates, promotions, stockAlerts } = req.body
 
-        const user = await User.findById(req.user.userId)
+        const user = await User.findById(req.user._id)
 
         if (!user) {
 

@@ -31,6 +31,9 @@ import EditVariant from './pages/variant/EditVariant'
 import Products from './pages/products/Products'
 import AddProduct from './pages/products/AddProduct'
 import EditProduct from './pages/products/EditProduct'
+import ProductDetails from './pages/products/ProductDetails'
+import Cart from './pages/Cart'
+import ProductDetailDemo from './components/demo/ProductDetailDemo'
 
 // Settings Pages
 import Settings from './pages/settings/Settings'
@@ -90,6 +93,9 @@ function App() {
               <Route path="/products" element={<Products />} />
               <Route path="/products/add" element={<AddProduct />} />
               <Route path="/products/:id/edit" element={<EditProduct />} />
+              <Route path="/products/:id/details" element={<ProductDetails />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/demo/product-detail" element={<ProductDetailDemo />} />
               <Route path="/categories" element={<Categories />} />
               <Route path="/categories/add" element={<AddCategory />} />
               <Route path="/categories/:id/edit" element={<EditCategory />} />

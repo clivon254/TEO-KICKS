@@ -7,6 +7,7 @@ import {
     FiGrid, 
     FiTag, 
     FiShoppingBag, 
+    FiShoppingCart,
     FiUsers, 
     FiSettings,
     FiBarChart2,
@@ -27,6 +28,7 @@ const Sidebar = ({ isSidebarOpen = false, toggleSidebar = () => {} }) => {
     const navigation = [
         { name: 'Dashboard', href: '/', icon: FiHome },
         { name: 'Products', href: '/products', icon: FiPackage },
+        { name: 'Cart', href: '/cart', icon: FiShoppingCart },
         { name: 'Variants', href: '/variants', icon: FiGrid },
         { name: 'Orders', href: '/orders', icon: FiShoppingBag },
         { name: 'Customers', href: '/customers', icon: FiUsers },

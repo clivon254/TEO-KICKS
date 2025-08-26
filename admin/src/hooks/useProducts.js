@@ -195,3 +195,65 @@ export const useSetPrimaryImage = () => {
         }
     })
 }
+
+// Update SKU
+export const useUpdateSKU = () => {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async ({ productId, skuId, skuData }) => {
+            const response = await productAPI.updateSKU(productId, skuId, skuData)
+            return response.data
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['products'] })
+            queryClient.invalidateQueries({ queryKey: ['product'] })
+        },
+        onError: (error) => {
+            console.error('Update SKU error:', error)
+            toast.error(error.response?.data?.message || 'Failed to update SKU')
+        }
+    })
+}
+
+// Delete SKU
+export const useDeleteSKU = () => {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async ({ productId, skuId }) => {
+            const response = await productAPI.deleteSKU(productId, skuId)
+            return response.data
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['products'] })
+            queryClient.invalidateQueries({ queryKey: ['product'] })
+            toast.success(data.message || 'SKU deleted successfully')
+        },
+        onError: (error) => {
+            console.error('Delete SKU error:', error)
+            toast.error(error.response?.data?.message || 'Failed to delete SKU')
+        }
+    })
+}
+
+// Generate SKUs
+export const useGenerateSKUs = () => {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async (productId) => {
+            const response = await productAPI.generateSKUs(productId)
+            return response.data
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['products'] })
+            queryClient.invalidateQueries({ queryKey: ['product'] })
+            toast.success(data.message || 'SKUs generated successfully')
+        },
+        onError: (error) => {
+            console.error('Generate SKUs error:', error)
+            toast.error(error.response?.data?.message || 'Failed to generate SKUs')
+        }
+    })
+}

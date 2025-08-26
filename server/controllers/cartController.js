@@ -14,7 +14,7 @@ export const getCart = async (req, res, next) => {
         await cart.populate([
             {
                 path: 'items.productId',
-                select: 'name images primaryImage slug skus'
+                select: 'title images primaryImage slug skus'
             }
         ])
 
@@ -79,7 +79,7 @@ export const addToCart = async (req, res, next) => {
         await cart.populate([
             {
                 path: 'items.productId',
-                select: 'name images primaryImage slug skus'
+                select: 'title images primaryImage slug skus'
             }
         ])
 
@@ -141,7 +141,7 @@ export const updateCartItem = async (req, res, next) => {
         await cart.populate([
             {
                 path: 'items.productId',
-                select: 'name images primaryImage slug skus'
+                select: 'title images primaryImage slug skus'
             }
         ])
 
@@ -174,7 +174,7 @@ export const removeFromCart = async (req, res, next) => {
         await cart.populate([
             {
                 path: 'items.productId',
-                select: 'name images primaryImage slug skus'
+                select: 'title images primaryImage slug skus'
             }
         ])
 

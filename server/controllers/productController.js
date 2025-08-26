@@ -260,6 +260,13 @@ export const getProductById = async (req, res) => {
 
             .populate('createdBy', 'name email')
 
+            .populate({
+                path: 'variants',
+                populate: {
+                    path: 'options'
+                }
+            })
+
 
 
 

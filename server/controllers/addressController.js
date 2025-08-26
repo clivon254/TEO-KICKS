@@ -11,7 +11,7 @@ export const getUserAddresses = async (req, res, next) => {
     try {
 
         const addresses = await Address.find({ 
-            userId: req.user.userId, 
+            userId: req.user._id, 
             isActive: true 
         }).sort({ isDefault: -1, createdAt: -1 })
 
