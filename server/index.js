@@ -21,9 +21,9 @@ import categoryRoute from "./routes/categoryRoute.js"
 import brandRoute from "./routes/brandRoute.js"
 import tagRoute from "./routes/tagRoute.js"
 import collectionRoute from "./routes/collectionRoute.js"
+import cartRoute from "./routes/cartRoute.js"
 // import orderRoute from "./routes/orderRoute.js"
 // import paymentRoute from "./routes/paymentRoute.js"
-// import cartRoute from "./routes/cartRoute.js"
 
 
 const app = express()
@@ -65,6 +65,7 @@ app.use("/api/categories", categoryRoute)
 app.use("/api/brands", brandRoute)
 app.use("/api/tags", tagRoute)
 app.use("/api/collections", collectionRoute)
+app.use("/api/cart", cartRoute)
 // app.use("/api/orders", orderRoute)
 // app.use("/api/payments", paymentRoute)
 // app.use("/api/cart", cartRoute)
@@ -211,7 +212,7 @@ app.use((err, req, res, next) => {
 server.listen(PORT, (err) => {
   if (!err) {
     console.log(`🚀 TEO KICKS Server running on http://localhost:${PORT}`)
-    console.log(`📚 API Documentation: http://localhost:${PORT}/api/docs`)
+    console.log(`�� API Documentation: http://localhost:${PORT}/api/docs`)
     console.log(`🌍 Environment: ${process.env.NODE_ENV}`)
     console.log(`💰 Currency: KES (Kenyan Shillings)`)
     console.log(`🔌 Socket.io enabled for real-time features`)

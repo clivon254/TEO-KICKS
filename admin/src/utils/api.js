@@ -248,4 +248,25 @@ export const variantAPI = {
     removeOption: (variantId, optionId) => api.delete(`/variants/${variantId}/options/${optionId}`),
 }
 
+// Cart API calls
+export const cartAPI = {
+    // Get user's cart
+    getCart: () => api.get('/cart'),
+    
+    // Add item to cart
+    addToCart: (cartData) => api.post('/cart/add', cartData),
+    
+    // Update cart item quantity
+    updateCartItem: (skuId, quantity) => api.put(`/cart/items/${skuId}`, { quantity }),
+    
+    // Remove item from cart
+    removeFromCart: (skuId) => api.delete(`/cart/items/${skuId}`),
+    
+    // Clear cart
+    clearCart: () => api.delete('/cart/clear'),
+    
+    // Validate cart
+    validateCart: () => api.get('/cart/validate'),
+}
+
 export default api 

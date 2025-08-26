@@ -49,19 +49,12 @@ const AddProduct = () => {
     const { data: tagsData } = useGetTags({ limit: 100 })
     const { data: variantsData } = useGetVariants({ limit: 100 })
 
-    // Debug logging
-    console.log('AddProduct - Variants API Response:', variantsData)
-    console.log('AddProduct - Data type:', typeof variantsData?.data)
-    console.log('AddProduct - Is Array:', Array.isArray(variantsData?.data))
-    console.log('AddProduct - Data length:', variantsData?.data?.length)
-
     const brands = brandsData?.data?.data?.brands || []
     const categories = categoriesData?.data?.data?.categories || []
     const collections = collectionsData?.data?.data?.collections || []
     const tags = tagsData?.data?.data?.tags || []
     // The API returns { data: { success: true, data: [...], pagination: {...} } }
     const variants = Array.isArray(variantsData?.data?.data) ? variantsData?.data?.data : []
-    console.log('AddProduct - Final variants array:', variants)
 
     // Tabs configuration
     const tabs = [
@@ -359,24 +352,6 @@ const AddProduct = () => {
                         <p className="text-sm text-gray-600">
                             Select variants to create different product options (e.g., Size, Color)
                         </p>
-
-                        {/* Debug info */}
-                        {import.meta.env.DEV && (
-                            <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-xs">
-                                <strong>Debug:</strong>
-                                <div>Loading: {variantsData ? 'No' : 'Yes'}</div>
-                                <div>Data exists: {variantsData ? 'Yes' : 'No'}</div>
-                                <div>Data type: {typeof variantsData?.data}</div>
-                                <div>Is Array: {Array.isArray(variantsData?.data) ? 'Yes' : 'No'}</div>
-                                <div>Variants count: {variants.length}</div>
-                                <div>Raw data: {JSON.stringify(variantsData, null, 2)}</div>
-                                {variants.length === 0 && (
-                                    <div className="text-yellow-700 mt-1">
-                                        No variants found. Check if variants API is working.
-                                    </div>
-                                )}
-                            </div>
-                        )}
 
                         {variants.length > 0 ? (
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
