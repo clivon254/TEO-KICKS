@@ -10,6 +10,7 @@ import { useAddToCart } from '../../hooks/useCart'
 import { FiArrowLeft, FiShoppingCart, FiPackage, FiGrid, FiTag, FiLayers, FiDollarSign, FiImage, FiCheck, FiPlus, FiMinus, FiHeart, FiShare2, FiStar, FiTruck, FiShield, FiRefreshCw } from 'react-icons/fi'
 import VariantSelector from '../../components/common/VariantSelector'
 import CartSuccessModal from '../../components/common/CartSuccessModal'
+import ReviewsSection from '../../components/common/ReviewsSection'
 import toast from 'react-hot-toast'
 
 
@@ -59,6 +60,32 @@ const ProductDetails = () => {
             [variantId]: optionId
         }))
     }
+
+    // Auto-select first variant option by default
+    useEffect(() => {
+        if (product) {
+            const populatedVariants = getPopulatedVariants()
+            const defaultSelections = {}
+            
+            populatedVariants.forEach(variant => {
+                if (variant.options && variant.options.length > 0) {
+                    // Select the first available option
+                    const firstAvailableOption = variant.options.find(option => {
+                        const skuForOption = product.skus?.find(sku => 
+                            sku.attributes?.some(attr => 
+                                attr.variantId === variant._id && attr.optionId === option._id
+                            )
+                        )
+                        return skuForOption?.stock > 0
+                    }) || variant.options[0]
+                    
+                    defaultSelections[variant._id] = firstAvailableOption._id
+                }
+            })
+            
+            setSelectedVariants(defaultSelections)
+        }
+    }, [product])
 
     // Find matching SKU based on selected variants
     useEffect(() => {
@@ -176,8 +203,7 @@ const ProductDetails = () => {
 
     const handleContinueShopping = () => {
         setShowCartSuccessModal(false)
-        // Optionally navigate back to products list
-        navigate('/products')
+        // Stay on the same page so user can add the same item again
     }
 
     const handleGoToCart = () => {
@@ -453,32 +479,6 @@ const ProductDetails = () => {
                                                         onOptionSelect={handleVariantChange}
                                                         stockInfo={stockInfo}
                                                     />
-                                                    
-                                                    {/* Variant Selection Status */}
-                                                    {Object.keys(selectedVariants).length > 0 && (
-                                                        <div className={`p-3 rounded-lg border ${
-                                                            areAllVariantsSelected() && hasSelectedCombinationStock()
-                                                                ? 'bg-green-50 border-green-200'
-                                                                : areAllVariantsSelected() && !hasSelectedCombinationStock()
-                                                                ? 'bg-red-50 border-red-200'
-                                                                : 'bg-blue-50 border-blue-200'
-                                                        }`}>
-                                                            <p className={`text-sm ${
-                                                                areAllVariantsSelected() && hasSelectedCombinationStock()
-                                                                    ? 'text-green-800'
-                                                                    : areAllVariantsSelected() && !hasSelectedCombinationStock()
-                                                                    ? 'text-red-800'
-                                                                    : 'text-blue-800'
-                                                            }`}>
-                                                                {areAllVariantsSelected() && hasSelectedCombinationStock()
-                                                                    ? 'All options selected. Ready to add to cart!'
-                                                                    : areAllVariantsSelected() && !hasSelectedCombinationStock()
-                                                                    ? 'Selected combination is out of stock'
-                                                                    : `Please select ${populatedVariants.length - Object.keys(selectedVariants).length} more option(s)`
-                                                                }
-                                                            </p>
-                                                        </div>
-                                                    )}
                                                 </>
                                             ) : product?.variants && product.variants.length > 0 ? (
                                                 // Fallback: Show raw variant data if populated variants is empty
@@ -511,16 +511,12 @@ const ProductDetails = () => {
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span className="text-sm font-medium text-gray-700">Stock Status:</span>
                                                     <span className={`text-sm font-medium px-2 py-1 rounded-full ${
-                                                        selectedSKU && selectedSKU.stock > 10 
+                                                        selectedSKU && selectedSKU.stock > 0 
                                                             ? 'bg-green-100 text-green-800' 
-                                                            : selectedSKU && selectedSKU.stock > 0 
-                                                            ? 'bg-yellow-100 text-yellow-800' 
                                                             : 'bg-red-100 text-red-800'
                                                     }`}>
-                                                        {selectedSKU && selectedSKU.stock > 10 
+                                                        {selectedSKU && selectedSKU.stock > 0 
                                                             ? 'In Stock' 
-                                                            : selectedSKU && selectedSKU.stock > 0 
-                                                            ? 'Low Stock' 
                                                             : 'Out of Stock'}
                                                     </span>
                                                 </div>
@@ -576,16 +572,12 @@ const ProductDetails = () => {
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span className="text-sm font-medium text-gray-700">Stock Status:</span>
                                                     <span className={`text-sm font-medium px-2 py-1 rounded-full ${
-                                                        totalStock > 10 
+                                                        totalStock > 0 
                                                             ? 'bg-green-100 text-green-800' 
-                                                            : totalStock > 0 
-                                                            ? 'bg-yellow-100 text-yellow-800' 
                                                             : 'bg-red-100 text-red-800'
                                                     }`}>
-                                                        {totalStock > 10 
+                                                        {totalStock > 0 
                                                             ? 'In Stock' 
-                                                            : totalStock > 0 
-                                                            ? 'Low Stock' 
                                                             : 'Out of Stock'}
                                                     </span>
                                                 </div>
@@ -721,8 +713,13 @@ const ProductDetails = () => {
                     onClose={() => setShowCartSuccessModal(false)}
                     onContinueShopping={handleContinueShopping}
                     onGoToCart={handleGoToCart}
-                    itemCount={quantity}
+                    itemName={product?.name || "Product"}
                 />
+
+                {/* Reviews Section */}
+                <div className="mt-12">
+                    <ReviewsSection productId={id} />
+                </div>
             </div>
         </>
     )

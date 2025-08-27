@@ -22,6 +22,7 @@ import brandRoute from "./routes/brandRoute.js"
 import tagRoute from "./routes/tagRoute.js"
 import collectionRoute from "./routes/collectionRoute.js"
 import cartRoute from "./routes/cartRoute.js"
+import reviewRoute from "./routes/reviewRoute.js"
 // import orderRoute from "./routes/orderRoute.js"
 // import paymentRoute from "./routes/paymentRoute.js"
 
@@ -66,9 +67,9 @@ app.use("/api/brands", brandRoute)
 app.use("/api/tags", tagRoute)
 app.use("/api/collections", collectionRoute)
 app.use("/api/cart", cartRoute)
+app.use("/api/reviews", reviewRoute)
 // app.use("/api/orders", orderRoute)
 // app.use("/api/payments", paymentRoute)
-// app.use("/api/cart", cartRoute)
 
 
 // Swagger Documentation

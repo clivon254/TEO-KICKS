@@ -278,4 +278,28 @@ export const cartAPI = {
     validateCart: () => api.get('/cart/validate'),
 }
 
+// Review API calls
+export const reviewAPI = {
+    // Get reviews for a product
+    getProductReviews: (productId, params) => api.get(`/reviews/products/${productId}`, { params }),
+    
+    // Get a single review
+    getReviewById: (reviewId) => api.get(`/reviews/${reviewId}`),
+    
+    // Create a review
+    createReview: (productId, reviewData) => api.post(`/reviews/products/${productId}`, reviewData),
+    
+    // Update a review
+    updateReview: (reviewId, reviewData) => api.put(`/reviews/${reviewId}`, reviewData),
+    
+    // Delete a review
+    deleteReview: (reviewId) => api.delete(`/reviews/${reviewId}`),
+    
+    // Get user's reviews
+    getUserReviews: (params) => api.get('/reviews/user/reviews', { params }),
+    
+    // Admin: Approve/Reject review
+    approveReview: (reviewId, isApproved) => api.patch(`/reviews/${reviewId}/approve`, { isApproved }),
+}
+
 export default api 

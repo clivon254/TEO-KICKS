@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCreateProduct } from '../../hooks/useProducts'
 import { useGetBrands } from '../../hooks/useBrands'
@@ -41,6 +41,18 @@ const AddProduct = () => {
 
     const [newFeature, setNewFeature] = useState('')
     const [imagePreview, setImagePreview] = useState([])
+
+    // Cleanup function to prevent memory leaks
+    useEffect(() => {
+        return () => {
+            // Revoke all object URLs when component unmounts
+            imagePreview.forEach(image => {
+                if (image.preview) {
+                    URL.revokeObjectURL(image.preview)
+                }
+            })
+        }
+    }, [])
 
     // Load data
     const { data: brandsData } = useGetBrands({ limit: 100 })
@@ -110,7 +122,9 @@ const AddProduct = () => {
         const newImages = files.map(file => ({
             file,
             preview: URL.createObjectURL(file),
-            alt: file.name
+            alt: file.name,
+            isUploading: false,
+            uploadError: null
         }))
 
         setImagePreview(prev => [...prev, ...newImages])
@@ -121,11 +135,29 @@ const AddProduct = () => {
     }
 
     const removeImage = (index) => {
-        setImagePreview(prev => prev.filter((_, i) => i !== index))
-        setFormData(prev => ({
-            ...prev,
-            images: prev.images.filter((_, i) => i !== index)
-        }))
+        console.log('Removing image at index:', index)
+        console.log('Current imagePreview:', imagePreview)
+        console.log('Current formData.images:', formData.images)
+        
+        // Revoke the object URL to prevent memory leaks
+        if (imagePreview[index]?.preview) {
+            URL.revokeObjectURL(imagePreview[index].preview)
+        }
+        
+        setImagePreview(prev => {
+            const newPreview = prev.filter((_, i) => i !== index)
+            console.log('New imagePreview:', newPreview)
+            return newPreview
+        })
+        
+        setFormData(prev => {
+            const newImages = prev.images.filter((_, i) => i !== index)
+            console.log('New formData.images:', newImages)
+            return {
+                ...prev,
+                images: newImages
+            }
+        })
     }
 
     const setPrimaryImage = (index) => {
@@ -156,15 +188,32 @@ const AddProduct = () => {
         e.preventDefault()
 
         try {
-            const submitData = {
+            // Clean up the data before submission
+            const cleanedData = {
                 ...formData,
+                // Handle empty brand field
+                brand: formData.brand && formData.brand.trim() !== '' ? formData.brand : undefined,
+                // Handle empty arrays (the hook will convert them to JSON strings)
+                categories: formData.categories && formData.categories.length > 0 ? formData.categories : [],
+                collections: formData.collections && formData.collections.length > 0 ? formData.collections : [],
+                tags: formData.tags && formData.tags.length > 0 ? formData.tags : [],
+                variants: formData.variants && formData.variants.length > 0 ? formData.variants : [],
+                features: formData.features && formData.features.length > 0 ? formData.features : [],
+                // Filter out invalid images (only keep File objects)
+                images: formData.images && Array.isArray(formData.images) 
+                    ? formData.images.filter(img => img instanceof File)
+                    : [],
+                // Parse numeric fields
                 basePrice: parseFloat(formData.basePrice) || 0,
-                comparePrice: formData.comparePrice ? parseFloat(formData.comparePrice) : undefined,
-                weight: formData.weight ? parseFloat(formData.weight) : undefined,
-                images: formData.images
+                comparePrice: formData.comparePrice && formData.comparePrice.trim() !== '' ? parseFloat(formData.comparePrice) : undefined,
+                weight: formData.weight && formData.weight.trim() !== '' ? parseFloat(formData.weight) : undefined,
+                // Handle boolean fields
+                trackInventory: formData.trackInventory === true || formData.trackInventory === 'true'
             }
 
-            await createProduct.mutateAsync(submitData)
+            console.log('Submitting cleaned data:', cleanedData)
+
+            await createProduct.mutateAsync(cleanedData)
             navigate('/products')
         } catch (error) {
             console.error('Submit error:', error)
@@ -420,34 +469,103 @@ const AddProduct = () => {
                         </div>
 
                         {imagePreview.length > 0 && (
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {imagePreview.map((image, index) => (
-                                    <div key={index} className="relative group">
-                                        <img
-                                            src={image.preview}
-                                            alt={image.alt}
-                                            className={`w-full h-24 object-cover rounded-lg border-2 ${
-                                                image.isPrimary ? 'border-primary' : 'border-gray-200'
-                                            }`}
-                                        />
-                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="text-sm font-medium text-gray-700">
+                                        Uploaded Images ({imagePreview.length})
+                                    </h4>
+                                    {imagePreview.length > 1 && (
+                                        <p className="text-xs text-gray-500">
+                                            Click "Primary" to set the main image
+                                        </p>
+                                    )}
+                                </div>
+                                
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {imagePreview.map((image, index) => (
+                                        <div key={index} className="relative group">
+                                            <img
+                                                src={image.preview}
+                                                alt={image.alt}
+                                                className={`w-full h-24 object-cover rounded-lg border-2 transition-all ${
+                                                    image.isPrimary ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200'
+                                                }`}
+                                            />
+                                            
+                                            {/* Primary Badge */}
+                                            {image.isPrimary && (
+                                                <div className="absolute top-1 left-1 bg-primary text-white text-xs px-2 py-1 rounded-full">
+                                                    Primary
+                                                </div>
+                                            )}
+                                            
+                                            {/* Trash Icon - Always Visible */}
                                             <button
                                                 type="button"
-                                                onClick={() => setPrimaryImage(index)}
-                                                className="text-white text-xs px-2 py-1 bg-primary rounded mr-1"
-                                            >
-                                                Primary
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => removeImage(index)}
-                                                className="text-white p-1 bg-red-600 rounded"
+                                                onClick={(e) => {
+                                                    e.preventDefault()
+                                                    e.stopPropagation()
+                                                    console.log('Remove button clicked for index:', index)
+                                                    removeImage(index)
+                                                }}
+                                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors shadow-sm z-10"
+                                                title="Remove image"
                                             >
                                                 <FiX className="h-3 w-3" />
                                             </button>
+                                            
+                                            {/* Hover Overlay for Primary Button */}
+                                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center pointer-events-none">
+                                                {!image.isPrimary && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault()
+                                                            e.stopPropagation()
+                                                            setPrimaryImage(index)
+                                                        }}
+                                                        className="text-white text-xs px-3 py-2 bg-primary rounded-lg hover:bg-primary/80 transition-colors shadow-sm pointer-events-auto"
+                                                        title="Set as primary image"
+                                                    >
+                                                        Set Primary
+                                                    </button>
+                                                )}
+                                            </div>
+                                            
+                                            {/* Upload Status */}
+                                            {image.isUploading && (
+                                                <div className="absolute inset-0 bg-black/30 rounded-lg flex items-center justify-center">
+                                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Error State */}
+                                            {image.uploadError && (
+                                                <div className="absolute inset-0 bg-red-500/20 rounded-lg flex items-center justify-center">
+                                                    <div className="text-red-600 text-xs text-center px-2">
+                                                        Upload failed
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                {/* Image Upload Tips */}
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <div className="flex items-start space-x-2">
+                                        <FiImage className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                        <div className="text-xs text-blue-800">
+                                            <p className="font-medium mb-1">Image Upload Tips:</p>
+                                            <ul className="space-y-1">
+                                                <li>• First image will be set as primary automatically</li>
+                                                <li>• Supported formats: JPG, PNG, GIF, WebP</li>
+                                                <li>• Maximum file size: 5MB per image</li>
+                                                <li>• Images will be optimized automatically</li>
+                                            </ul>
                                         </div>
                                     </div>
-                                ))}
+                                </div>
                             </div>
                         )}
                     </div>

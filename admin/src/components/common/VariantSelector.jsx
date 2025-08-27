@@ -53,11 +53,6 @@ const VariantSelector = ({
                         <label className="block text-sm font-medium text-gray-700">
                             Choose {variant.name}
                         </label>
-                        {selectedOptions[variant._id] && (
-                            <span className="text-xs text-green-600 font-medium">
-                                Selected
-                            </span>
-                        )}
                     </div>
 
                     <div className="flex flex-wrap gap-2">
@@ -75,7 +70,7 @@ const VariantSelector = ({
                                     className={`
                                         relative px-4 py-2 text-sm font-medium rounded-lg border-2 transition-all duration-200
                                         ${isSelected 
-                                            ? 'border-primary bg-primary text-white shadow-md' 
+                                            ? 'border-primary bg-light text-primary shadow-md' 
                                             : isAvailable
                                             ? 'border-gray-300 bg-white text-gray-900 hover:border-primary hover:bg-primary/5'
                                             : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'

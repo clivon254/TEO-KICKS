@@ -14,7 +14,7 @@ export const getCart = async (req, res, next) => {
         await cart.populate([
             {
                 path: 'items.productId',
-                select: 'title images primaryImage slug skus'
+                select: 'title images primaryImage slug skus variants'
             }
         ])
 
@@ -40,7 +40,7 @@ export const addToCart = async (req, res, next) => {
         }
 
         // Check if product exists and is active
-        const product = await Product.findById(productId)
+        const product = await Product.findById(productId).populate('variants')
         if (!product || product.status !== 'active') {
             return next(errorHandler(404, 'Product not found or inactive'))
         }
@@ -76,9 +76,11 @@ export const addToCart = async (req, res, next) => {
         if (Object.keys(variantOptions).length > 0) {
             // Get variant names from the product
             const variantNames = {}
+            
+            // Check if product has populated variants
             if (product.variants && Array.isArray(product.variants)) {
                 product.variants.forEach(variant => {
-                    if (variant.options) {
+                    if (variant.options && Array.isArray(variant.options)) {
                         variant.options.forEach(option => {
                             variantNames[option._id.toString()] = {
                                 variantName: variant.name,
@@ -95,6 +97,9 @@ export const addToCart = async (req, res, next) => {
                 const variantInfo = variantNames[optionId]
                 if (variantInfo) {
                     formattedVariantOptions[variantInfo.variantName] = variantInfo.optionValue
+                } else {
+                    // Fallback: if we can't find the variant info, use the IDs
+                    formattedVariantOptions[`Variant_${variantId}`] = `Option_${optionId}`
                 }
             })
         }
@@ -169,7 +174,7 @@ export const updateCartItem = async (req, res, next) => {
         await cart.populate([
             {
                 path: 'items.productId',
-                select: 'title images primaryImage slug skus'
+                select: 'title images primaryImage slug skus variants'
             }
         ])
 
@@ -202,7 +207,7 @@ export const removeFromCart = async (req, res, next) => {
         await cart.populate([
             {
                 path: 'items.productId',
-                select: 'title images primaryImage slug skus'
+                select: 'title images primaryImage slug skus variants'
             }
         ])
 
@@ -252,7 +257,10 @@ export const validateCart = async (req, res, next) => {
         }
 
         // Populate product details
-        await cart.populate('items.productId')
+        await cart.populate({
+            path: 'items.productId',
+            select: 'title images primaryImage slug skus variants'
+        })
 
         const validationResults = {
             isValid: true,

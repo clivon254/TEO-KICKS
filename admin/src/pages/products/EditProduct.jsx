@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { useGetProductById, useUpdateProduct, useUpdateSKU, useGenerateSKUs } from '../../hooks/useProducts'
 import { useGetBrands } from '../../hooks/useBrands'
 import { useGetCategories } from '../../hooks/useCategories'
@@ -53,6 +54,18 @@ const EditProduct = () => {
     const [imagePreview, setImagePreview] = useState([])
     const [isLoading, setIsLoading] = useState(true)
 
+    // Cleanup function to prevent memory leaks
+    useEffect(() => {
+        return () => {
+            // Revoke all object URLs when component unmounts
+            imagePreview.forEach(image => {
+                if (image.preview) {
+                    URL.revokeObjectURL(image.preview)
+                }
+            })
+        }
+    }, [imagePreview])
+
     // Load data
     const { data: productData, isLoading: productLoading } = useGetProductById(id)
     const { data: brandsData } = useGetBrands({ limit: 100 })
@@ -86,7 +99,7 @@ const EditProduct = () => {
         console.log('Product variants:', product?.variants)
         console.log('FormData variants:', formData.variants)
         console.log('Available variants:', variants)
-        
+
         if (product) {
             setFormData({
                 title: product.title || '',
@@ -99,7 +112,7 @@ const EditProduct = () => {
                 basePrice: product.basePrice?.toString() || '',
                 comparePrice: product.comparePrice?.toString() || '',
                 variants: Array.isArray(product.variants) ? product.variants : [],
-                images: [], // Will be handled separately for uploads
+                images: [], // Start with empty array, will be populated with new file uploads
                 status: product.status || 'draft',
                 metaTitle: product.metaTitle || '',
                 metaDescription: product.metaDescription || '',
@@ -122,7 +135,7 @@ const EditProduct = () => {
 
             setIsLoading(false)
         }
-    }, [product])
+    }, [product, productData, variants, formData.variants])
 
     // Tabs configuration
     const tabs = [
@@ -176,25 +189,57 @@ const EditProduct = () => {
 
     const handleImageUpload = (e) => {
         const files = Array.from(e.target.files)
-        const newImages = files.map(file => ({
+        console.log('Image upload - Selected files:', files)
+
+        // Create preview objects for UI display
+        const newImagePreviews = files.map(file => ({
             file,
             preview: URL.createObjectURL(file),
-            alt: file.name
+            alt: file.name,
+            isUploading: false,
+            uploadError: null,
+            isNew: true // Mark as new upload
         }))
 
-        setImagePreview(prev => [...prev, ...newImages])
-        setFormData(prev => ({
-            ...prev,
-            images: [...prev.images, ...files]
-        }))
+        // Update image previews for UI
+        setImagePreview(prev => [...prev, ...newImagePreviews])
+
+        // Add file objects to formData.images for submission
+        setFormData(prev => {
+            const currentImages = Array.isArray(prev.images) ? prev.images : []
+            const updatedImages = [...currentImages, ...files]
+            console.log('Image upload - Updated formData.images:', updatedImages)
+            return {
+                ...prev,
+                images: updatedImages
+            }
+        })
     }
 
     const removeImage = (index) => {
+        const imageToRemove = imagePreview[index]
+
+        // Revoke the object URL to prevent memory leaks
+        if (imageToRemove?.preview) {
+            URL.revokeObjectURL(imageToRemove.preview)
+        }
+
+        // Remove from image preview
         setImagePreview(prev => prev.filter((_, i) => i !== index))
-        setFormData(prev => ({
-            ...prev,
-            images: prev.images.filter((_, i) => i !== index)
-        }))
+
+        // Only remove from formData.images if it's a new file upload (not existing image)
+        if (imageToRemove?.isNew && imageToRemove?.file) {
+            setFormData(prev => {
+                const currentImages = Array.isArray(prev.images) ? prev.images : []
+                // Find and remove the specific file from formData.images
+                const updatedImages = currentImages.filter(file => file !== imageToRemove.file)
+                console.log('Remove image - Updated formData.images:', updatedImages)
+                return {
+                    ...prev,
+                    images: updatedImages
+                }
+            })
+        }
     }
 
     const setPrimaryImage = (index) => {
@@ -289,13 +334,33 @@ const EditProduct = () => {
         e.preventDefault()
 
         try {
+            // Ensure formData.images is always an array
+            const currentImages = Array.isArray(formData.images) ? formData.images : []
+
+            // Filter to only include File objects (new uploads)
+            const newImageFiles = currentImages.filter(img => img instanceof File)
+
+            console.log('Form submission - Current formData.images:', currentImages)
+            console.log('Form submission - New image files:', newImageFiles)
+            console.log('Form submission - Image types:', currentImages.map(img => typeof img))
+
             const submitData = {
                 ...formData,
                 basePrice: parseFloat(formData.basePrice) || 0,
                 comparePrice: formData.comparePrice ? parseFloat(formData.comparePrice) : undefined,
                 weight: formData.weight ? parseFloat(formData.weight) : undefined,
-                images: formData.images
+                images: newImageFiles // Only send new file uploads (File objects)
             }
+
+            console.log('Form submission - Final submitData:', {
+                ...submitData,
+                images: submitData.images.map(img => ({
+                    name: img.name,
+                    size: img.size,
+                    type: img.type,
+                    lastModified: img.lastModified
+                }))
+            })
 
             // SKU updates are now handled individually via API calls
             // No need to include them in the main form submission
@@ -683,7 +748,7 @@ const EditProduct = () => {
                                 </div>
 
                                 <div className="grid gap-4">
-                                    {product.skus.map((sku, index) => (
+                                    {product.skus.map((sku) => (
                                         <div key={sku._id} className="border border-gray-200 rounded-lg p-4">
                                             <div className="flex items-center justify-between mb-4">
                                                 <div>
@@ -869,7 +934,7 @@ const EditProduct = () => {
                                     <p className="mb-2 text-sm text-gray-500">
                                         <span className="font-semibold">Click to upload</span> or drag and drop
                                     </p>
-                                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
                                 </div>
                                 <input
                                     type="file"
@@ -882,34 +947,103 @@ const EditProduct = () => {
                         </div>
 
                         {imagePreview.length > 0 && (
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {imagePreview.map((image, index) => (
-                                    <div key={index} className="relative group">
-                                        <img
-                                            src={image.existing ? image.url : image.preview}
-                                            alt={image.alt}
-                                            className={`w-full h-24 object-cover rounded-lg border-2 ${
-                                                image.isPrimary ? 'border-primary' : 'border-gray-200'
-                                            }`}
-                                        />
-                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                                            <button
-                                                type="button"
-                                                onClick={() => setPrimaryImage(index)}
-                                                className="text-white text-xs px-2 py-1 bg-primary rounded mr-1"
-                                            >
-                                                Primary
-                                            </button>
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="text-sm font-medium text-gray-700">
+                                        Product Images ({imagePreview.length})
+                                    </h4>
+                                    {imagePreview.length > 1 && (
+                                        <p className="text-xs text-gray-500">
+                                            Click "Primary" to set the main image
+                                        </p>
+                                    )}
+                                </div>
+                                
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {imagePreview.map((image, index) => (
+                                        <div key={index} className="relative group">
+                                            <img
+                                                src={image.existing ? image.url : image.preview}
+                                                alt={image.alt}
+                                                className={`w-full h-24 object-cover rounded-lg border-2 transition-all ${
+                                                    image.isPrimary ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200'
+                                                }`}
+                                            />
+                                            
+                                            {/* Primary Badge */}
+                                            {image.isPrimary && (
+                                                <div className="absolute top-1 left-1 bg-primary text-white text-xs px-2 py-1 rounded-full">
+                                                    Primary
+                                                </div>
+                                            )}
+                                            
+                                            {/* Existing Image Badge */}
+                                            {image.existing && (
+                                                <div className="absolute top-1 right-8 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                                                    Existing
+                                                </div>
+                                            )}
+                                            
+                                            {/* Trash Icon - Always Visible */}
                                             <button
                                                 type="button"
                                                 onClick={() => removeImage(index)}
-                                                className="text-white p-1 bg-red-600 rounded"
+                                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors shadow-sm"
+                                                title="Remove image"
                                             >
                                                 <FiX className="h-3 w-3" />
                                             </button>
+                                            
+                                            {/* Hover Overlay for Primary Button */}
+                                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                                                {!image.isPrimary && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setPrimaryImage(index)}
+                                                        className="text-white text-xs px-3 py-2 bg-primary rounded-lg hover:bg-primary/80 transition-colors shadow-sm"
+                                                        title="Set as primary image"
+                                                    >
+                                                        Set Primary
+                                                    </button>
+                                                )}
+                                            </div>
+                                            
+                                            {/* Upload Status */}
+                                            {image.isUploading && (
+                                                <div className="absolute inset-0 bg-black/30 rounded-lg flex items-center justify-center">
+                                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Error State */}
+                                            {image.uploadError && (
+                                                <div className="absolute inset-0 bg-red-500/20 rounded-lg flex items-center justify-center">
+                                                    <div className="text-red-600 text-xs text-center px-2">
+                                                        Upload failed
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                {/* Image Upload Tips */}
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <div className="flex items-start space-x-2">
+                                        <FiImage className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                        <div className="text-xs text-blue-800">
+                                            <p className="font-medium mb-1">Image Management Tips:</p>
+                                            <ul className="space-y-1">
+                                                <li>• First image will be set as primary automatically</li>
+                                                <li>• Existing images are marked with green "Existing" badge</li>
+                                                <li>• Supported formats: JPG, PNG, GIF, WebP</li>
+                                                <li>• Maximum file size: 5MB per image</li>
+                                                <li>• Images will be optimized automatically</li>
+                                                <li>• Removing existing images will delete them permanently</li>
+                                            </ul>
                                         </div>
                                     </div>
-                                ))}
+                                </div>
                             </div>
                         )}
                     </div>
