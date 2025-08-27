@@ -16,7 +16,7 @@ import {
 // Create a new product
 export const createProduct = async (req, res, next) => {
     try {
-        const { title, description, shortDescription, brand, categories, collections, tags, basePrice, comparePrice, variants, features, metaTitle, metaDescription, trackInventory, weight } = req.body
+        const { title, description, shortDescription, brand, categories, collections, tags, basePrice, comparePrice, variants, features, trackInventory, weight } = req.body
 
         if (!title) {
             return next(errorHandler(400, "Product title is required"))
@@ -33,14 +33,37 @@ export const createProduct = async (req, res, next) => {
         if (req.files && req.files.length > 0) {
             for (const file of req.files) {
                 try {
-                    const uploadResult = await uploadToCloudinary(file.path, 'teo-kicks/products')
-                    
-                    processedImages.push({
-                        url: uploadResult.url,
-                        public_id: uploadResult.public_id,
-                        alt: file.originalname,
-                        isPrimary: processedImages.length === 0 // First image is primary
-                    })
+                    // When using Cloudinary storage, the file is already uploaded
+                    // We can access the Cloudinary result from the file object
+                    if (file.path) {
+                        // Traditional file upload - upload to Cloudinary
+                        const uploadResult = await uploadToCloudinary(file.path, 'teo-kicks/products')
+                        
+                        processedImages.push({
+                            url: uploadResult.url,
+                            public_id: uploadResult.public_id,
+                            alt: file.originalname,
+                            isPrimary: processedImages.length === 0 // First image is primary
+                        })
+                    } else if (file.secure_url) {
+                        // Cloudinary storage already uploaded the file
+                        processedImages.push({
+                            url: file.secure_url,
+                            public_id: file.public_id,
+                            alt: file.originalname,
+                            isPrimary: processedImages.length === 0 // First image is primary
+                        })
+                    } else {
+                        // Fallback: try to upload using file buffer
+                        const uploadResult = await uploadToCloudinary(file.buffer, 'teo-kicks/products')
+                        
+                        processedImages.push({
+                            url: uploadResult.url,
+                            public_id: uploadResult.public_id,
+                            alt: file.originalname,
+                            isPrimary: processedImages.length === 0 // First image is primary
+                        })
+                    }
                 } catch (uploadError) {
                     console.error('Image upload error:', uploadError)
                     return next(errorHandler(500, `Failed to upload image: ${uploadError.message}`))
@@ -62,8 +85,6 @@ export const createProduct = async (req, res, next) => {
             variants: variants ? JSON.parse(variants) : [],
             images: processedImages,
             features: features ? JSON.parse(features) : [],
-            metaTitle,
-            metaDescription,
             trackInventory,
             weight,
             createdBy: req.user.userId
@@ -102,6 +123,8 @@ export const createProduct = async (req, res, next) => {
 
     } catch (error) {
         console.error("Create product error:", error)
+        console.error("Create product error stack:", error.stack)
+        console.error("Create product error message:", error.message)
         next(errorHandler(500, "Server error while creating product"))
     }
 }
@@ -347,14 +370,37 @@ export const updateProduct = async (req, res, next) => {
         if (req.files && req.files.length > 0) {
             for (const file of req.files) {
                 try {
-                    const uploadResult = await uploadToCloudinary(file.path, 'teo-kicks/products')
-                    
-                    product.images.push({
-                        url: uploadResult.url,
-                        public_id: uploadResult.public_id,
-                        alt: file.originalname,
-                        isPrimary: product.images.length === 0 // Primary if no images exist
-                    })
+                    // When using Cloudinary storage, the file is already uploaded
+                    // We can access the Cloudinary result from the file object
+                    if (file.path) {
+                        // Traditional file upload - upload to Cloudinary
+                        const uploadResult = await uploadToCloudinary(file.path, 'teo-kicks/products')
+                        
+                        product.images.push({
+                            url: uploadResult.url,
+                            public_id: uploadResult.public_id,
+                            alt: file.originalname,
+                            isPrimary: product.images.length === 0 // Primary if no images exist
+                        })
+                    } else if (file.secure_url) {
+                        // Cloudinary storage already uploaded the file
+                        product.images.push({
+                            url: file.secure_url,
+                            public_id: file.public_id,
+                            alt: file.originalname,
+                            isPrimary: product.images.length === 0 // Primary if no images exist
+                        })
+                    } else {
+                        // Fallback: try to upload using file buffer
+                        const uploadResult = await uploadToCloudinary(file.buffer, 'teo-kicks/products')
+                        
+                        product.images.push({
+                            url: uploadResult.url,
+                            public_id: uploadResult.public_id,
+                            alt: file.originalname,
+                            isPrimary: product.images.length === 0 // Primary if no images exist
+                        })
+                    }
                 } catch (uploadError) {
                     console.error('Image upload error:', uploadError)
                     return next(errorHandler(500, `Failed to upload image: ${uploadError.message}`))
@@ -761,14 +807,37 @@ export const uploadProductImages = async (req, res, next) => {
         const uploadedImages = []
         for (const file of req.files) {
             try {
-                const uploadResult = await uploadToCloudinary(file.path, 'teo-kicks/products')
-                
-                uploadedImages.push({
-                    url: uploadResult.url,
-                    public_id: uploadResult.public_id,
-                    alt: file.originalname,
-                    isPrimary: product.images.length === 0 && uploadedImages.length === 0
-                })
+                // When using Cloudinary storage, the file is already uploaded
+                // We can access the Cloudinary result from the file object
+                if (file.path) {
+                    // Traditional file upload - upload to Cloudinary
+                    const uploadResult = await uploadToCloudinary(file.path, 'teo-kicks/products')
+                    
+                    uploadedImages.push({
+                        url: uploadResult.url,
+                        public_id: uploadResult.public_id,
+                        alt: file.originalname,
+                        isPrimary: product.images.length === 0 && uploadedImages.length === 0
+                    })
+                } else if (file.secure_url) {
+                    // Cloudinary storage already uploaded the file
+                    uploadedImages.push({
+                        url: file.secure_url,
+                        public_id: file.public_id,
+                        alt: file.originalname,
+                        isPrimary: product.images.length === 0 && uploadedImages.length === 0
+                    })
+                } else {
+                    // Fallback: try to upload using file buffer
+                    const uploadResult = await uploadToCloudinary(file.buffer, 'teo-kicks/products')
+                    
+                    uploadedImages.push({
+                        url: uploadResult.url,
+                        public_id: uploadResult.public_id,
+                        alt: file.originalname,
+                        isPrimary: product.images.length === 0 && uploadedImages.length === 0
+                    })
+                }
             } catch (uploadError) {
                 console.error('Image upload error:', uploadError)
                 return next(errorHandler(500, `Failed to upload image: ${uploadError.message}`))

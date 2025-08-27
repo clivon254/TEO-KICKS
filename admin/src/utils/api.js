@@ -302,4 +302,34 @@ export const reviewAPI = {
     approveReview: (reviewId, isApproved) => api.patch(`/reviews/${reviewId}/approve`, { isApproved }),
 }
 
+// Coupon API calls
+export const couponAPI = {
+    // Get all coupons (admin only)
+    getAllCoupons: (params) => api.get('/coupons', { params }),
+    
+    // Get coupon by ID
+    getCouponById: (couponId) => api.get(`/coupons/${couponId}`),
+    
+    // Create coupon (admin only)
+    createCoupon: (couponData) => api.post('/coupons', couponData),
+    
+    // Update coupon (admin only)
+    updateCoupon: (couponId, couponData) => api.put(`/coupons/${couponId}`, couponData),
+    
+    // Delete coupon (admin only)
+    deleteCoupon: (couponId) => api.delete(`/coupons/${couponId}`),
+    
+    // Validate coupon (public)
+    validateCoupon: (code, orderAmount) => api.post('/coupons/validate', { code }, { params: { orderAmount } }),
+    
+    // Apply coupon to order (protected)
+    applyCoupon: (code, orderAmount) => api.post('/coupons/apply', { code, orderAmount }),
+    
+    // Get coupon statistics (admin only)
+    getCouponStats: () => api.get('/coupons/stats'),
+    
+    // Generate new coupon code (admin only)
+    generateNewCode: (couponId) => api.patch(`/coupons/${couponId}/generate-code`),
+}
+
 export default api 

@@ -85,7 +85,7 @@ export const uploadGeneralFile = multer({
 // Cloudinary utility functions
 export const uploadToCloudinary = async (file, folder = 'teo-kicks/general') => {
     try {
-        const result = await cloudinary.uploader.upload(file.path || file, {
+        let uploadOptions = {
             folder: folder,
             resource_type: 'auto',
             transformation: [
@@ -93,7 +93,27 @@ export const uploadToCloudinary = async (file, folder = 'teo-kicks/general') => 
                 { quality: 'auto' },
                 { fetch_format: 'auto' }
             ]
-        })
+        }
+
+        let result
+        if (file.path) {
+            // File path (traditional upload)
+            result = await cloudinary.uploader.upload(file.path, uploadOptions)
+        } else if (file.buffer) {
+            // File buffer (memory upload)
+            result = await new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
+                    if (error) reject(error)
+                    else resolve(result)
+                })
+                uploadStream.end(file.buffer)
+            })
+        } else if (typeof file === 'string') {
+            // File path as string
+            result = await cloudinary.uploader.upload(file, uploadOptions)
+        } else {
+            throw new Error('Invalid file format. Expected file path, buffer, or string.')
+        }
         
         return {
             url: result.secure_url,

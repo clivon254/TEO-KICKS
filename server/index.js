@@ -23,6 +23,7 @@ import tagRoute from "./routes/tagRoute.js"
 import collectionRoute from "./routes/collectionRoute.js"
 import cartRoute from "./routes/cartRoute.js"
 import reviewRoute from "./routes/reviewRoute.js"
+import couponRoute from "./routes/couponRoute.js"
 // import orderRoute from "./routes/orderRoute.js"
 // import paymentRoute from "./routes/paymentRoute.js"
 
@@ -68,6 +69,7 @@ app.use("/api/tags", tagRoute)
 app.use("/api/collections", collectionRoute)
 app.use("/api/cart", cartRoute)
 app.use("/api/reviews", reviewRoute)
+app.use("/api/coupons", couponRoute)
 // app.use("/api/orders", orderRoute)
 // app.use("/api/payments", paymentRoute)
 

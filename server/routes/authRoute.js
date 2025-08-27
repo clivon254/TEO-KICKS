@@ -1,5 +1,5 @@
 import express from "express"
-
+import { authenticateToken } from "../middlewares/auth.js"
 import { 
     register, 
     verifyOTP, 
@@ -313,7 +313,7 @@ router.post('/reset-password/:token', resetPassword)
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/logout', logout)
+router.post('/logout', authenticateToken, logout)
 
 /**
  * @swagger
@@ -346,7 +346,7 @@ router.post('/logout', logout)
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/me', getMe)
+router.get('/me', authenticateToken, getMe)
 
 
 

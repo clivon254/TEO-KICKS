@@ -32,7 +32,7 @@
   {
     "title": "Nike Air Force 1 '07",
     "description": "<p>The iconic Nike Air Force 1 '07 delivers legendary style and all-day comfort. Features durable leather construction and Air cushioning technology.</p>",
-    "shortDescription": "Iconic basketball shoes with legendary style",
+    "shortDescription": "Nike Air Force 1 '07",
     "brand": "68a962f0f9a023b053607feb",
     "categories": ["68a63f1a9f8a1f721a63d392"],
     "collections": ["68a96daa17988c6e89805a3d"],
@@ -343,70 +343,68 @@
           { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" }
         ]
       }
-    },
-    {
-      "status": "active",
-      "metaTitle": "Reebok Club C 85 - Vintage Style",
-      "metaDescription": "Vintage-inspired leather sneakers with modern comfort",
-      "trackInventory": true,
-      "weight": 0.11,
-      "features": ["Soft leather upper", "Classic design", "Modern comfort", "Timeless style"]
-    },
-    {
-    {
-      "title": "Under Armour Curry 9",
-      "description": "<p>The Under Armour Curry 9 delivers performance and style on the court. Features responsive cushioning and secure fit for competitive play.</p>",
-      "shortDescription": "Performance basketball shoes with responsive cushioning",
-      "brand": "68a962f0f9a023b053607feb",
-      "categories": ["68a63f1a9f8a1f721a63d392"],
-      "collections": ["68a96daa17988c6e89805a3d"],
-      "tags": ["68a86c375e5ed74017441805"],
-      "basePrice": 1400,
-      "comparePrice": 1700,
-      "variants": [
-        {
-          "_id": "68a9a75c0614f4956b256d4b",
-          "name": "Size",
-          "options": [
-            { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
-            { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
-            { "value": "11", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d51" }
-          ]
-        }
-      ],
-      "status": "active",
-      "metaTitle": "Under Armour Curry 9 - Court Performance",
-      "metaDescription": "Performance basketball shoes designed for competitive play",
-      "trackInventory": true,
-      "weight": 0.12,
-      "features": ["Responsive cushioning", "Secure fit", "Court performance", "Durability"]
-    },
-    {
-      "title": "Asics Gel-Kayano 28",
-      "description": "<p>The Asics Gel-Kayano 28 provides stability and cushioning for long-distance running. Features advanced GEL technology and supportive structure.</p>",
-      "shortDescription": "Stability running shoes with GEL technology",
-      "brand": "68a962f0f9a023b053607feb",
-      "categories": ["68a63f1a9f8a1f721a63d392"],
-      "collections": ["68a96daa17988c6e89805a3d"],
-      "tags": ["68a86c375e5ed74017441805"],
-      "basePrice": 1600,
-      "comparePrice": 1900,
-      "variants": [
-        {
-          "_id": "68a9a75c0614f4956b256d4b",
-          "name": "Size",
-          "options": [
-            { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
-            { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
-            { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" }
-          ]
-        }
-      ],
-      "status": "active",
-      "metaTitle": "Asics Gel-Kayano 28 - Stability Running",
-      "metaDescription": "Advanced stability running shoes with GEL technology",
-      "trackInventory": true,
-      "weight": 0.13,
-      "features": ["GEL technology", "Stability support", "Cushioning", "Long-distance comfort"]
-    }
-  ]
+    ],
+    "status": "active",
+    "metaTitle": "Reebok Club C 85 - Vintage Style",
+    "metaDescription": "Vintage-inspired leather sneakers with modern comfort",
+    "trackInventory": true,
+    "weight": 0.11,
+    "features": ["Soft leather upper", "Classic design", "Modern comfort", "Timeless style"]
+  },
+  {
+    "title": "Under Armour Curry 9",
+    "description": "<p>The Under Armour Curry 9 delivers performance and style on the court. Features responsive cushioning and secure fit for competitive play.</p>",
+    "shortDescription": "Performance basketball shoes with responsive cushioning",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 1400,
+    "comparePrice": 1700,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "11", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d51" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Under Armour Curry 9 - Court Performance",
+    "metaDescription": "Performance basketball shoes designed for competitive play",
+    "trackInventory": true,
+    "weight": 0.12,
+    "features": ["Responsive cushioning", "Secure fit", "Court performance", "Durability"]
+  },
+  {
+    "title": "Asics Gel-Kayano 28",
+    "description": "<p>The Asics Gel-Kayano 28 provides stability and cushioning for long-distance running. Features advanced GEL technology and supportive structure.</p>",
+    "shortDescription": "Stability running shoes with GEL technology",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 1600,
+    "comparePrice": 1900,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Asics Gel-Kayano 28 - Stability Running",
+    "metaDescription": "Advanced stability running shoes with GEL technology",
+    "trackInventory": true,
+    "weight": 0.13,
+    "features": ["GEL technology", "Stability support", "Cushioning", "Long-distance comfort"]
+  }
+]

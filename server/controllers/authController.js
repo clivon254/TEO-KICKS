@@ -610,16 +610,11 @@ export const logout = async (req, res, next) => {
 // @route   GET /api/auth/me
 // @access  Private
 export const getMe = async (req, res, next) => {
-
     try {
-
         const user = await User.findById(req.user._id).select('-password -otpCode -resetPasswordToken')
 
-
         if (!user) {
-
             return next(errorHandler(404, "User not found"))
-
         }
 
         res.status(200).json({
@@ -643,11 +638,7 @@ export const getMe = async (req, res, next) => {
         })
 
     } catch (error) {
-
         console.error('Get me error:', error)
-
         next(errorHandler(500, "Server error while fetching user profile"))
-
     }
-
 }

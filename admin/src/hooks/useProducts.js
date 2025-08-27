@@ -34,24 +34,15 @@ export const useCreateProduct = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async (productData) => {
-            const formData = new FormData()
-
-            // Add basic fields
-            Object.keys(productData).forEach(key => {
-                if (key === 'images') return // Handle images separately
-                if (key === 'categories' || key === 'collections' || key === 'tags' || key === 'variants' || key === 'features') {
-                    formData.append(key, JSON.stringify(productData[key]))
+        mutationFn: async (formData) => {
+            console.log('useCreateProduct - Received FormData')
+            console.log('useCreateProduct - FormData entries:')
+            for (let [key, value] of formData.entries()) {
+                if (key === 'images') {
+                    console.log(`  ${key}: File object - ${value.name} (${value.size} bytes)`)
                 } else {
-                    formData.append(key, productData[key])
+                    console.log(`  ${key}: ${value}`)
                 }
-            })
-
-            // Add images
-            if (productData.images && productData.images.length > 0) {
-                productData.images.forEach((image) => {
-                    formData.append('images', image)
-                })
             }
 
             const response = await productAPI.createProduct(formData)
