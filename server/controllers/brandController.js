@@ -26,7 +26,7 @@ export const createBrand = async (req, res, next) => {
             slug,
             description,
             isActive,
-            createdBy: req.user.userId
+            createdBy: req.user._id
         })
 
         await brand.save()

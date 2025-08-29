@@ -45,7 +45,7 @@ export const getAddressById = async (req, res, next) => {
 
         const address = await Address.findOne({
             _id: addressId,
-            userId: req.user.userId,
+            userId: req.user._id,
             isActive: true
         })
 
@@ -109,7 +109,7 @@ export const createAddress = async (req, res, next) => {
         }
 
         // Check if user exists
-        const user = await User.findById(req.user.userId)
+        const user = await User.findById(req.user._id)
 
         if (!user) {
 
@@ -119,7 +119,7 @@ export const createAddress = async (req, res, next) => {
 
         // Create new address
         const newAddress = new Address({
-            userId: req.user.userId,
+            userId: req.user._id,
             label: label.trim(),
             street: street?.trim(),
             city: city?.trim(),
@@ -196,7 +196,7 @@ export const updateAddress = async (req, res, next) => {
 
         const address = await Address.findOne({
             _id: addressId,
-            userId: req.user.userId,
+            userId: req.user._id,
             isActive: true
         })
 
@@ -282,7 +282,7 @@ export const deleteAddress = async (req, res, next) => {
 
         const address = await Address.findOne({
             _id: addressId,
-            userId: req.user.userId,
+            userId: req.user._id,
             isActive: true
         })
 
@@ -326,7 +326,7 @@ export const setDefaultAddress = async (req, res, next) => {
 
         const address = await Address.findOne({
             _id: addressId,
-            userId: req.user.userId,
+            userId: req.user._id,
             isActive: true
         })
 
@@ -368,7 +368,7 @@ export const getDefaultAddress = async (req, res, next) => {
     try {
 
         const defaultAddress = await Address.findOne({
-            userId: req.user.userId,
+            userId: req.user._id,
             isDefault: true,
             isActive: true
         })

@@ -87,7 +87,7 @@ export const createProduct = async (req, res, next) => {
             features: features ? JSON.parse(features) : [],
             trackInventory,
             weight,
-            createdBy: req.user.userId
+            createdBy: req.user._id
         })
 
         await product.save()

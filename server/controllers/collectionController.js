@@ -24,7 +24,7 @@ export const createCollection = async (req, res, next) => {
             slug,
             description,
             isActive: isActive !== undefined ? isActive : true,
-            createdBy: req.user.userId
+            createdBy: req.user._id
         })
 
         await collection.save()

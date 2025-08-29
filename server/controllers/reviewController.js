@@ -74,7 +74,7 @@ export const createReview = async (req, res, next) => {
     try {
         const { productId } = req.params
         const { rating, comment } = req.body
-        const userId = req.user.id
+        const userId = req.user._id
 
         // Check if user is verified or admin
         const user = await User.findById(userId)
@@ -135,7 +135,7 @@ export const updateReview = async (req, res, next) => {
     try {
         const { reviewId } = req.params
         const { rating, comment } = req.body
-        const userId = req.user.id
+        const userId = req.user._id
         const userRoles = req.user.roles
 
         const review = await Review.findById(reviewId)
@@ -176,7 +176,7 @@ export const updateReview = async (req, res, next) => {
 export const deleteReview = async (req, res, next) => {
     try {
         const { reviewId } = req.params
-        const userId = req.user.id
+        const userId = req.user._id
         const userRoles = req.user.roles
 
         const review = await Review.findById(reviewId)
@@ -271,7 +271,7 @@ export const approveReview = async (req, res, next) => {
 // Get user's reviews
 export const getUserReviews = async (req, res, next) => {
     try {
-        const userId = req.user.id
+        const userId = req.user._id
         const { page = 1, limit = 10 } = req.query
 
         const skip = (page - 1) * limit

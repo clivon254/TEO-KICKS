@@ -65,6 +65,13 @@ export const useUpdateProduct = () => {
 
     return useMutation({
         mutationFn: async ({ productId, productData }) => {
+            // If productData is already FormData, use it directly
+            if (productData instanceof FormData) {
+                const response = await productAPI.updateProduct(productId, productData)
+                return response.data
+            }
+
+            // Otherwise, create FormData from object (fallback)
             const formData = new FormData()
 
             // Add basic fields

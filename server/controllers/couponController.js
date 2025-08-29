@@ -70,7 +70,7 @@ export const createCoupon = async (req, res, next) => {
             applicableCategories: applicableCategories || [],
             excludedProducts: excludedProducts || [],
             excludedCategories: excludedCategories || [],
-            createdBy: req.user.userId
+            createdBy: req.user._id
         })
 
         await coupon.save()
@@ -338,7 +338,7 @@ export const validateCoupon = async (req, res, next) => {
 export const applyCoupon = async (req, res, next) => {
     try {
         const { code, orderAmount } = req.body
-        const userId = req.user.userId
+        const userId = req.user._id
 
         if (!code) {
             return next(errorHandler(400, 'Coupon code is required'))

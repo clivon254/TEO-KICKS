@@ -6,7 +6,7 @@ import { errorHandler } from '../utils/error.js'
 // Get user's cart
 export const getCart = async (req, res, next) => {
     try {
-        const userId = req.user.id
+        const userId = req.user._id
         
         const cart = await Cart.findOrCreateByUser(userId)
         
@@ -31,7 +31,7 @@ export const getCart = async (req, res, next) => {
 // Add item to cart
 export const addToCart = async (req, res, next) => {
     try {
-        const userId = req.user.id
+        const userId = req.user._id
         const { productId, skuId, quantity = 1, variantOptions = {} } = req.body
 
         // Validate required fields
@@ -130,7 +130,7 @@ export const addToCart = async (req, res, next) => {
 // Update cart item quantity
 export const updateCartItem = async (req, res, next) => {
     try {
-        const userId = req.user.id
+        const userId = req.user._id
         const { skuId } = req.params
         const { quantity } = req.body
 
@@ -192,7 +192,7 @@ export const updateCartItem = async (req, res, next) => {
 // Remove item from cart
 export const removeFromCart = async (req, res, next) => {
     try {
-        const userId = req.user.id
+        const userId = req.user._id
         const { skuId } = req.params
 
         const cart = await Cart.findOne({ userId, status: 'active' })
@@ -225,7 +225,7 @@ export const removeFromCart = async (req, res, next) => {
 // Clear cart
 export const clearCart = async (req, res, next) => {
     try {
-        const userId = req.user.id
+        const userId = req.user._id
 
         const cart = await Cart.findOne({ userId, status: 'active' })
         if (!cart) {
@@ -249,7 +249,7 @@ export const clearCart = async (req, res, next) => {
 // Validate cart (check stock availability)
 export const validateCart = async (req, res, next) => {
     try {
-        const userId = req.user.id
+        const userId = req.user._id
 
         const cart = await Cart.findOne({ userId, status: 'active' })
         if (!cart) {

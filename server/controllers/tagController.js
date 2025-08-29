@@ -26,7 +26,7 @@ export const createTag = async (req, res, next) => {
             slug,
             description,
             isActive,
-            createdBy: req.user.userId
+            createdBy: req.user._id
         })
 
         await tag.save()
@@ -275,7 +275,7 @@ export const findOrCreateTag = async (req, res, next) => {
         const tagData = {
             name,
             description,
-            createdBy: req.user.userId
+            createdBy: req.user._id
         }
 
         const tag = await Tag.findOrCreate(tagData)

@@ -38,7 +38,6 @@ const EditProduct = () => {
         basePrice: '',
         comparePrice: '',
         variants: [],
-        images: [],
         status: 'draft',
         metaTitle: '',
         metaDescription: '',
@@ -51,20 +50,25 @@ const EditProduct = () => {
     const [skuUpdates, setSkuUpdates] = useState({})
 
     const [newFeature, setNewFeature] = useState('')
-    const [imagePreview, setImagePreview] = useState([])
     const [isLoading, setIsLoading] = useState(true)
+
+    // Image states - exactly like the user's pattern
+    // existing images already saved in DB (public_id + url)
+    const [existingImages, setExistingImages] = useState([])
+    // only NEW images selected in this edit session
+    const [newImages, setNewImages] = useState([])
 
     // Cleanup function to prevent memory leaks
     useEffect(() => {
         return () => {
             // Revoke all object URLs when component unmounts
-            imagePreview.forEach(image => {
-                if (image.preview) {
-                    URL.revokeObjectURL(image.preview)
+            newImages.forEach(file => {
+                if (file.preview) {
+                    URL.revokeObjectURL(file.preview)
                 }
             })
         }
-    }, [imagePreview])
+    }, [newImages])
 
     // Load data
     const { data: productData, isLoading: productLoading } = useGetProductById(id)
@@ -112,7 +116,6 @@ const EditProduct = () => {
                 basePrice: product.basePrice?.toString() || '',
                 comparePrice: product.comparePrice?.toString() || '',
                 variants: Array.isArray(product.variants) ? product.variants : [],
-                images: [], // Start with empty array, will be populated with new file uploads
                 status: product.status || 'draft',
                 metaTitle: product.metaTitle || '',
                 metaDescription: product.metaDescription || '',
@@ -121,17 +124,8 @@ const EditProduct = () => {
                 features: product.features || []
             })
 
-            // Set up image previews
-            if (product.images && product.images.length > 0) {
-                const previews = product.images.map(img => ({
-                    url: img.url,
-                    alt: img.alt || product.title,
-                    isPrimary: img.isPrimary || false,
-                    existing: true,
-                    public_id: img.public_id
-                }))
-                setImagePreview(previews)
-            }
+            // Set existing images - exactly like the user's pattern
+            setExistingImages(product.images || [])
 
             setIsLoading(false)
         }
@@ -187,67 +181,36 @@ const EditProduct = () => {
         }))
     }
 
-    const handleImageUpload = (e) => {
-        const files = Array.from(e.target.files)
-        console.log('Image upload - Selected files:', files)
-
-        // Create preview objects for UI display
-        const newImagePreviews = files.map(file => ({
-            file,
-            preview: URL.createObjectURL(file),
-            alt: file.name,
-            isUploading: false,
-            uploadError: null,
-            isNew: true // Mark as new upload
-        }))
-
-        // Update image previews for UI
-        setImagePreview(prev => [...prev, ...newImagePreviews])
-
-        // Add file objects to formData.images for submission
-        setFormData(prev => {
-            const currentImages = Array.isArray(prev.images) ? prev.images : []
-            const updatedImages = [...currentImages, ...files]
-            console.log('Image upload - Updated formData.images:', updatedImages)
-            return {
-                ...prev,
-                images: updatedImages
-            }
-        })
-    }
-
-    const removeImage = (index) => {
-        const imageToRemove = imagePreview[index]
-
-        // Revoke the object URL to prevent memory leaks
-        if (imageToRemove?.preview) {
-            URL.revokeObjectURL(imageToRemove.preview)
-        }
-
-        // Remove from image preview
-        setImagePreview(prev => prev.filter((_, i) => i !== index))
-
-        // Only remove from formData.images if it's a new file upload (not existing image)
-        if (imageToRemove?.isNew && imageToRemove?.file) {
-            setFormData(prev => {
-                const currentImages = Array.isArray(prev.images) ? prev.images : []
-                // Find and remove the specific file from formData.images
-                const updatedImages = currentImages.filter(file => file !== imageToRemove.file)
-                console.log('Remove image - Updated formData.images:', updatedImages)
-                return {
-                    ...prev,
-                    images: updatedImages
-                }
+    // Handle new images - exactly like the user's pattern
+    const handleNewImages = (e) => {
+        // store real File objects
+        const files = Array.from(e.target.files || [])
+        console.log('=== NEW IMAGES DEBUG ===')
+        console.log('Selected files:', files.length)
+        files.forEach((file, index) => {
+            console.log(`File ${index}:`, {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                isFile: file instanceof File
             })
-        }
+        })
+        setNewImages(files)
     }
 
-    const setPrimaryImage = (index) => {
-        setImagePreview(prev => prev.map((img, i) => ({
-            ...img,
-            isPrimary: i === index
-        })))
+    const removeNewImage = (index) => {
+        console.log('=== REMOVE NEW IMAGE DEBUG ===')
+        console.log('Removing new image at index:', index)
+        setNewImages(prev => prev.filter((_, i) => i !== index))
     }
+
+    const removeExistingImage = (index) => {
+        console.log('=== REMOVE EXISTING IMAGE DEBUG ===')
+        console.log('Removing existing image at index:', index)
+        setExistingImages(prev => prev.filter((_, i) => i !== index))
+    }
+
+
 
     const addFeature = () => {
         if (newFeature.trim()) {
@@ -334,38 +297,42 @@ const EditProduct = () => {
         e.preventDefault()
 
         try {
-            // Ensure formData.images is always an array
-            const currentImages = Array.isArray(formData.images) ? formData.images : []
+            console.log('=== FORM SUBMISSION DEBUG ===')
+            console.log('Form data:', formData)
+            console.log('New images count:', newImages.length)
+            console.log('Existing images count:', existingImages.length)
 
-            // Filter to only include File objects (new uploads)
-            const newImageFiles = currentImages.filter(img => img instanceof File)
+            const fd = new FormData()
 
-            console.log('Form submission - Current formData.images:', currentImages)
-            console.log('Form submission - New image files:', newImageFiles)
-            console.log('Form submission - Image types:', currentImages.map(img => typeof img))
-
-            const submitData = {
-                ...formData,
-                basePrice: parseFloat(formData.basePrice) || 0,
-                comparePrice: formData.comparePrice ? parseFloat(formData.comparePrice) : undefined,
-                weight: formData.weight ? parseFloat(formData.weight) : undefined,
-                images: newImageFiles // Only send new file uploads (File objects)
-            }
-
-            console.log('Form submission - Final submitData:', {
-                ...submitData,
-                images: submitData.images.map(img => ({
-                    name: img.name,
-                    size: img.size,
-                    type: img.type,
-                    lastModified: img.lastModified
-                }))
+            // append non-file fields (strings/numbers)
+            Object.keys(formData).forEach(key => {
+                if (key === 'categories' || key === 'collections' || key === 'tags' || key === 'variants' || key === 'features') {
+                    fd.append(key, JSON.stringify(formData[key]))
+                } else {
+                    fd.append(key, formData[key])
+                }
             })
 
-            // SKU updates are now handled individually via API calls
-            // No need to include them in the main form submission
+            // IMPORTANT: append each new file individually (DO NOT append the array)
+            newImages.forEach((file) => {
+                fd.append("images", file, file.name) // 'images' must match Multer field name
+            })
 
-            await updateProduct.mutateAsync({ productId: id, productData: submitData })
+            // send which existing images to KEEP (so backend knows not to delete them)
+            // send as JSON string or as repeated keys — pick one and match on the backend
+            fd.append("keepImages", JSON.stringify(existingImages.map(img => img.public_id)))
+
+            console.log('=== FINAL FORMDATA DEBUG ===')
+            console.log('FormData entries:')
+            for (let [key, value] of fd.entries()) {
+                if (key === 'images') {
+                    console.log(`  ${key}: File - ${value.name} (${value.size} bytes)`)
+                } else {
+                    console.log(`  ${key}: ${value}`)
+                }
+            }
+
+            await updateProduct.mutateAsync({ productId: id, productData: fd })
             navigate('/products')
         } catch (error) {
             console.error('Submit error:', error)
@@ -927,6 +894,7 @@ const EditProduct = () => {
             case 'images':
                 return (
                     <div className="space-y-4">
+                        
                         <div className="flex items-center justify-center w-full">
                             <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -940,31 +908,73 @@ const EditProduct = () => {
                                     type="file"
                                     multiple
                                     accept="image/*"
-                                    onChange={handleImageUpload}
+                                    onChange={handleNewImages}
                                     className="hidden"
                                 />
                             </label>
                         </div>
 
-                        {imagePreview.length > 0 && (
+                        {newImages.length > 0 && (
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <h4 className="text-sm font-medium text-gray-700">
-                                        Product Images ({imagePreview.length})
+                                        New Images ({newImages.length})
                                     </h4>
-                                    {imagePreview.length > 1 && (
+                                    {newImages.length > 1 && (
                                         <p className="text-xs text-gray-500">
-                                            Click "Primary" to set the main image
+                                            Click "Remove" to remove selected images.
                                         </p>
                                     )}
                                 </div>
                                 
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    {imagePreview.map((image, index) => (
+                                    {newImages.map((file, index) => (
                                         <div key={index} className="relative group">
                                             <img
-                                                src={image.existing ? image.url : image.preview}
-                                                alt={image.alt}
+                                                src={URL.createObjectURL(file)}
+                                                alt={file.name}
+                                                className={`w-full h-24 object-cover rounded-lg border-2 transition-all border-gray-200`}
+                                            />
+                                            
+                                            {/* New Image Badge */}
+                                            <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                                                New
+                                            </div>
+                                            
+                                            {/* Trash Icon - Always Visible */}
+                                            <button
+                                                type="button"
+                                                onClick={() => removeNewImage(index)}
+                                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors shadow-sm"
+                                                title="Remove image"
+                                            >
+                                                <FiX className="h-3 w-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {existingImages.length > 0 && (
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="text-sm font-medium text-gray-700">
+                                        Existing Images ({existingImages.length})
+                                    </h4>
+                                    {existingImages.length > 1 && (
+                                        <p className="text-xs text-gray-500">
+                                            Click "Remove" to remove existing images.
+                                        </p>
+                                    )}
+                                </div>
+                                
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {existingImages.map((image, index) => (
+                                        <div key={index} className="relative group">
+                                            <img
+                                                src={image.url}
+                                                alt={image.alt || 'Product image'}
                                                 className={`w-full h-24 object-cover rounded-lg border-2 transition-all ${
                                                     image.isPrimary ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200'
                                                 }`}
@@ -978,76 +988,47 @@ const EditProduct = () => {
                                             )}
                                             
                                             {/* Existing Image Badge */}
-                                            {image.existing && (
-                                                <div className="absolute top-1 right-8 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                                                    Existing
-                                                </div>
-                                            )}
+                                            <div className="absolute top-1 right-8 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                                                Existing
+                                            </div>
                                             
                                             {/* Trash Icon - Always Visible */}
                                             <button
                                                 type="button"
-                                                onClick={() => removeImage(index)}
+                                                onClick={() => removeExistingImage(index)}
                                                 className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors shadow-sm"
                                                 title="Remove image"
                                             >
                                                 <FiX className="h-3 w-3" />
                                             </button>
-                                            
-                                            {/* Hover Overlay for Primary Button */}
-                                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                                                {!image.isPrimary && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setPrimaryImage(index)}
-                                                        className="text-white text-xs px-3 py-2 bg-primary rounded-lg hover:bg-primary/80 transition-colors shadow-sm"
-                                                        title="Set as primary image"
-                                                    >
-                                                        Set Primary
-                                                    </button>
-                                                )}
-                                            </div>
-                                            
-                                            {/* Upload Status */}
-                                            {image.isUploading && (
-                                                <div className="absolute inset-0 bg-black/30 rounded-lg flex items-center justify-center">
-                                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                                                </div>
-                                            )}
-                                            
-                                            {/* Error State */}
-                                            {image.uploadError && (
-                                                <div className="absolute inset-0 bg-red-500/20 rounded-lg flex items-center justify-center">
-                                                    <div className="text-red-600 text-xs text-center px-2">
-                                                        Upload failed
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
                                     ))}
                                 </div>
-                                
-                                {/* Image Upload Tips */}
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                    <div className="flex items-start space-x-2">
-                                        <FiImage className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                                        <div className="text-xs text-blue-800">
-                                            <p className="font-medium mb-1">Image Management Tips:</p>
-                                            <ul className="space-y-1">
-                                                <li>• First image will be set as primary automatically</li>
-                                                <li>• Existing images are marked with green "Existing" badge</li>
-                                                <li>• Supported formats: JPG, PNG, GIF, WebP</li>
-                                                <li>• Maximum file size: 5MB per image</li>
-                                                <li>• Images will be optimized automatically</li>
-                                                <li>• Removing existing images will delete them permanently</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         )}
+                                
+                        {/* Image Upload Tips */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div className="flex items-start space-x-2">
+                                <FiImage className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                <div className="text-xs text-blue-800">
+                                    <p className="font-medium mb-1">Image Management Tips:</p>
+                                    <ul className="space-y-1">
+                                        <li>• First image will be set as primary automatically</li>
+                                        <li>• Existing images are marked with green "Existing" badge</li>
+                                        <li>• Supported formats: JPG, PNG, GIF, WebP</li>
+                                        <li>• Maximum file size: 5MB per image</li>
+                                        <li>• Images will be optimized automatically</li>
+                                        <li>• Removing existing images will delete them permanently</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 )
+                    
+                
 
             case 'settings':
                 return (
@@ -1175,7 +1156,7 @@ const EditProduct = () => {
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Images:</span>
-                                    <p className="text-gray-900">{imagePreview.length} uploaded</p>
+                                    <p className="text-gray-900">{newImages.length + existingImages.length} uploaded</p>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Status:</span>

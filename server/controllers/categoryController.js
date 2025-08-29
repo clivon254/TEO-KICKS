@@ -24,7 +24,7 @@ export const createCategory = async (req, res, next) => {
             slug,
             description,
             status: status === 'inactive' ? 'inactive' : 'active',
-            createdBy: req.user.userId
+            createdBy: req.user._id
         })
 
         await category.save()

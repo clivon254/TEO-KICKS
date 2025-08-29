@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FiSearch, FiFilter, FiX, FiEdit2, FiTrash2, FiEye, FiPlus, FiRefreshCw } from 'react-icons/fi'
+import { FiSearch, FiFilter, FiX, FiEdit2, FiTrash2, FiEye, FiPlus, FiRefreshCw, FiList } from 'react-icons/fi'
 import { useGetAllCoupons, useDeleteCoupon } from '../../hooks/useCoupons'
 import Pagination from '../../components/common/Pagination'
 import StatusBadge from '../../components/common/StatusBadge'
@@ -14,7 +14,6 @@ const Coupons = () => {
     const [statusFilter, setStatusFilter] = useState('all')
     const [discountTypeFilter, setDiscountTypeFilter] = useState('all')
     const [selectedCoupons, setSelectedCoupons] = useState([])
-    const [showFilters, setShowFilters] = useState(false)
     const [deleteModal, setDeleteModal] = useState({ show: false, couponId: null })
 
     // Get all coupons
@@ -35,27 +34,18 @@ const Coupons = () => {
     const coupons = couponsData?.data?.data?.coupons || []
     const pagination = couponsData?.data?.data?.pagination
 
-    // Handle search
-    const handleSearch = (e) => {
-        e.preventDefault()
-        setCurrentPage(1)
-        refetch()
-    }
+
 
     // Handle clear search
     const clearSearch = () => {
         setSearchTerm('')
-        setCurrentPage(1)
-        refetch()
-    }
-
-    // Handle clear filters
-    const clearFilters = () => {
         setStatusFilter('all')
         setDiscountTypeFilter('all')
         setCurrentPage(1)
         refetch()
     }
+
+
 
     // Handle select coupon
     const handleSelectCoupon = (couponId) => {
@@ -139,107 +129,109 @@ const Coupons = () => {
     return (
         <div className="p-6">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Coupons Management</h1>
-                    <p className="text-gray-600 mt-1">Manage discount coupons and promotional codes</p>
-                </div>
-                <button
-                    onClick={() => navigate('/coupons/add')}
-                    className="btn-primary inline-flex items-center"
-                >
-                    <FiPlus className="mr-2 h-4 w-4" />
-                    Add Coupon
-                </button>
+            <div className="mb-4">
+                <h1 className="text-2xl font-bold text-gray-900">Coupons Management</h1>
+                <p className="text-gray-600 mt-1">Manage discount coupons and promotional codes</p>
             </div>
 
-            {/* Search and Filters */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-                <div className="flex flex-col lg:flex-row gap-4">
-                    {/* Search */}
-                    <div className="flex-1">
-                        <form onSubmit={handleSearch} className="relative">
-                            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                            <input
-                                type="text"
-                                placeholder="Search coupons by code, name, or description..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                            />
-                            {searchTerm && (
-                                <button
-                                    type="button"
-                                    onClick={clearSearch}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                >
-                                    <FiX className="h-4 w-4" />
-                                </button>
-                            )}
-                        </form>
+            {/* Search Bar and Add Button */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                <div className="flex-1">
+                    <div className="relative">
+                        <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                        <input
+                            type="text"
+                            placeholder="Search coupons by code, name, or description..."
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value)
+                                setCurrentPage(1)
+                                refetch()
+                            }}
+                            className="w-full pl-10 pr-9 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                        />
+                        {searchTerm && (
+                            <button
+                                type="button"
+                                onClick={clearSearch}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                aria-label="Clear search"
+                            >
+                                <FiX className="h-4 w-4" />
+                            </button>
+                        )}
                     </div>
-
-                    {/* Filter Toggle */}
+                </div>
+                <div className="sm:w-auto">
                     <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        onClick={() => navigate('/coupons/add')}
+                        className="btn-primary inline-flex items-center justify-center w-full sm:w-auto"
                     >
-                        <FiFilter className="h-4 w-4" />
-                        Filters
-                        {showFilters && <FiX className="h-4 w-4" />}
+                        <FiPlus className="mr-2 h-4 w-4" />
+                        Add Coupon
                     </button>
                 </div>
+            </div>
 
-                {/* Filters Panel */}
-                {showFilters && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {/* Status Filter */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Status
-                                </label>
-                                <select
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                >
-                                    <option value="all">All Status</option>
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                    <option value="expired">Expired</option>
-                                    <option value="limit-reached">Limit Reached</option>
-                                </select>
-                            </div>
-
-                            {/* Discount Type Filter */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Discount Type
-                                </label>
-                                <select
-                                    value={discountTypeFilter}
-                                    onChange={(e) => setDiscountTypeFilter(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                >
-                                    <option value="all">All Types</option>
-                                    <option value="percentage">Percentage</option>
-                                    <option value="fixed">Fixed Amount</option>
-                                </select>
-                            </div>
-
-                            {/* Clear Filters */}
-                            <div className="flex items-end">
-                                <button
-                                    onClick={clearFilters}
-                                    className="w-full px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                                >
-                                    Clear Filters
-                                </button>
-                            </div>
-                        </div>
+            {/* Coupon Count and Filters */}
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <p className="text-sm text-gray-600">Total {pagination?.totalCoupons || 0} coupons</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {/* Status Filter */}
+                    <div className="relative">
+                        <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-3 w-3" />
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => {
+                                setStatusFilter(e.target.value)
+                                setCurrentPage(1)
+                                refetch()
+                            }}
+                            className="border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-white text-xs"
+                        >
+                            <option value="all">Status: All</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="expired">Expired</option>
+                            <option value="limit-reached">Limit Reached</option>
+                        </select>
                     </div>
-                )}
+
+                    {/* Discount Type Filter */}
+                    <div className="relative">
+                        <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-3 w-3" />
+                        <select
+                            value={discountTypeFilter}
+                            onChange={(e) => {
+                                setDiscountTypeFilter(e.target.value)
+                                setCurrentPage(1)
+                                refetch()
+                            }}
+                            className="border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-white text-xs"
+                        >
+                            <option value="all">Type: All</option>
+                            <option value="percentage">Percentage</option>
+                            <option value="fixed">Fixed Amount</option>
+                        </select>
+                    </div>
+
+                    {/* Rows per page */}
+                    <div className="relative">
+                        <FiList className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-3 w-3" />
+                        <select
+                            value={10}
+                            onChange={(e) => { /* Handle rows per page */ }}
+                            className="border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-white text-xs"
+                        >
+                            <option value={5}>Rows: 5</option>
+                            <option value={10}>Rows: 10</option>
+                            <option value={20}>Rows: 20</option>
+                            <option value={50}>Rows: 50</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             {/* Bulk Actions */}

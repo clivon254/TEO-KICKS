@@ -32,7 +32,7 @@ export const createRole = async (req, res, next) => {
         const role = await Role.create({
             name: name.toLowerCase(),
             description,
-            createdBy: req.user.userId
+            createdBy: req.user._id
         })
 
         await role.populate('createdBy', 'name email')
@@ -202,7 +202,7 @@ export const updateRole = async (req, res, next) => {
 
         if (isActive !== undefined) role.isActive = isActive
 
-        role.updatedBy = req.user.userId
+        role.updatedBy = req.user._id
 
         await role.save()
 
