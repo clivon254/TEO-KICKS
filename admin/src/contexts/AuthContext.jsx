@@ -291,6 +291,19 @@ export const AuthProvider = ({ children }) => {
         }
     }
 
+    // Change password function
+    const changePassword = async (passwordData) => {
+        try {
+            const response = await userAPI.changePassword(passwordData)
+            toast.success('Password changed successfully!')
+            return { success: true }
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || 'Failed to change password'
+            toast.error(errorMessage)
+            throw error
+        }
+    }
+
     // Logout function
     const logout = async () => {
         try {
@@ -330,6 +343,7 @@ export const AuthProvider = ({ children }) => {
         forgotPassword,
         resetPassword,
         updateProfile,
+        changePassword,
         logout,
         clearError
     }
