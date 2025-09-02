@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useGetProductById } from '../../hooks/useProducts'
 import { useGetBrands } from '../../hooks/useBrands'
@@ -19,7 +19,7 @@ const ProductDetails = () => {
     const navigate = useNavigate()
     const addToCart = useAddToCart()
 
-    // Product data
+    // Product data with memoized processing
     const { data: productData, isLoading } = useGetProductById(id)
     const { data: brandsData } = useGetBrands({ limit: 100 })
     const { data: categoriesData } = useGetCategories({ limit: 100 })
@@ -27,12 +27,13 @@ const ProductDetails = () => {
     const { data: tagsData } = useGetTags({ limit: 100 })
     const { data: variantsData } = useGetVariants({ limit: 100 })
 
-    const product = productData?.data
-    const brands = brandsData?.data?.data?.brands || []
-    const categories = categoriesData?.data?.data?.categories || []
-    const collections = collectionsData?.data?.data?.collections || []
-    const tags = tagsData?.data?.data?.tags || []
-    const allVariants = variantsData?.data?.data || []
+    // Memoize processed data to avoid re-computations
+    const product = useMemo(() => productData?.data, [productData])
+    const brands = useMemo(() => brandsData?.data?.data?.brands || [], [brandsData])
+    const categories = useMemo(() => categoriesData?.data?.data?.categories || [], [categoriesData])
+    const collections = useMemo(() => collectionsData?.data?.data?.collections || [], [collectionsData])
+    const tags = useMemo(() => tagsData?.data?.data?.tags || [], [tagsData])
+    const allVariants = useMemo(() => variantsData?.data?.data || [], [variantsData])
 
     // State for cart and variant selection
     const [selectedVariants, setSelectedVariants] = useState({})
@@ -41,25 +42,24 @@ const ProductDetails = () => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0)
     const [showCartSuccessModal, setShowCartSuccessModal] = useState(false)
 
-    // Get all available SKUs for the product
-    const getAvailableSKUs = () => {
+    // Memoize utility functions to avoid re-computations
+    const getAvailableSKUs = useMemo(() => {
         if (!product?.skus) return []
         return product.skus.filter(sku => sku.stock > 0)
-    }
+    }, [product?.skus])
 
     // Get total available stock across all SKUs
-    const getTotalAvailableStock = () => {
-        const availableSKUs = getAvailableSKUs()
-        return availableSKUs.reduce((total, sku) => total + sku.stock, 0)
-    }
+    const getTotalAvailableStock = useMemo(() => {
+        return getAvailableSKUs.reduce((total, sku) => total + sku.stock, 0)
+    }, [getAvailableSKUs])
 
-    // Handle variant selection
-    const handleVariantChange = (variantId, optionId) => {
+    // Memoize event handlers to prevent child component re-renders
+    const handleVariantChange = useCallback((variantId, optionId) => {
         setSelectedVariants(prev => ({
             ...prev,
             [variantId]: optionId
         }))
-    }
+    }, [])
 
     // Auto-select first variant option by default
     useEffect(() => {
@@ -115,29 +115,29 @@ const ProductDetails = () => {
 
 
 
-    const handleQuantityChange = (e) => {
+    const handleQuantityChange = useCallback((e) => {
         const value = parseInt(e.target.value)
         if (value > 0) {
             setQuantity(value)
         }
-    }
+    }, [])
 
-    const increaseQuantity = () => {
+    const increaseQuantity = useCallback(() => {
         const populatedVariants = getPopulatedVariants()
-        const maxStock = populatedVariants.length > 0 
+        const maxStock = populatedVariants.length > 0
             ? (selectedSKU?.stock || 0)
             : getTotalAvailableStock()
-        
+
         if (quantity < maxStock) {
             setQuantity(prev => prev + 1)
         }
-    }
+    }, [selectedSKU?.stock, getTotalAvailableStock, quantity, getPopulatedVariants])
 
-    const decreaseQuantity = () => {
+    const decreaseQuantity = useCallback(() => {
         if (quantity > 1) {
             setQuantity(prev => prev - 1)
         }
-    }
+    }, [quantity])
 
     const handleAddToCart = async () => {
         const populatedVariants = getPopulatedVariants()
@@ -201,46 +201,47 @@ const ProductDetails = () => {
         }
     }
 
-    const handleContinueShopping = () => {
+    const handleContinueShopping = useCallback(() => {
         setShowCartSuccessModal(false)
         // Stay on the same page so user can add the same item again
-    }
+    }, [])
 
-    const handleGoToCart = () => {
+    const handleGoToCart = useCallback(() => {
         setShowCartSuccessModal(false)
         navigate('/cart')
-    }
+    }, [navigate])
 
 
 
-    const getBrandName = (brandId) => {
+    // Memoize utility functions used in rendering
+    const getBrandName = useCallback((brandId) => {
         const brand = brands.find(b => b._id === brandId)
         return brand?.name || 'Unknown Brand'
-    }
+    }, [brands])
 
-    const getCategoryNames = (categoryIds) => {
+    const getCategoryNames = useCallback((categoryIds) => {
         return categoryIds?.map(id => {
             const category = categories.find(c => c._id === id)
             return category?.name || 'Unknown Category'
         }).join(', ') || 'No categories'
-    }
+    }, [categories])
 
-    const getCollectionNames = (collectionIds) => {
+    const getCollectionNames = useCallback((collectionIds) => {
         return collectionIds?.map(id => {
             const collection = collections.find(c => c._id === id)
             return collection?.name || 'Unknown Collection'
         }).join(', ') || 'No collections'
-    }
+    }, [collections])
 
-    const getTagNames = (tagIds) => {
+    const getTagNames = useCallback((tagIds) => {
         return tagIds?.map(id => {
             const tag = tags.find(t => t._id === id)
             return tag?.name || 'Unknown Tag'
         }).join(', ') || 'No tags'
-    }
+    }, [tags])
 
-    // Get populated variants with options
-    const getPopulatedVariants = () => {
+    // Memoize populated variants with options
+    const getPopulatedVariants = useMemo(() => {
         // Check if product has variants directly (not as IDs)
         if (product?.variants && Array.isArray(product.variants) && product.variants.length > 0) {
             // If variants are already populated objects, return them directly
@@ -248,7 +249,7 @@ const ProductDetails = () => {
                 return product.variants
             }
         }
-        
+
         // Fallback: if variants are stored as IDs, try to populate them
         if (product?.variants && Array.isArray(product.variants) && allVariants.length > 0) {
             return product.variants.map(variantId => {
@@ -256,9 +257,9 @@ const ProductDetails = () => {
                 return variant
             }).filter(Boolean)
         }
-        
+
         return []
-    }
+    }, [product?.variants, allVariants])
 
     if (isLoading) {
         return (

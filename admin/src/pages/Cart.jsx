@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGetCart, useUpdateCartItem, useRemoveFromCart, useClearCart } from '../hooks/useCart'
 import { FiShoppingCart, FiTrash2, FiPlus, FiMinus, FiArrowLeft, FiX } from 'react-icons/fi'
@@ -12,10 +12,12 @@ const Cart = () => {
     const removeFromCart = useRemoveFromCart()
     const clearCart = useClearCart()
 
-    const cart = cartData?.data?.data
-    const cartItems = cart?.items || []
+    // Memoize cart data to prevent unnecessary re-computations
+    const cart = useMemo(() => cartData?.data?.data, [cartData])
+    const cartItems = useMemo(() => cart?.items || [], [cart])
 
-    const getProductImage = (product) => {
+    // Memoize utility functions to prevent unnecessary re-computations
+    const getProductImage = useCallback((product) => {
         if (product?.images && product.images.length > 0) {
             return product.images[0]
         }
@@ -23,23 +25,25 @@ const Cart = () => {
             return product.primaryImage
         }
         return null // Return null to trigger placeholder
-    }
+    }, [])
 
-    const formatVariantOptions = (variantOptions) => {
+    const formatVariantOptions = useCallback((variantOptions) => {
         if (!variantOptions || Object.keys(variantOptions).length === 0) {
             return 'No variants'
         }
-        
+
         return Object.entries(variantOptions)
             .map(([key, value]) => `${key}: ${value}`)
             .join(', ')
-    }
+    }, [])
 
-    const calculateSubtotal = () => {
+    // Memoize expensive calculations
+    const calculateSubtotal = useMemo(() => {
         return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0)
-    }
+    }, [cartItems])
 
-    const handleQuantityChange = async (skuId, newQuantity) => {
+    // Memoize event handlers to prevent child component re-renders
+    const handleQuantityChange = useCallback(async (skuId, newQuantity) => {
         if (newQuantity < 1) {
             toast.error('Quantity must be at least 1')
             return
@@ -50,17 +54,17 @@ const Cart = () => {
         } catch (error) {
             console.error('Error updating quantity:', error)
         }
-    }
+    }, [updateCartItem])
 
-    const handleRemoveItem = async (skuId) => {
+    const handleRemoveItem = useCallback(async (skuId) => {
         try {
             await removeFromCart.mutateAsync(skuId)
         } catch (error) {
             console.error('Error removing item:', error)
         }
-    }
+    }, [removeFromCart])
 
-    const handleClearCart = async () => {
+    const handleClearCart = useCallback(async () => {
         if (window.confirm('Are you sure you want to clear your cart?')) {
             try {
                 await clearCart.mutateAsync()
@@ -68,12 +72,12 @@ const Cart = () => {
                 console.error('Error clearing cart:', error)
             }
         }
-    }
+    }, [clearCart])
 
-    const handleCheckout = () => {
+    const handleCheckout = useCallback(() => {
         // TODO: Implement checkout functionality
         toast.info('Checkout functionality coming soon!')
-    }
+    }, [])
 
 
 
@@ -172,7 +176,7 @@ const Cart = () => {
                                                                     e.target.nextSibling.style.display = 'flex'
                                                                 }}
                                                             />
-                                                            <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200 hidden">
+                                                            <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
                                                                 <FiShoppingCart className="w-8 h-8 text-gray-400" />
                                                             </div>
                                                         </>
@@ -260,7 +264,7 @@ const Cart = () => {
                             <div className="space-y-3 mb-6">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">Subtotal</span>
-                                    <span className="font-medium">${calculateSubtotal().toFixed(2)}</span>
+                                    <span className="font-medium">${calculateSubtotal.toFixed(2)}</span>
                                 </div>
                                 
                                 <div className="flex justify-between text-sm">
@@ -271,7 +275,7 @@ const Cart = () => {
                                 <div className="border-t border-gray-200 pt-3">
                                     <div className="flex justify-between text-base font-semibold">
                                         <span>Total</span>
-                                        <span>${calculateSubtotal().toFixed(2)}</span>
+                                        <span>${calculateSubtotal.toFixed(2)}</span>
                                     </div>
                                 </div>
                             </div>

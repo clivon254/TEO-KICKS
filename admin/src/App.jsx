@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
-import { AuthProvider } from './contexts/AuthContext'
-import { useAuth } from './contexts/AuthContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { useState } from 'react'
 import Header from './components/common/Header'
 import Sidebar from './components/common/Sidebar'
@@ -45,46 +44,45 @@ import Address from './pages/settings/Address'
 import ChangePassword from './pages/settings/ChangePassword'
 import StoreConfigurations from './pages/settings/StoreConfigurations'
 
+// Main Layout - only for authenticated users
+function Layout() {
+  const { isAuthenticated, isLoading } = useAuth()
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return isAuthenticated ? (
+    <div className="min-h-screen h-screen flex flex-col">
+      <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+      <div className="flex-1 flex overflow-hidden">
+        <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+        <div className="flex-1 h-full overflow-y-auto relative">
+          <Outlet />
+        </div>
+      </div>
+    </div>
+  ) : (
+    <Navigate to="/login" replace />
+  )
+}
 
 
 
 
 function App() {
-  // Main Layout - only for authenticated users
-  function Layout() {
-    const { isAuthenticated, isLoading } = useAuth()
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-
-    const toggleSidebar = () => {
-      setIsSidebarOpen(!isSidebarOpen)
-    }
-
-    if (isLoading) {
-      return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
-          </div>
-        </div>
-      )
-    }
-
-    return isAuthenticated ? (
-      <div className="min-h-screen h-screen flex flex-col">
-        <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-        <div className="flex-1 flex overflow-hidden">
-          <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-          <div className="flex-1 h-full overflow-y-auto relative">
-            <Outlet />
-          </div>
-        </div>
-      </div>
-    ) : (
-      <Navigate to="/login" replace />
-    )
-  }
-
   return (
     <Router>
       <AuthProvider>

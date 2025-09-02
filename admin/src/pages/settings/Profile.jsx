@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { FiUser, FiMail, FiPhone, FiCalendar, FiEdit, FiArrowLeft, FiSave, FiX } from 'react-icons/fi'
+import { FiUser, FiMail, FiPhone, FiEdit, FiArrowLeft, FiSave, FiX } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 
 const Profile = () => {
@@ -9,21 +9,17 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     phone: '',
-    dateOfBirth: '',
   })
 
   useEffect(() => {
     if (user) {
       setFormData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
+        name: user.name || user.firstName + ' ' + user.lastName || '',
         email: user.email || '',
         phone: user.phone || '',
-        dateOfBirth: user.dateOfBirth || '',
       })
     }
   }, [user])
@@ -43,9 +39,10 @@ const Profile = () => {
     try {
       await updateProfile(formData)
       setIsEditing(false)
-      toast.success('Profile updated successfully!')
+      // The user data will be automatically updated via the AuthContext
+      // No need for additional toast since it's handled in the AuthContext
     } catch (error) {
-      toast.error('Failed to update profile')
+      // Error handling is done in the AuthContext
       console.error('Profile update error:', error)
     } finally {
       setLoading(false)
@@ -55,11 +52,9 @@ const Profile = () => {
   const handleCancel = () => {
     if (user) {
       setFormData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
+        name: user.name || user.firstName + ' ' + user.lastName || '',
         email: user.email || '',
         phone: user.phone || '',
-        dateOfBirth: user.dateOfBirth || '',
       })
     }
     setIsEditing(false)
@@ -114,12 +109,22 @@ const Profile = () => {
             <div className="space-y-6">
               {/* Profile Header */}
               <div className="flex items-center gap-4 pb-6 border-b border-gray-200">
-                <div className="w-20 h-20 bg-primary text-white rounded-full flex items-center justify-center text-2xl font-bold">
-                  {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'User')}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-primary text-white flex items-center justify-center text-2xl font-bold">
+                      {(user.name || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'U'))?.charAt(0)?.toUpperCase()}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">
-                    {user.firstName} {user.lastName}
+                    {user.name || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'User')}
                   </h2>
                   <p className="text-gray-600">{user.email}</p>
                   <p className="text-sm text-gray-500 mt-1">
@@ -136,9 +141,9 @@ const Profile = () => {
                       <FiUser className="h-5 w-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Full Name</p>
+                      <p className="text-sm text-gray-500">Name</p>
                       <p className="font-medium text-gray-900">
-                        {user.firstName} {user.lastName}
+                        {user.name || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'Not provided')}
                       </p>
                     </div>
                   </div>
@@ -165,17 +170,7 @@ const Profile = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
-                      <FiCalendar className="h-5 w-5 text-orange-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Date of Birth</p>
-                      <p className="font-medium text-gray-900">
-                        {user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : 'Not provided'}
-                      </p>
-                    </div>
-                  </div>
+
                 </div>
               </div>
 
@@ -197,14 +192,14 @@ const Profile = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                    First Name
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Name
                   </label>
                   <input
                     type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
+                    id="name"
+                    name="name"
+                    value={formData.name}
                     onChange={handleInputChange}
                     className="input"
                     required
@@ -212,21 +207,6 @@ const Profile = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    className="input"
-                    required
-                  />
-                </div>
-
-                <div className="md:col-span-2">
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                     Email
                   </label>
@@ -255,19 +235,7 @@ const Profile = () => {
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">
-                    Date of Birth
-                  </label>
-                  <input
-                    type="date"
-                    id="dateOfBirth"
-                    name="dateOfBirth"
-                    value={formData.dateOfBirth}
-                    onChange={handleInputChange}
-                    className="input"
-                  />
-                </div>
+
               </div>
 
               {/* Form Actions */}

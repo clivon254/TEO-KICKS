@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCreateProduct } from '../../hooks/useProducts'
 import { useGetBrands } from '../../hooks/useBrands'
@@ -53,21 +53,25 @@ const AddProduct = () => {
         }
     }, [files])
 
-    // Load data
+    // Load data with memoized processing
     const { data: brandsData } = useGetBrands({ limit: 100 })
     const { data: categoriesData } = useGetCategories({ limit: 100 })
     const { data: collectionsData } = useGetCollections({ limit: 100 })
     const { data: tagsData } = useGetTags({ limit: 100 })
     const { data: variantsData } = useGetVariants({ limit: 100 })
 
-    const brands = brandsData?.data?.data?.brands || []
-    const categories = categoriesData?.data?.data?.categories || []
-    const collections = collectionsData?.data?.data?.collections || []
-    const tags = tagsData?.data?.data?.tags || []
-    const variants = Array.isArray(variantsData?.data?.data) ? variantsData?.data?.data : []
+    // Memoize processed data to avoid re-computations
+    const brands = useMemo(() => brandsData?.data?.data?.brands || [], [brandsData])
+    const categories = useMemo(() => categoriesData?.data?.data?.categories || [], [categoriesData])
+    const collections = useMemo(() => collectionsData?.data?.data?.collections || [], [collectionsData])
+    const tags = useMemo(() => tagsData?.data?.data?.tags || [], [tagsData])
+    const variants = useMemo(() =>
+        Array.isArray(variantsData?.data?.data) ? variantsData?.data?.data : [],
+        [variantsData]
+    )
 
-    // Tabs configuration
-    const tabs = [
+    // Memoize tabs configuration to prevent re-creation
+    const tabs = useMemo(() => [
         { id: 'basic', label: 'Basic Info', icon: FiInfo },
         { id: 'organization', label: 'Organization', icon: FiGrid },
         { id: 'pricing', label: 'Pricing', icon: FiDollarSign },
@@ -75,46 +79,47 @@ const AddProduct = () => {
         { id: 'images', label: 'Images', icon: FiImage },
         { id: 'settings', label: 'Settings', icon: FiPackage },
         { id: 'summary', label: 'Summary', icon: FiEye }
-    ]
+    ], [])
 
-    const handleInputChange = (e) => {
+    // Memoize event handlers to prevent child component re-renders
+    const handleInputChange = useCallback((e) => {
         const { name, value, type, checked } = e.target
         setFormData(prev => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }))
-    }
+    }, [])
 
-    const handleDescriptionChange = (html) => {
+    const handleDescriptionChange = useCallback((html) => {
         setFormData(prev => ({ ...prev, description: html }))
-    }
+    }, [])
 
-    // Tab navigation functions
-    const goToNextTab = () => {
+    // Memoize tab navigation with tabs dependency
+    const goToNextTab = useCallback(() => {
         const currentIndex = tabs.findIndex(tab => tab.id === activeTab)
         if (currentIndex < tabs.length - 1) {
             setActiveTab(tabs[currentIndex + 1].id)
         }
-    }
+    }, [activeTab, tabs])
 
-    const goToPreviousTab = () => {
+    const goToPreviousTab = useCallback(() => {
         const currentIndex = tabs.findIndex(tab => tab.id === activeTab)
         if (currentIndex > 0) {
             setActiveTab(tabs[currentIndex - 1].id)
         }
-    }
+    }, [activeTab, tabs])
 
-    const handleArrayChange = (field, value, checked) => {
+    const handleArrayChange = useCallback((field, value, checked) => {
         setFormData(prev => ({
             ...prev,
             [field]: checked
                 ? [...prev[field], value]
                 : prev[field].filter(item => item !== value)
         }))
-    }
+    }, [])
 
-    // Clean file handling - exactly like the blueprint
-    const handleFileChange = (e) => {
+    // Memoize file handling functions
+    const handleFileChange = useCallback((e) => {
         const selectedFiles = Array.from(e.target.files)
         console.log('=== FILE UPLOAD DEBUG ===')
         console.log('Selected files:', selectedFiles.length)
@@ -134,21 +139,21 @@ const AddProduct = () => {
         }))
 
         setFiles(prev => [...prev, ...filesWithPreview])
-    }
+    }, [])
 
-    const removeFile = (index) => {
+    const removeFile = useCallback((index) => {
         console.log('=== REMOVE FILE DEBUG ===')
         console.log('Removing file at index:', index)
-        
+
         // Revoke the object URL
         if (files[index]?.preview) {
             URL.revokeObjectURL(files[index].preview)
         }
-        
-        setFiles(prev => prev.filter((_, i) => i !== index))
-    }
 
-    const addFeature = () => {
+        setFiles(prev => prev.filter((_, i) => i !== index))
+    }, [files])
+
+    const addFeature = useCallback(() => {
         if (newFeature.trim()) {
             setFormData(prev => ({
                 ...prev,
@@ -156,14 +161,14 @@ const AddProduct = () => {
             }))
             setNewFeature('')
         }
-    }
+    }, [newFeature])
 
-    const removeFeature = (index) => {
+    const removeFeature = useCallback((index) => {
         setFormData(prev => ({
             ...prev,
             features: prev.features.filter((_, i) => i !== index)
         }))
-    }
+    }, [])
 
     // Clean submit function - exactly like the blueprint
     const handleSubmit = async (e) => {
@@ -216,9 +221,9 @@ const AddProduct = () => {
         }
     }
 
-    const handleCancel = () => {
+    const handleCancel = useCallback(() => {
         navigate('/products')
-    }
+    }, [navigate])
 
     // Render tab content
     const renderTabContent = () => {

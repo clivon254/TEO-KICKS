@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useGetProducts, useDeleteProduct } from '../../hooks/useProducts'
 import { useGetBrands } from '../../hooks/useBrands'
@@ -23,35 +23,43 @@ const Products = () => {
     const navigate = useNavigate()
     const deleteProduct = useDeleteProduct()
 
+    // Debounce search term
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(searchTerm), 300)
         return () => clearTimeout(t)
     }, [searchTerm])
 
-    const params = {}
-    if (filterStatus === 'active') params.status = 'active'
-    if (filterStatus === 'draft') params.status = 'draft'
-    if (filterStatus === 'archived') params.status = 'archived'
-    if (filterStatus === 'all') delete params.status
-    if (filterBrand !== 'all') params.brand = filterBrand
-    if (filterCategory !== 'all') params.category = filterCategory
-    if (debouncedSearch) params.search = debouncedSearch
-    params.page = currentPage
-    params.limit = itemsPerPage
+    // Memoize API parameters to prevent unnecessary re-renders
+    const params = useMemo(() => {
+        const p = {}
+        if (filterStatus === 'active') p.status = 'active'
+        if (filterStatus === 'draft') p.status = 'draft'
+        if (filterStatus === 'archived') p.status = 'archived'
+        if (filterBrand !== 'all') p.brand = filterBrand
+        if (filterCategory !== 'all') p.category = filterCategory
+        if (debouncedSearch) p.search = debouncedSearch
+        p.page = currentPage
+        p.limit = itemsPerPage
+        return p
+    }, [filterStatus, filterBrand, filterCategory, debouncedSearch, currentPage, itemsPerPage])
 
     const { data, isLoading } = useGetProducts(params)
     const { data: brandsData } = useGetBrands({ limit: 100 })
     const { data: categoriesData } = useGetCategories({ limit: 100 })
 
-    // Debug: Log the data structure
-    console.log('Products API Response:', data)
-
-    const products = data?.data || []
-    const pagination = data?.pagination || {}
-    const totalItems = pagination.totalDocs || pagination.totalProducts || pagination.totalItems || products.length
-    const totalPages = pagination.totalPages || Math.max(1, Math.ceil((totalItems || 0) / (itemsPerPage || 1)))
-    const brands = brandsData?.data?.data?.brands || []
-    const categories = categoriesData?.data?.data?.categories || []
+    // Memoize processed data to avoid re-computations
+    const products = useMemo(() => data?.data || [], [data])
+    const pagination = useMemo(() => data?.pagination || {}, [data])
+    const totalItems = useMemo(() =>
+        pagination.totalDocs || pagination.totalProducts || pagination.totalItems || products.length,
+        [pagination, products.length]
+    )
+    const totalPages = useMemo(() =>
+        pagination.totalPages || Math.max(1, Math.ceil((totalItems || 0) / (itemsPerPage || 1))),
+        [pagination.totalPages, totalItems, itemsPerPage]
+    )
+    const brands = useMemo(() => brandsData?.data?.data?.brands || [], [brandsData])
+    const categories = useMemo(() => categoriesData?.data?.data?.categories || [], [categoriesData])
 
     // Debug: Log the processed data
     console.log('Processed products:', products)
@@ -65,56 +73,58 @@ const Products = () => {
         isArray: Array.isArray(data?.data)
     })
 
-    // Handle product selection
-    const handleSelectProduct = (productId) => {
+    // Memoize event handlers to prevent unnecessary re-renders
+    const handleSelectProduct = useCallback((productId) => {
         setSelectedProducts(prev =>
             prev.includes(productId)
                 ? prev.filter(id => id !== productId)
                 : [...prev, productId]
         )
-    }
+    }, [])
 
-    // Handle select all
-    const handleSelectAll = () => {
-        if (selectedProducts.length === products.length) {
-            setSelectedProducts([])
-        } else {
-            setSelectedProducts(products.map(prod => prod._id || prod.id))
-        }
-    }
+    // Memoize select all handler with products dependency
+    const handleSelectAll = useCallback(() => {
+        setSelectedProducts(prev => {
+            if (prev.length === products.length) {
+                return []
+            } else {
+                return products.map(prod => prod._id || prod.id)
+            }
+        })
+    }, [products])
 
-    const handleEdit = (product) => {
+    const handleEdit = useCallback((product) => {
         navigate(`/products/${product._id || product.id}/edit`)
-    }
+    }, [navigate])
 
-    const handleViewDetails = (product) => {
+    const handleViewDetails = useCallback((product) => {
         navigate(`/products/${product._id || product.id}/details`)
-    }
+    }, [navigate])
 
-    const handleDelete = async (product) => {
+    const handleDelete = useCallback((product) => {
         setConfirmDelete({ open: true, product })
-    }
+    }, [])
 
-    const confirmDeleteProduct = async () => {
+    const confirmDeleteProduct = useCallback(async () => {
         try {
             await deleteProduct.mutateAsync(confirmDelete.product._id || confirmDelete.product.id)
             setConfirmDelete({ open: false, product: null })
         } catch (error) {
             console.error('Delete error:', error)
         }
-    }
+    }, [confirmDelete.product, deleteProduct])
 
-    const clearSearch = () => {
+    const clearSearch = useCallback(() => {
         setSearchTerm('')
         setCurrentPage(1)
-    }
+    }, [])
 
-    const clearFilters = () => {
+    const clearFilters = useCallback(() => {
         setFilterStatus('all')
         setFilterBrand('all')
         setFilterCategory('all')
         setCurrentPage(1)
-    }
+    }, [])
 
     const LoadingSkeleton = () => (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">

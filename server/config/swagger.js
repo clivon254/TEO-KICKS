@@ -474,6 +474,393 @@ const options = {
               description: 'Last update timestamp'
             }
           }
+        },
+        CartItem: {
+          type: 'object',
+          properties: {
+            _id: {
+              type: 'string',
+              description: 'Cart item ID'
+            },
+            product: {
+              $ref: '#/components/schemas/Product',
+              description: 'Product information'
+            },
+            skuId: {
+              type: 'string',
+              description: 'SKU ID'
+            },
+            quantity: {
+              type: 'integer',
+              description: 'Quantity in cart'
+            },
+            price: {
+              type: 'number',
+              description: 'Price per item'
+            },
+            totalPrice: {
+              type: 'number',
+              description: 'Total price for this item'
+            },
+            selectedOptions: {
+              type: 'object',
+              description: 'Selected variant options'
+            }
+          }
+        },
+        Cart: {
+          type: 'object',
+          properties: {
+            _id: {
+              type: 'string',
+              description: 'Cart ID'
+            },
+            userId: {
+              type: 'string',
+              description: 'User ID who owns the cart'
+            },
+            items: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/CartItem'
+              }
+            },
+            subtotal: {
+              type: 'number',
+              description: 'Cart subtotal'
+            },
+            totalItems: {
+              type: 'integer',
+              description: 'Total number of items'
+            },
+            isActive: {
+              type: 'boolean',
+              description: 'Whether cart is active'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Cart creation timestamp'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Last update timestamp'
+            }
+          }
+        },
+        Coupon: {
+          type: 'object',
+          properties: {
+            _id: {
+              type: 'string',
+              description: 'Coupon ID'
+            },
+            code: {
+              type: 'string',
+              description: 'Coupon code'
+            },
+            name: {
+              type: 'string',
+              description: 'Coupon name'
+            },
+            description: {
+              type: 'string',
+              description: 'Coupon description'
+            },
+            discountType: {
+              type: 'string',
+              enum: ['percentage', 'fixed'],
+              description: 'Type of discount'
+            },
+            discountValue: {
+              type: 'number',
+              description: 'Discount value'
+            },
+            minimumAmount: {
+              type: 'number',
+              description: 'Minimum order amount'
+            },
+            maximumDiscount: {
+              type: 'number',
+              description: 'Maximum discount amount'
+            },
+            usageLimit: {
+              type: 'integer',
+              description: 'Total usage limit'
+            },
+            usageCount: {
+              type: 'integer',
+              description: 'Current usage count'
+            },
+            perUserLimit: {
+              type: 'integer',
+              description: 'Usage limit per user'
+            },
+            expiryDate: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Expiry date'
+            },
+            isActive: {
+              type: 'boolean',
+              description: 'Whether coupon is active'
+            },
+            applicableProducts: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              description: 'Applicable product IDs'
+            },
+            applicableCategories: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              description: 'Applicable category IDs'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Creation timestamp'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Last update timestamp'
+            }
+          }
+        },
+        Category: {
+          type: 'object',
+          properties: {
+            _id: {
+              type: 'string',
+              description: 'Category ID'
+            },
+            name: {
+              type: 'string',
+              description: 'Category name'
+            },
+            slug: {
+              type: 'string',
+              description: 'Category slug'
+            },
+            description: {
+              type: 'string',
+              description: 'Category description'
+            },
+            parentId: {
+              type: 'string',
+              description: 'Parent category ID'
+            },
+            image: {
+              type: 'string',
+              description: 'Category image URL'
+            },
+            isActive: {
+              type: 'boolean',
+              description: 'Whether category is active'
+            },
+            sortOrder: {
+              type: 'integer',
+              description: 'Sort order'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Creation timestamp'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Last update timestamp'
+            }
+          }
+        },
+        Brand: {
+          type: 'object',
+          properties: {
+            _id: {
+              type: 'string',
+              description: 'Brand ID'
+            },
+            name: {
+              type: 'string',
+              description: 'Brand name'
+            },
+            slug: {
+              type: 'string',
+              description: 'Brand slug'
+            },
+            description: {
+              type: 'string',
+              description: 'Brand description'
+            },
+            logo: {
+              type: 'string',
+              description: 'Brand logo URL'
+            },
+            website: {
+              type: 'string',
+              description: 'Brand website URL'
+            },
+            isActive: {
+              type: 'boolean',
+              description: 'Whether brand is active'
+            },
+            sortOrder: {
+              type: 'integer',
+              description: 'Sort order'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Creation timestamp'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Last update timestamp'
+            }
+          }
+        },
+        Collection: {
+          type: 'object',
+          properties: {
+            _id: {
+              type: 'string',
+              description: 'Collection ID'
+            },
+            name: {
+              type: 'string',
+              description: 'Collection name'
+            },
+            slug: {
+              type: 'string',
+              description: 'Collection slug'
+            },
+            description: {
+              type: 'string',
+              description: 'Collection description'
+            },
+            image: {
+              type: 'string',
+              description: 'Collection image URL'
+            },
+            isActive: {
+              type: 'boolean',
+              description: 'Whether collection is active'
+            },
+            sortOrder: {
+              type: 'integer',
+              description: 'Sort order'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Creation timestamp'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Last update timestamp'
+            }
+          }
+        },
+        Tag: {
+          type: 'object',
+          properties: {
+            _id: {
+              type: 'string',
+              description: 'Tag ID'
+            },
+            name: {
+              type: 'string',
+              description: 'Tag name'
+            },
+            slug: {
+              type: 'string',
+              description: 'Tag slug'
+            },
+            description: {
+              type: 'string',
+              description: 'Tag description'
+            },
+            color: {
+              type: 'string',
+              description: 'Tag color hex code'
+            },
+            type: {
+              type: 'string',
+              enum: ['product', 'blog', 'general'],
+              description: 'Tag type'
+            },
+            isActive: {
+              type: 'boolean',
+              description: 'Whether tag is active'
+            },
+            sortOrder: {
+              type: 'integer',
+              description: 'Sort order'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Creation timestamp'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Last update timestamp'
+            }
+          }
+        },
+        Review: {
+          type: 'object',
+          properties: {
+            _id: {
+              type: 'string',
+              description: 'Review ID'
+            },
+            productId: {
+              type: 'string',
+              description: 'Product ID being reviewed'
+            },
+            userId: {
+              type: 'string',
+              description: 'User ID who wrote the review'
+            },
+            rating: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 5,
+              description: 'Rating from 1-5 stars'
+            },
+            comment: {
+              type: 'string',
+              description: 'Review comment'
+            },
+            isVerifiedPurchase: {
+              type: 'boolean',
+              description: 'Whether review is from verified purchase'
+            },
+            isApproved: {
+              type: 'boolean',
+              description: 'Whether review is approved by admin'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Review creation timestamp'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Last update timestamp'
+            }
+          }
         }
       }
     },
@@ -501,6 +888,34 @@ const options = {
       {
         name: 'Products',
         description: 'Product catalog and inventory management'
+      },
+      {
+        name: 'Categories',
+        description: 'Product category management'
+      },
+      {
+        name: 'Brands',
+        description: 'Brand management'
+      },
+      {
+        name: 'Collections',
+        description: 'Product collection management'
+      },
+      {
+        name: 'Tags',
+        description: 'Product tag management'
+      },
+      {
+        name: 'Cart',
+        description: 'Shopping cart management'
+      },
+      {
+        name: 'Coupons',
+        description: 'Discount coupon management'
+      },
+      {
+        name: 'Reviews',
+        description: 'Product review management'
       },
       {
         name: 'Orders',

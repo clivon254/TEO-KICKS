@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useGetProductById, useUpdateProduct, useUpdateSKU, useGenerateSKUs } from '../../hooks/useProducts'
@@ -70,7 +70,7 @@ const EditProduct = () => {
         }
     }, [newImages])
 
-    // Load data
+    // Load data with memoized processing
     const { data: productData, isLoading: productLoading } = useGetProductById(id)
     const { data: brandsData } = useGetBrands({ limit: 100 })
     const { data: categoriesData } = useGetCategories({ limit: 100 })
@@ -78,13 +78,15 @@ const EditProduct = () => {
     const { data: tagsData } = useGetTags({ limit: 100 })
     const { data: variantsData } = useGetVariants({ limit: 100 })
 
-    const product = productData?.data
-    const brands = brandsData?.data?.data?.brands || []
-    const categories = categoriesData?.data?.data?.categories || []
-    const collections = collectionsData?.data?.data?.collections || []
-    const tags = tagsData?.data?.data?.tags || []
-    // Fix variants data access - handle different possible structures
-    const variants = (() => {
+    // Memoize processed data to avoid re-computations
+    const product = useMemo(() => productData?.data, [productData])
+    const brands = useMemo(() => brandsData?.data?.data?.brands || [], [brandsData])
+    const categories = useMemo(() => categoriesData?.data?.data?.categories || [], [categoriesData])
+    const collections = useMemo(() => collectionsData?.data?.data?.collections || [], [collectionsData])
+    const tags = useMemo(() => tagsData?.data?.data?.tags || [], [tagsData])
+
+    // Memoize variants processing
+    const variants = useMemo(() => {
         const variantsResponse = variantsData?.data
         if (Array.isArray(variantsResponse)) {
             return variantsResponse
@@ -94,7 +96,7 @@ const EditProduct = () => {
             return variantsResponse.variants
         }
         return []
-    })()
+    }, [variantsData])
 
     // Load product data into form
     useEffect(() => {
@@ -131,8 +133,8 @@ const EditProduct = () => {
         }
     }, [product, productData, variants, formData.variants])
 
-    // Tabs configuration
-    const tabs = [
+    // Memoize tabs configuration to prevent re-creation
+    const tabs = useMemo(() => [
         { id: 'basic', label: 'Basic Info', icon: FiInfo },
         { id: 'organization', label: 'Organization', icon: FiGrid },
         { id: 'pricing', label: 'Pricing', icon: FiDollarSign },
@@ -141,48 +143,49 @@ const EditProduct = () => {
         { id: 'images', label: 'Images', icon: FiImage },
         { id: 'settings', label: 'Settings', icon: FiPackage },
         { id: 'summary', label: 'Summary', icon: FiEye }
-    ]
+    ], [])
 
-    const handleInputChange = (e) => {
+    // Memoize event handlers to prevent child component re-renders
+    const handleInputChange = useCallback((e) => {
         const { name, value, type, checked } = e.target
         setFormData(prev => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }))
-    }
+    }, [])
 
-    const handleDescriptionChange = (html) => {
+    const handleDescriptionChange = useCallback((html) => {
         setFormData(prev => ({ ...prev, description: html }))
-    }
+    }, [])
 
-    // Tab navigation functions
-    const goToNextTab = () => {
+    // Memoize tab navigation with tabs dependency
+    const goToNextTab = useCallback(() => {
         const currentIndex = tabs.findIndex(tab => tab.id === activeTab)
         if (currentIndex < tabs.length - 1) {
             setActiveTab(tabs[currentIndex + 1].id)
         }
-    }
+    }, [activeTab, tabs])
 
-    const goToPreviousTab = () => {
+    const goToPreviousTab = useCallback(() => {
         const currentIndex = tabs.findIndex(tab => tab.id === activeTab)
         if (currentIndex > 0) {
             setActiveTab(tabs[currentIndex - 1].id)
         }
-    }
+    }, [activeTab, tabs])
 
 
 
-    const handleArrayChange = (field, value, checked) => {
+    const handleArrayChange = useCallback((field, value, checked) => {
         setFormData(prev => ({
             ...prev,
             [field]: checked
                 ? [...prev[field], value]
                 : prev[field].filter(item => item !== value)
         }))
-    }
+    }, [])
 
-    // Handle new images - exactly like the user's pattern
-    const handleNewImages = (e) => {
+    // Memoize image handling functions
+    const handleNewImages = useCallback((e) => {
         // store real File objects
         const files = Array.from(e.target.files || [])
         console.log('=== NEW IMAGES DEBUG ===')
@@ -196,23 +199,23 @@ const EditProduct = () => {
             })
         })
         setNewImages(files)
-    }
+    }, [])
 
-    const removeNewImage = (index) => {
+    const removeNewImage = useCallback((index) => {
         console.log('=== REMOVE NEW IMAGE DEBUG ===')
         console.log('Removing new image at index:', index)
         setNewImages(prev => prev.filter((_, i) => i !== index))
-    }
+    }, [])
 
-    const removeExistingImage = (index) => {
+    const removeExistingImage = useCallback((index) => {
         console.log('=== REMOVE EXISTING IMAGE DEBUG ===')
         console.log('Removing existing image at index:', index)
         setExistingImages(prev => prev.filter((_, i) => i !== index))
-    }
+    }, [])
 
 
 
-    const addFeature = () => {
+    const addFeature = useCallback(() => {
         if (newFeature.trim()) {
             setFormData(prev => ({
                 ...prev,
@@ -220,17 +223,17 @@ const EditProduct = () => {
             }))
             setNewFeature('')
         }
-    }
+    }, [newFeature])
 
-    const removeFeature = (index) => {
+    const removeFeature = useCallback((index) => {
         setFormData(prev => ({
             ...prev,
             features: prev.features.filter((_, i) => i !== index)
         }))
-    }
+    }, [])
 
-    // SKU update handlers
-    const handleSkuUpdate = (skuId, field, value) => {
+        // Memoize SKU update handlers
+    const handleSkuUpdate = useCallback((skuId, field, value) => {
         // Update local state only (no API call yet)
         setSkuUpdates(prev => ({
             ...prev,
@@ -239,9 +242,9 @@ const EditProduct = () => {
                 [field]: value
             }
         }))
-    }
+    }, [])
 
-    const handleUpdateSKU = async (skuId) => {
+    const handleUpdateSKU = useCallback(async (skuId) => {
         const updates = skuUpdates[skuId]
         if (!updates || Object.keys(updates).length === 0) {
             toast.error('No changes to update')
@@ -254,7 +257,7 @@ const EditProduct = () => {
                 skuId: skuId,
                 skuData: updates
             })
-            
+
             // Clear the updates for this SKU after successful update
             setSkuUpdates(prev => {
                 const newState = { ...prev }
@@ -270,28 +273,29 @@ const EditProduct = () => {
         } catch (error) {
             console.error('Failed to update SKU:', error)
         }
-    }
+    }, [skuUpdates, updateSKU, id, navigate])
 
-    const getSkuValue = (sku, field) => {
+    // Memoize SKU value getter with skuUpdates dependency
+    const getSkuValue = useCallback((sku, field) => {
         const update = skuUpdates[sku._id]
         return update && update[field] !== undefined ? update[field] : sku[field]
-    }
+    }, [skuUpdates])
 
-    const handleRegenerateSKUs = async () => {
+    const handleRegenerateSKUs = useCallback(async () => {
         try {
             await generateSKUs.mutateAsync(id)
         } catch (error) {
             console.error('Failed to regenerate SKUs:', error)
         }
-    }
+    }, [generateSKUs, id])
 
 
-    const handleVariantOptionSelect = (variantId, optionId) => {
+    const handleVariantOptionSelect = useCallback((variantId, optionId) => {
         setSelectedVariantOptions(prev => ({
             ...prev,
             [variantId]: optionId
         }))
-    }
+    }, [])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -339,9 +343,9 @@ const EditProduct = () => {
         }
     }
 
-    const handleCancel = () => {
+    const handleCancel = useCallback(() => {
         navigate('/products')
-    }
+    }, [navigate])
 
     // Loading state
     if (isLoading || productLoading) {

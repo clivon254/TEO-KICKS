@@ -31,31 +31,62 @@ export const verifyToken = (req, res, next) => {
 
 
 // Alternative token verification from Authorization header (Bearer token)
-export const verifyBearerToken = (req, res, next) => {
+export const verifyBearerToken = async (req, res, next) => {
 
-    const authHeader = req.headers.authorization
+    try {
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        const authHeader = req.headers.authorization
 
-        return next(errorHandler(403, "Access token required"))
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
 
-    }
-
-    const token = authHeader.split(' ')[1]
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-
-        if (err) {
-
-            return next(errorHandler(401, "Invalid or expired token"))
+            return next(errorHandler(403, "Access token required"))
 
         }
-        
+
+        const token = authHeader.split(' ')[1]
+
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+
+        // Import User model dynamically to avoid circular dependencies
+        const { default: User } = await import('../models/userModel.js')
+
+        // Get user with roles populated
+        const user = await User.findById(decoded.userId)
+            .populate('roles', 'name permissions')
+
+        if (!user) {
+
+            return next(errorHandler(401, "User not found"))
+
+        }
+
+        if (!user.isActive) {
+
+            return next(errorHandler(401, "User account is deactivated"))
+
+        }
+
+        // Add user to request object
         req.user = user
 
         next()
-        
-    })
+
+    } catch (error) {
+
+        if (error.name === 'JsonWebTokenError') {
+
+            return next(errorHandler(401, "Invalid token"))
+
+        } else if (error.name === 'TokenExpiredError') {
+
+            return next(errorHandler(401, "Token expired"))
+
+        }
+
+        return next(errorHandler(500, "Authentication error"))
+
+    }
 
 }
 
@@ -78,8 +109,14 @@ export const requireRole = (...roles) => {
 
         }
 
-        // Check if user has any of the required roles (by role name)
-        const hasRole = roles.some(role => req.user.roleNames?.includes(role))
+        // Check if user has any of the required roles (by role name from populated roles)
+        const userRoles = req.user.roles || []
+        const hasRole = roles.some(roleName =>
+            userRoles.some(role => {
+                const roleNameFromDb = typeof role === 'string' ? role : role.name
+                return roleNameFromDb === roleName
+            })
+        )
 
         if (!hasRole) {
 
@@ -132,8 +169,14 @@ export const requirePermission = (...roleNames) => {
 
         }
 
-        // Check if user has any of the required roles
-        const hasRole = roleNames.some(roleName => req.user.roleNames?.includes(roleName))
+        // Check if user has any of the required roles (by role name from populated roles)
+        const userRoles = req.user.roles || []
+        const hasRole = roleNames.some(roleName =>
+            userRoles.some(role => {
+                const roleNameFromDb = typeof role === 'string' ? role : role.name
+                return roleNameFromDb === roleName
+            })
+        )
 
         if (!hasRole) {
 

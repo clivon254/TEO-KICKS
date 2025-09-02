@@ -2,7 +2,7 @@ import { createContext, useContext, useReducer, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { setAuthLoading, setAuthSuccess, clearAuth, setAuthFailure } from '../store/slices/authSlice'
-import { authAPI } from '../utils/api'
+import { authAPI, userAPI } from '../utils/api'
 import toast from 'react-hot-toast'
 
 // Initial state
@@ -264,6 +264,33 @@ export const AuthProvider = ({ children }) => {
         }
     }
 
+    // Update profile function
+    const updateProfile = async (profileData) => {
+        try {
+            const response = await userAPI.updateProfile(profileData)
+            const updatedUser = response.data.data.user
+
+            // Update local storage
+            localStorage.setItem('user', JSON.stringify(updatedUser))
+
+            // Update Redux state
+            reduxDispatch(setAuthSuccess(updatedUser))
+
+            // Update local context state
+            dispatch({
+                type: AUTH_ACTIONS.LOGIN_SUCCESS,
+                payload: { user: updatedUser }
+            })
+
+            toast.success('Profile updated successfully!')
+            return { success: true, user: updatedUser }
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || 'Failed to update profile'
+            toast.error(errorMessage)
+            throw error
+        }
+    }
+
     // Logout function
     const logout = async () => {
         try {
@@ -302,6 +329,7 @@ export const AuthProvider = ({ children }) => {
         resendOTP,
         forgotPassword,
         resetPassword,
+        updateProfile,
         logout,
         clearError
     }
