@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGetCart, useUpdateCartItem, useRemoveFromCart, useClearCart } from '../hooks/useCart'
-import { FiShoppingCart, FiTrash2, FiPlus, FiMinus, FiArrowLeft, FiX } from 'react-icons/fi'
+import { useValidateCoupon, useApplyCoupon } from '../hooks/useCoupons'
+import { FiShoppingCart, FiTrash2, FiPlus, FiMinus, FiArrowLeft, FiX, FiTag, FiCheck } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 
 
@@ -11,6 +12,16 @@ const Cart = () => {
     const updateCartItem = useUpdateCartItem()
     const removeFromCart = useRemoveFromCart()
     const clearCart = useClearCart()
+
+    // Coupon functionality
+    const validateCoupon = useValidateCoupon()
+    const applyCoupon = useApplyCoupon()
+
+    // Coupon and modal state
+    const [couponCode, setCouponCode] = useState('')
+    const [appliedCoupon, setAppliedCoupon] = useState(null)
+    const [showClearModal, setShowClearModal] = useState(false)
+    const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
 
     // Memoize cart data to prevent unnecessary re-computations
     const cart = useMemo(() => cartData?.data?.data, [cartData])
@@ -42,6 +53,15 @@ const Cart = () => {
         return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0)
     }, [cartItems])
 
+    // Calculate discount and final total
+    const discountAmount = useMemo(() => {
+        return appliedCoupon?.discountAmount || 0
+    }, [appliedCoupon])
+
+    const finalTotal = useMemo(() => {
+        return calculateSubtotal - discountAmount
+    }, [calculateSubtotal, discountAmount])
+
     // Memoize event handlers to prevent child component re-renders
     const handleQuantityChange = useCallback(async (skuId, newQuantity) => {
         if (newQuantity < 1) {
@@ -64,15 +84,67 @@ const Cart = () => {
         }
     }, [removeFromCart])
 
-    const handleClearCart = useCallback(async () => {
-        if (window.confirm('Are you sure you want to clear your cart?')) {
-            try {
-                await clearCart.mutateAsync()
-            } catch (error) {
-                console.error('Error clearing cart:', error)
-            }
+    const handleClearCart = useCallback(() => {
+        setShowClearModal(true)
+    }, [])
+
+    const confirmClearCart = useCallback(async () => {
+        try {
+            await clearCart.mutateAsync()
+            setShowClearModal(false)
+            setAppliedCoupon(null) // Clear applied coupon as well
+            setCouponCode('')
+        } catch (error) {
+            console.error('Error clearing cart:', error)
         }
     }, [clearCart])
+
+    const cancelClearCart = useCallback(() => {
+        setShowClearModal(false)
+    }, [])
+
+    // Coupon handlers
+    const handleApplyCoupon = useCallback(async () => {
+        if (!couponCode.trim()) {
+            toast.error('Please enter a coupon code')
+            return
+        }
+
+        setIsApplyingCoupon(true)
+
+        try {
+            console.log('Applying coupon:', { code: couponCode.toUpperCase(), orderAmount: calculateSubtotal })
+
+            const result = await validateCoupon.mutateAsync({
+                code: couponCode.toUpperCase(),
+                orderAmount: calculateSubtotal
+            })
+
+            console.log('Coupon validation result:', result)
+
+            if (result.success) {
+                setAppliedCoupon({
+                    code: result.data.coupon.code,
+                    discountAmount: result.data.discountAmount,
+                    name: result.data.coupon.name
+                })
+                toast.success(`Coupon "${result.data.coupon.name}" applied successfully!`)
+                setCouponCode('')
+            } else {
+                toast.error(result.message)
+            }
+        } catch (error) {
+            console.error('Error applying coupon:', error)
+            toast.error('Failed to apply coupon. Please try again.')
+        } finally {
+            setIsApplyingCoupon(false)
+        }
+    }, [couponCode, validateCoupon, calculateSubtotal, isApplyingCoupon])
+
+    const handleRemoveCoupon = useCallback(() => {
+        setAppliedCoupon(null)
+        toast.success('Coupon removed successfully')
+    }, [])
 
     const handleCheckout = useCallback(() => {
         // TODO: Implement checkout functionality
@@ -198,7 +270,7 @@ const Cart = () => {
                                                     </p>
                                                     
                                                     <p className="text-lg font-bold text-primary">
-                                                        ${item.price?.toFixed(2) || '0.00'}
+                                                        KSh {item.price?.toFixed(2) || '0.00'}
                                                     </p>
                                                 </div>
                                                 
@@ -256,28 +328,96 @@ const Cart = () => {
                         </div>
                     </div>
 
-                    {/* Order Summary */}
+                    {/* Cart Summary */}
                     <div className="lg:col-span-1">
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-4">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
-                            
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Cart Summary</h2>
+
+                            {/* Coupon Section */}
+                            <div className="mb-6">
+                                {!appliedCoupon ? (
+                                    <div className="space-y-3">
+                                        <div className="flex items-center space-x-2">
+                                            <FiTag className="w-4 h-4 text-gray-500" />
+                                            <span className="text-sm font-medium text-gray-700">Have a coupon?</span>
+                                        </div>
+                                        <div className="flex space-x-2">
+                                            <input
+                                                type="text"
+                                                value={couponCode}
+                                                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                                placeholder="Enter coupon code"
+                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                onKeyPress={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                                            />
+                                            <button
+                                                onClick={handleApplyCoupon}
+                                                disabled={(validateCoupon.isPending || isApplyingCoupon) || !couponCode.trim()}
+                                                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                                            >
+                                                {(validateCoupon.isPending || isApplyingCoupon) ? 'Applying...' : 'Apply'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center space-x-2">
+                                                <FiCheck className="w-4 h-4 text-green-600" />
+                                                <div>
+                                                    <p className="text-sm font-medium text-green-800">
+                                                        {appliedCoupon.name}
+                                                    </p>
+                                                    <p className="text-xs text-green-600">
+                                                        Code: {appliedCoupon.code}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={handleRemoveCoupon}
+                                                className="text-red-600 hover:text-red-700 transition-colors"
+                                                title="Remove coupon"
+                                            >
+                                                <FiX className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="space-y-3 mb-6">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">Subtotal</span>
-                                    <span className="font-medium">${calculateSubtotal.toFixed(2)}</span>
+                                    <span className="font-medium">KSh {calculateSubtotal.toFixed(2)}</span>
                                 </div>
-                                
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Shipping</span>
-                                    <span className="font-medium">Free</span>
-                                </div>
-                                
-                                <div className="border-t border-gray-200 pt-3">
-                                    <div className="flex justify-between text-base font-semibold">
-                                        <span>Total</span>
-                                        <span>${calculateSubtotal.toFixed(2)}</span>
+
+                                {appliedCoupon ? (
+                                    <>
+                                        <div className="flex justify-between text-sm text-green-600">
+                                            <span>Discount ({appliedCoupon.name})</span>
+                                            <span className="font-medium">-KSh {discountAmount.toFixed(2)}</span>
+                                        </div>
+
+                                        <div className="border-t border-gray-200 pt-3">
+                                            <div className="flex justify-between text-base font-semibold">
+                                                <span>Total</span>
+                                                <span className="text-green-600">
+                                                    KSh {finalTotal.toFixed(2)}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-green-600 mt-1">
+                                                You saved KSh {discountAmount.toFixed(2)}!
+                                            </p>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="border-t border-gray-200 pt-3">
+                                        <div className="flex justify-between text-base font-semibold">
+                                            <span>Total</span>
+                                            <span>KSh {calculateSubtotal.toFixed(2)}</span>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                             
                             <button
@@ -298,6 +438,50 @@ const Cart = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Clear Cart Confirmation Modal */}
+            {showClearModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                        <div className="text-center">
+                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <FiTrash2 className="w-8 h-8 text-red-600" />
+                            </div>
+
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                Clear Cart
+                            </h3>
+
+                            <p className="text-gray-600 mb-6">
+                                Are you sure you want to remove all items from your cart?
+                                {appliedCoupon && (
+                                    <span className="block mt-2 text-sm text-red-600 font-medium">
+                                        This will also remove your applied coupon.
+                                    </span>
+                                )}
+                            </p>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={cancelClearCart}
+                                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                                    disabled={clearCart.isPending}
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    onClick={confirmClearCart}
+                                    disabled={clearCart.isPending}
+                                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {clearCart.isPending ? 'Clearing...' : 'Clear Cart'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

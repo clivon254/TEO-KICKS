@@ -35,13 +35,22 @@ const Login = () => {
         { code: '+254', country: 'Kenya', flag: '🇰🇪' },
     ]
 
-    const { login } = useAuth()
+    const { login, initiateGoogleAuth } = useAuth()
     const navigate = useNavigate()
 
     // Social login handlers
-    const handleGoogleLogin = () => {
-        console.log('Google login clicked')
-        // TODO: Implement Google OAuth
+    const handleGoogleLogin = async () => {
+        setIsLoading(true)
+        setError('')
+
+        try {
+            await initiateGoogleAuth()
+            // Note: The page will redirect to Google, so this code won't execute
+        } catch (error) {
+            console.error('Google login error:', error)
+            setError('Failed to initiate Google authentication. Please check your Google OAuth configuration.')
+            setIsLoading(false)
+        }
     }
 
     const handleAppleLogin = () => {

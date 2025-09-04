@@ -1,79 +1,126 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { FiSettings, FiGlobe, FiCreditCard, FiTruck, FiClock, FiDollarSign, FiArrowLeft, FiSave, FiRefreshCw } from 'react-icons/fi'
+import { FiSettings, FiGlobe, FiCreditCard, FiTruck, FiClock, FiDollarSign, FiArrowLeft, FiSave, FiRefreshCw, FiPlus, FiTrash2 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import {
+  useGetStoreConfig,
+  useCreateStoreConfig,
+  useUpdateStoreConfig,
+  useDeleteStoreConfig,
+  useInitStoreConfig
+} from '../../hooks/useStoreConfig'
 
 const StoreConfigurations = () => {
-  const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('general')
   const [formData, setFormData] = useState({
     // General Settings
-    storeName: 'TEO KICKS',
-    storeDescription: 'Your premier destination for quality footwear',
-    contactEmail: 'info@teokicks.com',
-    contactPhone: '+254 700 000 000',
-    timezone: 'Africa/Nairobi',
+    storeName: '',
+    storeEmail: '',
+    storePhone: '',
+    storeAddress: {
+      street: '',
+      city: '',
+      country: '',
+      postalCode: ''
+    },
 
     // Business Hours
-    businessHours: {
-      monday: { open: '09:00', close: '18:00', closed: false },
-      tuesday: { open: '09:00', close: '18:00', closed: false },
-      wednesday: { open: '09:00', close: '18:00', closed: false },
-      thursday: { open: '09:00', close: '18:00', closed: false },
-      friday: { open: '09:00', close: '18:00', closed: false },
-      saturday: { open: '10:00', close: '16:00', closed: false },
-      sunday: { open: '00:00', close: '00:00', closed: true },
-    },
+    businessHours: [
+      { day: 'monday', open: '09:00', close: '18:00', isOpen: true },
+      { day: 'tuesday', open: '09:00', close: '18:00', isOpen: true },
+      { day: 'wednesday', open: '09:00', close: '18:00', isOpen: true },
+      { day: 'thursday', open: '09:00', close: '18:00', isOpen: true },
+      { day: 'friday', open: '09:00', close: '18:00', isOpen: true },
+      { day: 'saturday', open: '10:00', close: '16:00', isOpen: true },
+      { day: 'sunday', open: '', close: '', isOpen: false }
+    ],
 
     // Payment Settings
     paymentMethods: {
-      mpesa: true,
-      card: true,
-      cash: false,
-    },
-    mpesaConfig: {
-      shortcode: '',
-      passkey: '',
-      consumerKey: '',
-      consumerSecret: '',
+      mpesa: { enabled: true, shortcode: '' },
+      card: { enabled: true, paystackKey: '' },
+      cash: { enabled: true, description: 'Pay on delivery' }
     },
 
-    // Delivery Settings
-    deliveryFeePerKm: 50,
-    freeDeliveryThreshold: 5000,
-    maxDeliveryDistance: 50,
-
-    // Currency Settings
-    currency: 'KES',
-    currencySymbol: 'KSh',
+    // Shipping Settings
+    shippingSettings: {
+      freeShippingThreshold: 5000,
+      baseDeliveryFee: 200,
+      feePerKm: 50
+    },
 
     // Notification Settings
+    notificationSettings: {
     emailNotifications: true,
     smsNotifications: true,
-    orderNotifications: true,
+      orderConfirmations: true,
+      stockAlerts: true
+    },
+
+    // Store Status
+    isActive: true
   })
+
+  // API hooks
+  const { data: configData, isLoading: configLoading, error: configError, refetch } = useGetStoreConfig()
+  const createConfigMutation = useCreateStoreConfig()
+  const updateConfigMutation = useUpdateStoreConfig()
+  const deleteConfigMutation = useDeleteStoreConfig()
+  const initConfigMutation = useInitStoreConfig()
+
+  const config = configData?.data?.config
+  const hasConfig = !!config
 
   const tabs = [
     { id: 'general', label: 'General', icon: FiSettings },
     { id: 'hours', label: 'Business Hours', icon: FiClock },
     { id: 'payment', label: 'Payment', icon: FiCreditCard },
-    { id: 'delivery', label: 'Delivery', icon: FiTruck },
+    { id: 'shipping', label: 'Shipping', icon: FiTruck },
     { id: 'notifications', label: 'Notifications', icon: FiGlobe },
   ]
 
+  // Load configuration data into form when it arrives
   useEffect(() => {
-    // Simulate loading store configuration
-    const loadStoreConfig = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        // In a real app, you'd fetch this from an API
-      } catch (error) {
-        console.error('Error loading store configuration:', error)
-      }
+    if (config) {
+      setFormData({
+        storeName: config.storeName || '',
+        storeEmail: config.storeEmail || '',
+        storePhone: config.storePhone || '',
+        storeAddress: config.storeAddress || {
+          street: '',
+          city: '',
+          country: '',
+          postalCode: ''
+        },
+        businessHours: config.businessHours || [
+          { day: 'monday', open: '09:00', close: '18:00', isOpen: true },
+          { day: 'tuesday', open: '09:00', close: '18:00', isOpen: true },
+          { day: 'wednesday', open: '09:00', close: '18:00', isOpen: true },
+          { day: 'thursday', open: '09:00', close: '18:00', isOpen: true },
+          { day: 'friday', open: '09:00', close: '18:00', isOpen: true },
+          { day: 'saturday', open: '10:00', close: '16:00', isOpen: true },
+          { day: 'sunday', open: '', close: '', isOpen: false }
+        ],
+        paymentMethods: config.paymentMethods || {
+          mpesa: { enabled: true, shortcode: '' },
+          card: { enabled: true, paystackKey: '' },
+          cash: { enabled: true, description: 'Pay on delivery' }
+        },
+        shippingSettings: config.shippingSettings || {
+          freeShippingThreshold: 5000,
+          baseDeliveryFee: 200,
+          feePerKm: 50
+        },
+        notificationSettings: config.notificationSettings || {
+          emailNotifications: true,
+          smsNotifications: true,
+          orderConfirmations: true,
+          stockAlerts: true
+        },
+        isActive: config.isActive ?? true
+      })
     }
-
-    loadStoreConfig()
-  }, [])
+  }, [config])
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -101,44 +148,119 @@ const StoreConfigurations = () => {
     }))
   }
 
-  const handleBusinessHoursChange = (day, field, value) => {
+  const handleAddressChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
-      businessHours: {
-        ...prev.businessHours,
-        [day]: {
-          ...prev.businessHours[day],
+      storeAddress: {
+        ...prev.storeAddress,
+        [field]: value
+      }
+    }))
+  }
+
+  const handleBusinessHoursChange = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      businessHours: prev.businessHours.map((hour, i) =>
+        i === index ? { ...hour, [field]: value } : hour
+      )
+    }))
+  }
+
+  const handlePaymentMethodToggle = (method, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      paymentMethods: {
+        ...prev.paymentMethods,
+        [method]: {
+          ...prev.paymentMethods[method],
           [field]: value
         }
       }
     }))
   }
 
-  const handlePaymentMethodToggle = (method, checked) => {
+  const handleShippingChange = (field, value, type = 'number') => {
     setFormData(prev => ({
       ...prev,
-      paymentMethods: {
-        ...prev.paymentMethods,
-        [method]: checked
+      shippingSettings: {
+        ...prev.shippingSettings,
+        [field]: type === 'number' ? Number(value) : value
+      }
+    }))
+  }
+
+  const handleNotificationChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      notificationSettings: {
+        ...prev.notificationSettings,
+        [field]: value
       }
     }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setLoading(true)
 
     try {
-      // Simulate API call to save store configuration
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      toast.success('Store configuration saved successfully!')
+      if (hasConfig) {
+        // Update existing configuration
+        await updateConfigMutation.mutateAsync(formData)
+      } else {
+        // Create new configuration
+        await createConfigMutation.mutateAsync(formData)
+      }
     } catch (error) {
       console.error('Error saving store configuration:', error)
-      toast.error('Failed to save store configuration')
-    } finally {
-      setLoading(false)
     }
+  }
+
+  const handleInitConfig = async () => {
+    try {
+      await initConfigMutation.mutateAsync()
+    } catch (error) {
+      console.error('Error initializing store configuration:', error)
+    }
+  }
+
+  const handleDeleteConfig = async () => {
+    if (window.confirm('Are you sure you want to delete the store configuration? This action cannot be undone.')) {
+      try {
+        await deleteConfigMutation.mutateAsync()
+      } catch (error) {
+        console.error('Error deleting store configuration:', error)
+      }
+    }
+  }
+
+  const isLoading = configLoading || createConfigMutation.isPending || updateConfigMutation.isPending || deleteConfigMutation.isPending || initConfigMutation.isPending
+
+  // Loading and error states
+  if (configLoading) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (configError) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">Error loading store configuration: {configError.message}</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
   }
 
   const renderTabContent = () => {
@@ -151,7 +273,7 @@ const StoreConfigurations = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Store Name
+                    Store Name *
                   </label>
                   <input
                     type="text"
@@ -159,100 +281,88 @@ const StoreConfigurations = () => {
                     value={formData.storeName}
                     onChange={handleInputChange}
                     className="input"
+                    placeholder="Enter store name"
                     required
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contact Email
+                    Contact Email *
                   </label>
                   <input
                     type="email"
-                    name="contactEmail"
-                    value={formData.contactEmail}
+                    name="storeEmail"
+                    value={formData.storeEmail}
                     onChange={handleInputChange}
                     className="input"
+                    placeholder="Enter contact email"
                     required
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contact Phone
+                    Contact Phone *
                   </label>
                   <input
                     type="tel"
-                    name="contactPhone"
-                    value={formData.contactPhone}
+                    name="storePhone"
+                    value={formData.storePhone}
                     onChange={handleInputChange}
                     className="input"
+                    placeholder="Enter contact phone"
                     required
                   />
                 </div>
 
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Timezone
+                    Store Address
                   </label>
-                  <select
-                    name="timezone"
-                    value={formData.timezone}
-                    onChange={handleInputChange}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      type="text"
+                      placeholder="Street Address"
+                      value={formData.storeAddress.street}
+                      onChange={(e) => handleAddressChange('street', e.target.value)}
+                      className="input"
+                    />
+                    <input
+                      type="text"
+                      placeholder="City"
+                      value={formData.storeAddress.city}
+                      onChange={(e) => handleAddressChange('city', e.target.value)}
+                      className="input"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Country"
+                      value={formData.storeAddress.country}
+                      onChange={(e) => handleAddressChange('country', e.target.value)}
                     className="input"
-                  >
-                    <option value="Africa/Nairobi">East Africa Time (EAT)</option>
-                    <option value="Africa/Johannesburg">South Africa Standard Time (SAST)</option>
-                    <option value="UTC">Coordinated Universal Time (UTC)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Store Description
-                </label>
-                <textarea
-                  name="storeDescription"
-                  value={formData.storeDescription}
-                  onChange={handleInputChange}
-                  rows={4}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Postal Code"
+                      value={formData.storeAddress.postalCode}
+                      onChange={(e) => handleAddressChange('postalCode', e.target.value)}
                   className="input"
                 />
               </div>
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Currency Settings</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Currency
-                  </label>
-                  <select
-                    name="currency"
-                    value={formData.currency}
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="isActive"
+                      checked={formData.isActive}
                     onChange={handleInputChange}
-                    className="input"
-                  >
-                    <option value="KES">Kenyan Shilling (KES)</option>
-                    <option value="USD">US Dollar (USD)</option>
-                    <option value="EUR">Euro (EUR)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Currency Symbol
+                      className="mr-2"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Store is Active</span>
                   </label>
-                  <input
-                    type="text"
-                    name="currencySymbol"
-                    value={formData.currencySymbol}
-                    onChange={handleInputChange}
-                    className="input"
-                    placeholder="KSh"
-                  />
                 </div>
               </div>
             </div>
@@ -265,42 +375,38 @@ const StoreConfigurations = () => {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Business Hours</h3>
               <div className="space-y-4">
-                {Object.entries(formData.businessHours).map(([day, hours]) => (
-                  <div key={day} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                {formData.businessHours.map((hour, index) => (
+                  <div key={hour.day} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
                     <div className="w-24">
-                      <span className="font-medium text-gray-900 capitalize">{day}</span>
+                      <span className="text-sm font-medium text-gray-700 capitalize">
+                        {hour.day}
+                      </span>
                     </div>
-
-                    <label className="flex items-center gap-2">
+                    <label className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={!hours.closed}
-                        onChange={(e) => handleBusinessHoursChange(day, 'closed', !e.target.checked)}
-                        className="rounded border-gray-300 text-primary focus:ring-primary"
+                        checked={hour.isOpen}
+                        onChange={(e) => handleBusinessHoursChange(index, 'isOpen', e.target.checked)}
+                        className="mr-2"
                       />
-                      <span className="text-sm text-gray-700">Open</span>
+                      <span className="text-sm text-gray-600">Open</span>
                     </label>
-
-                    {!hours.closed && (
-                      <div className="flex items-center gap-2">
+                    {hour.isOpen && (
+                      <>
                         <input
                           type="time"
-                          value={hours.open}
-                          onChange={(e) => handleBusinessHoursChange(day, 'open', e.target.value)}
-                          className="input text-sm"
+                          value={hour.open}
+                          onChange={(e) => handleBusinessHoursChange(index, 'open', e.target.value)}
+                          className="input w-32"
                         />
                         <span className="text-gray-500">to</span>
                         <input
                           type="time"
-                          value={hours.close}
-                          onChange={(e) => handleBusinessHoursChange(day, 'close', e.target.value)}
-                          className="input text-sm"
+                          value={hour.close}
+                          onChange={(e) => handleBusinessHoursChange(index, 'close', e.target.value)}
+                          className="input w-32"
                         />
-                      </div>
-                    )}
-
-                    {hours.closed && (
-                      <span className="text-sm text-gray-500 italic">Closed</span>
+                      </>
                     )}
                   </div>
                 ))}
@@ -314,179 +420,180 @@ const StoreConfigurations = () => {
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Methods</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+              <div className="space-y-6">
+                {/* M-Pesa */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <FiDollarSign className="h-5 w-5 text-green-600" />
+                      <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <FiCreditCard className="h-6 w-6 text-green-600" />
+                      </div>
                     <div>
-                      <p className="font-medium text-gray-900">M-Pesa</p>
-                      <p className="text-sm text-gray-600">Mobile money payments</p>
+                        <h4 className="font-medium text-gray-900">M-Pesa</h4>
+                        <p className="text-sm text-gray-500">Mobile money payments</p>
                     </div>
                   </div>
                   <label className="flex items-center">
                     <input
                       type="checkbox"
-                      checked={formData.paymentMethods.mpesa}
-                      onChange={(e) => handlePaymentMethodToggle('mpesa', e.target.checked)}
-                      className="rounded border-gray-300 text-primary focus:ring-primary"
-                    />
+                        checked={formData.paymentMethods.mpesa.enabled}
+                        onChange={(e) => handlePaymentMethodToggle('mpesa', 'enabled', e.target.checked)}
+                        className="mr-2"
+                      />
+                      <span className="text-sm text-gray-600">Enabled</span>
+                    </label>
+                  </div>
+                  {formData.paymentMethods.mpesa.enabled && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Shortcode *
                   </label>
+                      <input
+                        type="text"
+                        value={formData.paymentMethods.mpesa.shortcode}
+                        onChange={(e) => handlePaymentMethodToggle('mpesa', 'shortcode', e.target.value)}
+                        className="input"
+                        placeholder="Enter M-Pesa shortcode"
+                      />
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                {/* Card Payments */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <FiCreditCard className="h-5 w-5 text-blue-600" />
+                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <FiCreditCard className="h-6 w-6 text-blue-600" />
+                      </div>
                     <div>
-                      <p className="font-medium text-gray-900">Credit/Debit Cards</p>
-                      <p className="text-sm text-gray-600">Visa, Mastercard, etc.</p>
+                        <h4 className="font-medium text-gray-900">Card Payments</h4>
+                        <p className="text-sm text-gray-500">Visa, Mastercard via Paystack</p>
                     </div>
                   </div>
                   <label className="flex items-center">
                     <input
                       type="checkbox"
-                      checked={formData.paymentMethods.card}
-                      onChange={(e) => handlePaymentMethodToggle('card', e.target.checked)}
-                      className="rounded border-gray-300 text-primary focus:ring-primary"
-                    />
+                        checked={formData.paymentMethods.card.enabled}
+                        onChange={(e) => handlePaymentMethodToggle('card', 'enabled', e.target.checked)}
+                        className="mr-2"
+                      />
+                      <span className="text-sm text-gray-600">Enabled</span>
                   </label>
                 </div>
-
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <FiDollarSign className="h-5 w-5 text-gray-600" />
+                  {formData.paymentMethods.card.enabled && (
                     <div>
-                      <p className="font-medium text-gray-900">Cash on Delivery</p>
-                      <p className="text-sm text-gray-600">Pay when you receive</p>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Paystack Public Key *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.paymentMethods.card.paystackKey}
+                        onChange={(e) => handlePaymentMethodToggle('card', 'paystackKey', e.target.value)}
+                        className="input"
+                        placeholder="Enter Paystack public key"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Cash on Delivery */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <FiDollarSign className="h-6 w-6 text-gray-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900">Cash on Delivery</h4>
+                        <p className="text-sm text-gray-500">Pay when you receive your order</p>
                     </div>
                   </div>
                   <label className="flex items-center">
                     <input
                       type="checkbox"
-                      checked={formData.paymentMethods.cash}
-                      onChange={(e) => handlePaymentMethodToggle('cash', e.target.checked)}
-                      className="rounded border-gray-300 text-primary focus:ring-primary"
-                    />
+                        checked={formData.paymentMethods.cash.enabled}
+                        onChange={(e) => handlePaymentMethodToggle('cash', 'enabled', e.target.checked)}
+                        className="mr-2"
+                      />
+                      <span className="text-sm text-gray-600">Enabled</span>
                   </label>
+                </div>
+                  {formData.paymentMethods.cash.enabled && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Description
+                    </label>
+                    <input
+                      type="text"
+                        value={formData.paymentMethods.cash.description}
+                        onChange={(e) => handlePaymentMethodToggle('cash', 'description', e.target.value)}
+                      className="input"
+                        placeholder="Enter description"
+                    />
+                  </div>
+                  )}
                 </div>
               </div>
             </div>
-
-            {formData.paymentMethods.mpesa && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">M-Pesa Configuration</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Shortcode
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.mpesaConfig.shortcode}
-                      onChange={(e) => handleNestedInputChange('mpesaConfig', 'shortcode', e.target.value)}
-                      className="input"
-                      placeholder="174379"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Consumer Key
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.mpesaConfig.consumerKey}
-                      onChange={(e) => handleNestedInputChange('mpesaConfig', 'consumerKey', e.target.value)}
-                      className="input"
-                      placeholder="Your consumer key"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Consumer Secret
-                    </label>
-                    <input
-                      type="password"
-                      value={formData.mpesaConfig.consumerSecret}
-                      onChange={(e) => handleNestedInputChange('mpesaConfig', 'consumerSecret', e.target.value)}
-                      className="input"
-                      placeholder="Your consumer secret"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Passkey
-                    </label>
-                    <input
-                      type="password"
-                      value={formData.mpesaConfig.passkey}
-                      onChange={(e) => handleNestedInputChange('mpesaConfig', 'passkey', e.target.value)}
-                      className="input"
-                      placeholder="Your passkey"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )
 
-      case 'delivery':
+      case 'shipping':
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Delivery Settings</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Delivery Fee per KM
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                      {formData.currencySymbol}
-                    </span>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Shipping Settings</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Free Shipping Threshold (KES)
+                    </label>
                     <input
-                      type="number"
-                      value={formData.deliveryFeePerKm}
-                      onChange={(e) => handleNestedInputChange('', 'deliveryFeePerKm', e.target.value, 'number')}
-                      className="input pl-8"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Free Delivery Threshold
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                      {formData.currencySymbol}
-                    </span>
-                    <input
-                      type="number"
-                      value={formData.freeDeliveryThreshold}
-                      onChange={(e) => handleNestedInputChange('', 'freeDeliveryThreshold', e.target.value, 'number')}
-                      className="input pl-8"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Max Delivery Distance (KM)
-                  </label>
-                  <input
                     type="number"
-                    value={formData.maxDeliveryDistance}
-                    onChange={(e) => handleNestedInputChange('', 'maxDeliveryDistance', e.target.value, 'number')}
-                    className="input"
-                    min="1"
-                  />
+                    value={formData.shippingSettings.freeShippingThreshold}
+                    onChange={(e) => handleShippingChange('freeShippingThreshold', e.target.value)}
+                      className="input"
+                    placeholder="5000"
+                    min="0"
+                    />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Orders above this amount get free shipping
+                  </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Base Delivery Fee (KES)
+                    </label>
+                    <input
+                    type="number"
+                    value={formData.shippingSettings.baseDeliveryFee}
+                    onChange={(e) => handleShippingChange('baseDeliveryFee', e.target.value)}
+                      className="input"
+                    placeholder="200"
+                    min="0"
+                    />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Minimum delivery fee
+                  </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Fee Per Kilometer (KES)
+                    </label>
+                    <input
+                    type="number"
+                    value={formData.shippingSettings.feePerKm}
+                    onChange={(e) => handleShippingChange('feePerKm', e.target.value)}
+                      className="input"
+                    placeholder="50"
+                      min="0"
+                    />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Additional fee per kilometer
+                  </p>
                 </div>
               </div>
             </div>
@@ -497,54 +604,58 @@ const StoreConfigurations = () => {
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Notification Preferences</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Notification Settings</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-900">Email Notifications</p>
-                    <p className="text-sm text-gray-600">Send email notifications for orders and updates</p>
+                    <h4 className="font-medium text-gray-900">Email Notifications</h4>
+                    <p className="text-sm text-gray-500">Receive order updates via email</p>
                   </div>
-                  <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.notificationSettings.emailNotifications}
+                    onChange={(e) => handleNotificationChange('emailNotifications', e.target.checked)}
+                    className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <div>
+                    <h4 className="font-medium text-gray-900">SMS Notifications</h4>
+                    <p className="text-sm text-gray-500">Receive order updates via SMS</p>
+                  </div>
                     <input
                       type="checkbox"
-                      name="emailNotifications"
-                      checked={formData.emailNotifications}
-                      onChange={handleInputChange}
-                      className="rounded border-gray-300 text-primary focus:ring-primary"
-                    />
-                  </label>
+                    checked={formData.notificationSettings.smsNotifications}
+                    onChange={(e) => handleNotificationChange('smsNotifications', e.target.checked)}
+                    className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                  />
                 </div>
 
                 <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-900">SMS Notifications</p>
-                    <p className="text-sm text-gray-600">Send SMS notifications for orders and updates</p>
+                    <h4 className="font-medium text-gray-900">Order Confirmations</h4>
+                    <p className="text-sm text-gray-500">Send confirmation when orders are placed</p>
                   </div>
-                  <label className="flex items-center">
                     <input
                       type="checkbox"
-                      name="smsNotifications"
-                      checked={formData.smsNotifications}
-                      onChange={handleInputChange}
-                      className="rounded border-gray-300 text-primary focus:ring-primary"
-                    />
-                  </label>
+                    checked={formData.notificationSettings.orderConfirmations}
+                    onChange={(e) => handleNotificationChange('orderConfirmations', e.target.checked)}
+                    className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                  />
                 </div>
 
                 <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-900">Order Notifications</p>
-                    <p className="text-sm text-gray-600">Notify customers about order status changes</p>
+                    <h4 className="font-medium text-gray-900">Stock Alerts</h4>
+                    <p className="text-sm text-gray-500">Get notified when products are low in stock</p>
                   </div>
-                  <label className="flex items-center">
                     <input
                       type="checkbox"
-                      name="orderNotifications"
-                      checked={formData.orderNotifications}
-                      onChange={handleInputChange}
-                      className="rounded border-gray-300 text-primary focus:ring-primary"
-                    />
-                  </label>
+                    checked={formData.notificationSettings.stockAlerts}
+                    onChange={(e) => handleNotificationChange('stockAlerts', e.target.checked)}
+                    className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                  />
                 </div>
               </div>
             </div>
@@ -557,9 +668,9 @@ const StoreConfigurations = () => {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 md:p-6 max-w-6xl mx-auto overflow-x-hidden">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6 md:mb-8">
         <div className="flex items-center gap-4 mb-4">
           <Link
             to="/settings"
@@ -569,34 +680,80 @@ const StoreConfigurations = () => {
             Back to Settings
           </Link>
         </div>
+
+        <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-            <FiSettings className="h-6 w-6 text-purple-600" />
+            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+              <FiSettings className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Store Configurations</h1>
-            <p className="text-gray-600">Configure your store settings and preferences</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                {hasConfig ? 'Store Configuration' : 'Create Store Configuration'}
+              </h1>
+              <p className="text-gray-600 text-sm md:text-base">
+                {hasConfig
+                  ? 'Manage your store settings and preferences'
+                  : 'Set up your store configuration to get started'
+                }
+              </p>
+            </div>
           </div>
+
+          {hasConfig && (
+            <div className="flex gap-2">
+              <button
+                onClick={handleInitConfig}
+                disabled={isLoading}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
+                <FiRefreshCw className="h-4 w-4" />
+                Reset to Default
+              </button>
+              <button
+                onClick={handleDeleteConfig}
+                disabled={isLoading}
+                className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 disabled:opacity-50"
+              >
+                <FiTrash2 className="h-4 w-4" />
+                Delete Config
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Status Message */}
+      {!hasConfig && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-3">
+            <FiSettings className="h-5 w-5 text-blue-600" />
+                <div>
+              <h3 className="font-medium text-blue-900">No Store Configuration Found</h3>
+              <p className="text-sm text-blue-700">
+                Create your store configuration to enable all store features.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tab Navigation */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
         <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
+          <nav className="flex overflow-x-auto scrollbar-hide px-4 md:px-6">
             {tabs.map((tab) => {
               const Icon = tab.icon
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  className={`flex items-center gap-2 py-4 px-2 md:px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-primary text-primary'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-4 w-4 flex-shrink-0" />
                   {tab.label}
                 </button>
               )
@@ -605,27 +762,30 @@ const StoreConfigurations = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           <form onSubmit={handleSubmit}>
             {renderTabContent()}
 
             {/* Form Actions */}
-            <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200 mt-6">
-              <button
-                type="button"
-                className="btn btn-outline flex items-center gap-2"
-                onClick={() => window.location.reload()}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-4 pt-6 border-t border-gray-200 mt-6">
+              <Link
+                to="/settings"
+                className="btn btn-outline flex items-center justify-center"
               >
-                <FiRefreshCw className="h-4 w-4" />
-                Reset
-              </button>
+                Cancel
+              </Link>
               <button
                 type="submit"
-                className="btn btn-primary flex items-center gap-2"
-                disabled={loading}
+                disabled={isLoading}
+                className="btn btn-primary flex items-center justify-center gap-2"
               >
                 <FiSave className="h-4 w-4" />
-                {loading ? 'Saving...' : 'Save Configuration'}
+                {isLoading
+                  ? 'Saving...'
+                  : hasConfig
+                    ? 'Update Configuration'
+                    : 'Create Configuration'
+                }
               </button>
             </div>
           </form>

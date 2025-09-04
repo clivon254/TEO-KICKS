@@ -325,6 +325,87 @@ export const AuthProvider = ({ children }) => {
         }
     }
 
+    // Google OAuth functions
+    const initiateGoogleAuth = async () => {
+        try {
+            const response = await authAPI.googleAuth()
+            const { authUrl } = response.data.data
+
+            // Open Google OAuth in a popup or redirect
+            window.location.href = authUrl
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || 'Failed to initiate Google authentication'
+            toast.error(errorMessage)
+            throw error
+        }
+    }
+
+    const handleGoogleCallback = async (code) => {
+        dispatch({ type: AUTH_ACTIONS.LOGIN_START })
+        reduxDispatch(setAuthLoading(true))
+
+        try {
+            const response = await authAPI.googleAuthCallback({ code })
+            const { user, tokens } = response.data.data
+
+            // Store tokens and user data
+            localStorage.setItem('accessToken', tokens.accessToken)
+            localStorage.setItem('refreshToken', tokens.refreshToken)
+            localStorage.setItem('user', JSON.stringify(user))
+
+            dispatch({
+                type: AUTH_ACTIONS.LOGIN_SUCCESS,
+                payload: { user }
+            })
+            reduxDispatch(setAuthSuccess(user))
+
+            toast.success('Google authentication successful!')
+            return { success: true }
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || 'Google authentication failed'
+            dispatch({
+                type: AUTH_ACTIONS.LOGIN_FAILURE,
+                payload: errorMessage
+            })
+            reduxDispatch(setAuthFailure(errorMessage))
+            toast.error(errorMessage)
+            return { success: false, error: errorMessage }
+        }
+    }
+
+    const googleAuthWithIdToken = async (idToken) => {
+        dispatch({ type: AUTH_ACTIONS.LOGIN_START })
+        reduxDispatch(setAuthLoading(true))
+
+        try {
+            const response = await authAPI.googleAuthMobile({ idToken })
+            const { user, tokens } = response.data.data
+
+            // Store tokens and user data
+            localStorage.setItem('accessToken', tokens.accessToken)
+            localStorage.setItem('refreshToken', tokens.refreshToken)
+            localStorage.setItem('user', JSON.stringify(user))
+
+            dispatch({
+                type: AUTH_ACTIONS.LOGIN_SUCCESS,
+                payload: { user }
+            })
+            reduxDispatch(setAuthSuccess(user))
+
+            toast.success('Google authentication successful!')
+            return { success: true }
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || 'Google authentication failed'
+            dispatch({
+                type: AUTH_ACTIONS.LOGIN_FAILURE,
+                payload: errorMessage
+            })
+            reduxDispatch(setAuthFailure(errorMessage))
+            toast.error(errorMessage)
+            return { success: false, error: errorMessage }
+        }
+    }
+
     // Clear error function
     const clearError = () => {
         dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR })
@@ -345,7 +426,10 @@ export const AuthProvider = ({ children }) => {
         updateProfile,
         changePassword,
         logout,
-        clearError
+        clearError,
+        initiateGoogleAuth,
+        handleGoogleCallback,
+        googleAuthWithIdToken
     }
 
     return (

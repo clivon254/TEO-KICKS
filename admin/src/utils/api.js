@@ -82,6 +82,11 @@ export const authAPI = {
     
     // Logout
     logout: () => api.post('/auth/logout'),
+
+    // Google OAuth
+    googleAuth: () => api.get('/auth/google'),
+    googleAuthCallback: (codeData) => api.post('/auth/google/callback', codeData),
+    googleAuthMobile: (idTokenData) => api.post('/auth/google/mobile', idTokenData),
 }
 
 // User API calls
@@ -306,30 +311,51 @@ export const reviewAPI = {
 export const couponAPI = {
     // Get all coupons (admin only)
     getAllCoupons: (params) => api.get('/coupons', { params }),
-    
+
     // Get coupon by ID
     getCouponById: (couponId) => api.get(`/coupons/${couponId}`),
-    
+
     // Create coupon (admin only)
     createCoupon: (couponData) => api.post('/coupons', couponData),
-    
+
     // Update coupon (admin only)
     updateCoupon: (couponId, couponData) => api.put(`/coupons/${couponId}`, couponData),
-    
+
     // Delete coupon (admin only)
     deleteCoupon: (couponId) => api.delete(`/coupons/${couponId}`),
-    
+
     // Validate coupon (public)
     validateCoupon: (code, orderAmount) => api.post('/coupons/validate', { code }, { params: { orderAmount } }),
-    
+
     // Apply coupon to order (protected)
     applyCoupon: (code, orderAmount) => api.post('/coupons/apply', { code, orderAmount }),
-    
+
     // Get coupon statistics (admin only)
     getCouponStats: () => api.get('/coupons/stats'),
-    
+
     // Generate new coupon code (admin only)
     generateNewCode: (couponId) => api.patch(`/coupons/${couponId}/generate-code`),
+}
+
+// Store Configuration API calls
+export const storeConfigAPI = {
+    // Get store configuration
+    getStoreConfig: () => api.get('/store-config'),
+
+    // Create store configuration (admin only)
+    createStoreConfig: (configData) => api.post('/store-config', configData),
+
+    // Update store configuration (admin only)
+    updateStoreConfig: (configData) => api.put('/store-config', configData),
+
+    // Delete store configuration (admin only)
+    deleteStoreConfig: () => api.delete('/store-config'),
+
+    // Get store configuration status
+    getStoreConfigStatus: () => api.get('/store-config/status'),
+
+    // Initialize default store configuration (admin only)
+    initStoreConfig: () => api.post('/store-config/init'),
 }
 
 export default api 

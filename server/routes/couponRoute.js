@@ -20,6 +20,14 @@ const router = express.Router()
  *   post:
  *     summary: Validate coupon code
  *     tags: [Coupons]
+ *     parameters:
+ *       - in: query
+ *         name: orderAmount
+ *         required: true
+ *         schema:
+ *           type: number
+ *         description: Order amount to validate against minimum requirements
+ *         example: 1000
  *     requestBody:
  *       required: true
  *       content:
@@ -28,16 +36,11 @@ const router = express.Router()
  *             type: object
  *             required:
  *               - code
- *               - orderAmount
  *             properties:
  *               code:
  *                 type: string
  *                 description: Coupon code to validate
  *                 example: "SAVE20"
- *               orderAmount:
- *                 type: number
- *                 description: Order amount to validate against minimum requirements
- *                 example: 1000
  *     responses:
  *       200:
  *         description: Coupon is valid

@@ -10,6 +10,7 @@ import Login from './pages/auth/Login'
 import OTPVerification from './pages/auth/OTPVerification'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
+import GoogleCallback from './pages/auth/GoogleCallback'
 import Dashboard from './pages/Dashboard'
 import NotFound from './pages/NotFound'
 import Categories from './pages/classifications/category/Categories'
@@ -44,45 +45,42 @@ import Address from './pages/settings/Address'
 import ChangePassword from './pages/settings/ChangePassword'
 import StoreConfigurations from './pages/settings/StoreConfigurations'
 
-// Main Layout - only for authenticated users
-function Layout() {
-  const { isAuthenticated, isLoading } = useAuth()
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+function App() {
+  // Main Layout - only for authenticated users (inside App component for AuthProvider context)
+  const Layout = () => {
+    const { isAuthenticated, isLoading } = useAuth()
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen)
-  }
+    const toggleSidebar = () => {
+      setIsSidebarOpen(!isSidebarOpen)
+    }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+    if (isLoading) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      )
+    }
+
+    return isAuthenticated ? (
+      <div className="min-h-screen h-screen flex flex-col">
+        <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+        <div className="flex-1 flex overflow-hidden">
+          <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+          <div className="flex-1 h-full overflow-y-auto relative">
+            <Outlet />
+          </div>
         </div>
       </div>
+    ) : (
+      <Navigate to="/login" replace />
     )
   }
 
-  return isAuthenticated ? (
-    <div className="min-h-screen h-screen flex flex-col">
-      <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-      <div className="flex-1 flex overflow-hidden">
-        <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-        <div className="flex-1 h-full overflow-y-auto relative">
-          <Outlet />
-        </div>
-      </div>
-    </div>
-  ) : (
-    <Navigate to="/login" replace />
-  )
-}
-
-
-
-
-function App() {
   return (
     <Router>
       <AuthProvider>
@@ -129,6 +127,7 @@ function App() {
             <Route path="/otp-verification" element={<OTPVerification />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
             {/* 404 Page */}
             <Route path="*" element={<NotFound />} />

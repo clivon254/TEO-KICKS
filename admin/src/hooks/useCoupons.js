@@ -89,8 +89,18 @@ export const useDeleteCoupon = () => {
 // Validate coupon (public)
 export const useValidateCoupon = () => {
     return useMutation({
-        mutationFn: ({ code, orderAmount }) => couponAPI.validateCoupon(code, orderAmount),
+        mutationFn: (params) => {
+            // Handle both object and array parameter formats
+            if (Array.isArray(params)) {
+                return couponAPI.validateCoupon(params[0], params[1])
+            }
+            return couponAPI.validateCoupon(params.code, params.orderAmount)
+        },
+        onSuccess: (data) => {
+            console.log('Coupon validation successful:', data)
+        },
         onError: (error) => {
+            console.error('Coupon validation error:', error)
             toast.error(error.response?.data?.message || 'Failed to validate coupon')
         }
     })

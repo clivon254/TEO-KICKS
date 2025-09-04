@@ -1,15 +1,18 @@
 import express from "express"
 import { authenticateToken } from "../middlewares/auth.js"
-import { 
-    register, 
-    verifyOTP, 
+import {
+    register,
+    verifyOTP,
     resendOTP,
-    login, 
-    refreshToken, 
-    forgotPassword, 
-    resetPassword, 
-    logout, 
-    getMe 
+    login,
+    refreshToken,
+    forgotPassword,
+    resetPassword,
+    logout,
+    getMe,
+    googleAuth,
+    googleAuthCallback,
+    googleAuthMobile
 } from "../controllers/authController.js"
 
 
@@ -347,6 +350,88 @@ router.post('/logout', authenticateToken, logout)
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get('/me', authenticateToken, getMe)
+
+/**
+ * @swagger
+ * /api/auth/google:
+ *   get:
+ *     summary: Initiate Google OAuth login
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Google OAuth URL generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     authUrl:
+ *                       type: string
+ *                       example: "https://accounts.google.com/oauth/authorize?..."
+ */
+router.get('/google', googleAuth)
+
+/**
+ * @swagger
+ * /api/auth/google/callback:
+ *   post:
+ *     summary: Handle Google OAuth callback
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [code]
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 description: Authorization code from Google
+ *                 example: "4/0AZEOvhV..."
+ *     responses:
+ *       200:
+ *         description: Google authentication successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ */
+router.post('/google/callback', googleAuthCallback)
+
+/**
+ * @swagger
+ * /api/auth/google/mobile:
+ *   post:
+ *     summary: Google OAuth for mobile apps using ID token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [idToken]
+ *             properties:
+ *               idToken:
+ *                 type: string
+ *                 description: Google ID token
+ *                 example: "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
+ *     responses:
+ *       200:
+ *         description: Google authentication successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ */
+router.post('/google/mobile', googleAuthMobile)
 
 
 

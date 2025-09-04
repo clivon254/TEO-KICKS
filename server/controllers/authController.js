@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 import validator from "validator"
 import crypto from "crypto"
+import { OAuth2Client } from "google-auth-library"
 import { errorHandler } from "../utils/error.js"
 import { sendOTPNotification, sendPasswordResetNotification, sendWelcomeNotification } from "../services/notificationService.js"
 import { assignDefaultRole } from "./userController.js"
@@ -640,5 +641,231 @@ export const getMe = async (req, res, next) => {
     } catch (error) {
         console.error('Get me error:', error)
         next(errorHandler(500, "Server error while fetching user profile"))
+    }
+}
+
+
+// Initialize Google OAuth client
+const googleClient = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI || `${process.env.FRONTEND_URL}/auth/google/callback`
+)
+
+
+// @desc    Initiate Google OAuth login
+// @route   GET /api/auth/google
+// @access  Public
+export const googleAuth = async (req, res, next) => {
+    try {
+        const authorizeUrl = googleClient.generateAuthUrl({
+            access_type: 'offline',
+            scope: [
+                'https://www.googleapis.com/auth/userinfo.profile',
+                'https://www.googleapis.com/auth/userinfo.email'
+            ],
+            prompt: 'consent'
+        })
+
+        res.status(200).json({
+            success: true,
+            data: {
+                authUrl: authorizeUrl
+            }
+        })
+
+    } catch (error) {
+        console.error('Google auth initiation error:', error)
+        next(errorHandler(500, "Failed to initiate Google authentication"))
+    }
+}
+
+
+// @desc    Handle Google OAuth callback
+// @route   POST /api/auth/google/callback
+// @access  Public
+export const googleAuthCallback = async (req, res, next) => {
+    try {
+        const { code } = req.body
+
+        if (!code) {
+            return next(errorHandler(400, "Authorization code is required"))
+        }
+
+        // Exchange authorization code for tokens
+        const { tokens } = await googleClient.getToken(code)
+        googleClient.setCredentials(tokens)
+
+        // Get user info from Google
+        const ticket = await googleClient.verifyIdToken({
+            idToken: tokens.id_token,
+            audience: process.env.GOOGLE_CLIENT_ID
+        })
+
+        const payload = ticket.getPayload()
+
+        if (!payload || !payload.email) {
+            return next(errorHandler(400, "Failed to get user information from Google"))
+        }
+
+        const { sub: googleId, email, name, picture } = payload
+
+        // Check if user exists with this Google ID
+        let user = await User.findOne({
+            'oauthProviders.provider': 'google',
+            'oauthProviders.providerUserId': googleId
+        })
+
+        if (!user) {
+            // Check if user exists with same email
+            const existingUser = await User.findOne({ email })
+
+            if (existingUser) {
+                // Add Google provider to existing user
+                existingUser.addOAuthProvider('google', googleId, email)
+                await existingUser.save()
+                user = existingUser
+            } else {
+                // Create new user
+                user = new User({
+                    name: name || 'Google User',
+                    email,
+                    avatar: picture,
+                    isVerified: true, // Google accounts are pre-verified
+                    oauthProviders: [{
+                        provider: 'google',
+                        providerUserId: googleId,
+                        email
+                    }]
+                })
+
+                // Assign default role
+                await assignDefaultRole(user._id)
+
+                await user.save()
+            }
+        }
+
+        // Update last login
+        user.lastLoginAt = new Date()
+        await user.save()
+
+        // Generate JWT tokens
+        const { accessToken, refreshToken } = generateTokens(user)
+
+        res.status(200).json({
+            success: true,
+            message: "Google authentication successful",
+            data: {
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    avatar: user.avatar,
+                    roles: user.roles,
+                    isVerified: user.isVerified
+                },
+                tokens: {
+                    accessToken,
+                    refreshToken
+                }
+            }
+        })
+
+    } catch (error) {
+        console.error('Google auth callback error:', error)
+        next(errorHandler(500, "Google authentication failed"))
+    }
+}
+
+
+// @desc    Mobile-friendly Google OAuth with ID token
+// @route   POST /api/auth/google/mobile
+// @access  Public
+export const googleAuthMobile = async (req, res, next) => {
+    try {
+        const { idToken } = req.body
+
+        if (!idToken) {
+            return next(errorHandler(400, "ID token is required"))
+        }
+
+        // Verify the ID token
+        const ticket = await googleClient.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID
+        })
+
+        const payload = ticket.getPayload()
+
+        if (!payload || !payload.email) {
+            return next(errorHandler(400, "Invalid ID token"))
+        }
+
+        const { sub: googleId, email, name, picture } = payload
+
+        // Check if user exists with this Google ID
+        let user = await User.findOne({
+            'oauthProviders.provider': 'google',
+            'oauthProviders.providerUserId': googleId
+        })
+
+        if (!user) {
+            // Check if user exists with same email
+            const existingUser = await User.findOne({ email })
+
+            if (existingUser) {
+                // Add Google provider to existing user
+                existingUser.addOAuthProvider('google', googleId, email)
+                await existingUser.save()
+                user = existingUser
+            } else {
+                // Create new user
+                user = new User({
+                    name: name || 'Google User',
+                    email,
+                    avatar: picture,
+                    isVerified: true,
+                    oauthProviders: [{
+                        provider: 'google',
+                        providerUserId: googleId,
+                        email
+                    }]
+                })
+
+                await assignDefaultRole(user._id)
+                await user.save()
+            }
+        }
+
+        // Update last login
+        user.lastLoginAt = new Date()
+        await user.save()
+
+        // Generate JWT tokens
+        const { accessToken, refreshToken } = generateTokens(user)
+
+        res.status(200).json({
+            success: true,
+            message: "Google authentication successful",
+            data: {
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    avatar: user.avatar,
+                    roles: user.roles,
+                    isVerified: user.isVerified
+                },
+                tokens: {
+                    accessToken,
+                    refreshToken
+                }
+            }
+        })
+
+    } catch (error) {
+        console.error('Google mobile auth error:', error)
+        next(errorHandler(500, "Google authentication failed"))
     }
 }
