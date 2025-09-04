@@ -50,17 +50,32 @@ const Cart = () => {
 
     // Memoize expensive calculations
     const calculateSubtotal = useMemo(() => {
-        return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0)
+        const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0)
+        console.log('=== CART CALCULATIONS ===')
+        console.log('Cart Items:', cartItems.map(item => ({
+            product: item.productId?.title,
+            quantity: item.quantity,
+            price: item.price,
+            itemTotal: item.price * item.quantity
+        })))
+        console.log('Calculated Subtotal:', subtotal)
+        return subtotal
     }, [cartItems])
 
     // Calculate discount and final total
     const discountAmount = useMemo(() => {
-        return appliedCoupon?.discountAmount || 0
+        const discount = appliedCoupon?.discountAmount || 0
+        console.log('Discount Amount:', discount)
+        return discount
     }, [appliedCoupon])
 
     const finalTotal = useMemo(() => {
-        return calculateSubtotal - discountAmount
-    }, [calculateSubtotal, discountAmount])
+        const total = calculateSubtotal - discountAmount
+        console.log('Final Total (Subtotal - Discount):', total)
+        console.log('Applied Coupon in Calculation:', appliedCoupon)
+        console.log('=== CART CALCULATIONS END ===')
+        return total
+    }, [calculateSubtotal, discountAmount, appliedCoupon])
 
     // Memoize event handlers to prevent child component re-renders
     const handleQuantityChange = useCallback(async (skuId, newQuantity) => {
@@ -113,38 +128,66 @@ const Cart = () => {
         setIsApplyingCoupon(true)
 
         try {
-            console.log('Applying coupon:', { code: couponCode.toUpperCase(), orderAmount: calculateSubtotal })
+            console.log('=== COUPON APPLICATION START ===')
+            
 
             const result = await validateCoupon.mutateAsync({
                 code: couponCode.toUpperCase(),
                 orderAmount: calculateSubtotal
             })
 
-            console.log('Coupon validation result:', result)
-
-            if (result.success) {
+            console.log(`result: ${JSON.stringify(result, null, 2)}`)
+           
+            if (result.data.success) {
+            
                 setAppliedCoupon({
-                    code: result.data.coupon.code,
-                    discountAmount: result.data.discountAmount,
-                    name: result.data.coupon.name
+                    code: result.data.data.coupon.code,
+                    discountAmount: result.data.data.discountAmount,
+                    name: result.data.data.coupon.name
                 })
-                toast.success(`Coupon "${result.data.coupon.name}" applied successfully!`)
+                toast.success(`Coupon "${result.data.data.coupon.name}" applied successfully!`)
                 setCouponCode('')
+
+                console.log('=== COUPON APPLIED TO CART ===')
+                console.log('Applied Coupon State:', {
+                    code: result.data.data.coupon.code,
+                    discountAmount: result.data.data.discountAmount,
+                    name: result.data.data.coupon.name
+                })
             } else {
-                toast.error(result.message)
+                console.log('=== COUPON VALIDATION FAILED ===')
+                console.log('Error Message:', result.data.message)
+                toast.error(result.data.message)
             }
+
+            console.log('=== COUPON APPLICATION END ===')
+            
         } catch (error) {
-            console.error('Error applying coupon:', error)
+            console.error('=== COUPON APPLICATION ERROR ===')
+            console.error('Error Details:', error)
+            console.error('Error Response:', error.response?.data)
+            console.error('Error Status:', error.response?.status)
+            console.error('Error Message:', error.message)
             toast.error('Failed to apply coupon. Please try again.')
         } finally {
+            console.log('Setting isApplyingCoupon to false')
             setIsApplyingCoupon(false)
         }
-    }, [couponCode, validateCoupon, calculateSubtotal, isApplyingCoupon])
+    }, [couponCode, validateCoupon, calculateSubtotal, isApplyingCoupon, cartItems])
 
     const handleRemoveCoupon = useCallback(() => {
+        console.log('=== COUPON REMOVAL START ===')
+        console.log('Current Applied Coupon:', appliedCoupon)
+        console.log('Cart Subtotal before removal:', calculateSubtotal)
+
         setAppliedCoupon(null)
+
+        console.log('Applied Coupon set to null')
+        console.log('Cart will recalculate without discount')
+        console.log('=== COUPON REMOVAL END ===')
+
         toast.success('Coupon removed successfully')
-    }, [])
+    }, [appliedCoupon, calculateSubtotal])
 
     const handleCheckout = useCallback(() => {
         // TODO: Implement checkout functionality
