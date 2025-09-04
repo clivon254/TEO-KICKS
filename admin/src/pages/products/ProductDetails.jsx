@@ -42,6 +42,27 @@ const ProductDetails = () => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0)
     const [showCartSuccessModal, setShowCartSuccessModal] = useState(false)
 
+    // Memoize populated variants with options - MOVED UP to avoid initialization error
+    const getPopulatedVariants = useMemo(() => {
+        // Check if product has variants directly (not as IDs)
+        if (product?.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+            // If variants are already populated objects, return them directly
+            if (product.variants[0]?.options) {
+                return product.variants
+            }
+        }
+
+        // Fallback: if variants are stored as IDs, try to populate them
+        if (product?.variants && Array.isArray(product.variants) && allVariants.length > 0) {
+            return product.variants.map(variantId => {
+                const variant = allVariants.find(v => v._id === variantId)
+                return variant
+            }).filter(Boolean)
+        }
+
+        return []
+    }, [product?.variants, allVariants])
+
     // Memoize utility functions to avoid re-computations
     const getAvailableSKUs = useMemo(() => {
         if (!product?.skus) return []
@@ -64,28 +85,28 @@ const ProductDetails = () => {
     // Auto-select first variant option by default
     useEffect(() => {
         if (product) {
-            const populatedVariants = getPopulatedVariants()
+            const populatedVariants = getPopulatedVariants
             const defaultSelections = {}
-            
+
             populatedVariants.forEach(variant => {
                 if (variant.options && variant.options.length > 0) {
                     // Select the first available option
                     const firstAvailableOption = variant.options.find(option => {
-                        const skuForOption = product.skus?.find(sku => 
-                            sku.attributes?.some(attr => 
+                        const skuForOption = product.skus?.find(sku =>
+                            sku.attributes?.some(attr =>
                                 attr.variantId === variant._id && attr.optionId === option._id
                             )
                         )
                         return skuForOption?.stock > 0
                     }) || variant.options[0]
-                    
+
                     defaultSelections[variant._id] = firstAvailableOption._id
                 }
             })
-            
+
             setSelectedVariants(defaultSelections)
         }
-    }, [product])
+    }, [product, getPopulatedVariants])
 
     // Find matching SKU based on selected variants
     useEffect(() => {
@@ -103,8 +124,8 @@ const ProductDetails = () => {
 
     // Check if all variants are selected
     const areAllVariantsSelected = () => {
-        const populatedVariants = getPopulatedVariants()
-        return populatedVariants.length > 0 && 
+        const populatedVariants = getPopulatedVariants
+        return populatedVariants.length > 0 &&
                populatedVariants.every(variant => selectedVariants[variant._id])
     }
 
@@ -123,10 +144,10 @@ const ProductDetails = () => {
     }, [])
 
     const increaseQuantity = useCallback(() => {
-        const populatedVariants = getPopulatedVariants()
+        const populatedVariants = getPopulatedVariants
         const maxStock = populatedVariants.length > 0
             ? (selectedSKU?.stock || 0)
-            : getTotalAvailableStock()
+            : getTotalAvailableStock
 
         if (quantity < maxStock) {
             setQuantity(prev => prev + 1)
@@ -140,25 +161,25 @@ const ProductDetails = () => {
     }, [quantity])
 
     const handleAddToCart = async () => {
-        const populatedVariants = getPopulatedVariants()
-        
+        const populatedVariants = getPopulatedVariants
+
         // Check if variants exist and all are selected
         if (populatedVariants.length > 0 && !areAllVariantsSelected()) {
             toast.error('Please select all variant options')
             return
         }
-        
+
         // Check if selected combination has stock
         if (populatedVariants.length > 0 && !hasSelectedCombinationStock()) {
             toast.error('Selected combination is out of stock')
             return
         }
-        
+
         // Check quantity against available stock for the selected variant
-        const maxStock = populatedVariants.length > 0 
+        const maxStock = populatedVariants.length > 0
             ? (selectedSKU?.stock || 0)
-            : getTotalAvailableStock()
-            
+            : getTotalAvailableStock
+
         if (maxStock < quantity) {
             toast.error(`Only ${maxStock} items available in stock for the selected option`)
             return
@@ -166,15 +187,15 @@ const ProductDetails = () => {
 
         try {
             // Use selected SKU if variants exist, otherwise use first available SKU
-            const skuId = populatedVariants.length > 0 
+            const skuId = populatedVariants.length > 0
                 ? selectedSKU._id
-                : getAvailableSKUs()[0]?._id
-                
+                : getAvailableSKUs[0]?._id
+
             if (!skuId) {
                 toast.error('No available SKU found')
                 return
             }
-            
+
             // Prepare variant options for backend
             const variantOptions = {}
             if (populatedVariants.length > 0) {
@@ -185,7 +206,7 @@ const ProductDetails = () => {
                     }
                 })
             }
-            
+
             // Add to cart with the quantity for the selected variant option
             await addToCart.mutateAsync({
                 productId: product._id,
@@ -193,7 +214,7 @@ const ProductDetails = () => {
                 quantity: quantity, // This is the quantity for the selected variant (e.g., 3 of size X)
                 variantOptions: variantOptions
             })
-            
+
             // Show cart success modal
             setShowCartSuccessModal(true)
         } catch (error) {
@@ -240,26 +261,6 @@ const ProductDetails = () => {
         }).join(', ') || 'No tags'
     }, [tags])
 
-    // Memoize populated variants with options
-    const getPopulatedVariants = useMemo(() => {
-        // Check if product has variants directly (not as IDs)
-        if (product?.variants && Array.isArray(product.variants) && product.variants.length > 0) {
-            // If variants are already populated objects, return them directly
-            if (product.variants[0]?.options) {
-                return product.variants
-            }
-        }
-
-        // Fallback: if variants are stored as IDs, try to populate them
-        if (product?.variants && Array.isArray(product.variants) && allVariants.length > 0) {
-            return product.variants.map(variantId => {
-                const variant = allVariants.find(v => v._id === variantId)
-                return variant
-            }).filter(Boolean)
-        }
-
-        return []
-    }, [product?.variants, allVariants])
 
     if (isLoading) {
         return (
@@ -447,8 +448,8 @@ const ProductDetails = () => {
 
                                 {/* Variants */}
                                 {(() => {
-                                    const populatedVariants = getPopulatedVariants()
-                                    
+                                    const populatedVariants = getPopulatedVariants
+
                                     // Debug logging
                                     console.log('Product variants:', product?.variants)
                                     console.log('All variants:', allVariants)
@@ -501,9 +502,9 @@ const ProductDetails = () => {
 
                                 {/* Stock Information */}
                                 {(() => {
-                                    const populatedVariants = getPopulatedVariants()
-                                    const totalStock = getTotalAvailableStock()
-                                    const availableSKUs = getAvailableSKUs()
+                                    const populatedVariants = getPopulatedVariants
+                                    const totalStock = getTotalAvailableStock
+                                    const availableSKUs = getAvailableSKUs
                                     
                                     // If variants exist, show selected SKU stock, otherwise show total stock
                                     if (populatedVariants.length > 0) {
@@ -540,17 +541,17 @@ const ProductDetails = () => {
                                                     <div className="mt-4 pt-4 border-t border-gray-200">
                                                         <h4 className="text-sm font-medium text-gray-700 mb-2">Stock by Option:</h4>
                                                         <div className="space-y-1 text-sm text-gray-600">
-                                                            {populatedVariants.map(variant => 
+                                                            {populatedVariants.map(variant =>
                                                                 variant.options?.map(option => {
                                                                     // Find SKU for this option
-                                                                    const skuForOption = product.skus?.find(sku => 
-                                                                        sku.attributes?.some(attr => 
+                                                                    const skuForOption = product.skus?.find(sku =>
+                                                                        sku.attributes?.some(attr =>
                                                                             attr.variantId === variant._id && attr.optionId === option._id
                                                                         )
                                                                     )
                                                                     const stockCount = skuForOption?.stock || 0
                                                                     const isSelected = selectedVariants[variant._id] === option._id
-                                                                    
+
                                                                     return (
                                                                         <div key={option._id} className={`flex justify-between ${isSelected ? 'font-semibold text-gray-900' : ''}`}>
                                                                             <span>{variant.name} {option.value}:</span>
@@ -600,7 +601,7 @@ const ProductDetails = () => {
                                     <div className="flex items-center space-x-4">
                                         <label className="text-sm font-medium text-gray-700">
                                             {(() => {
-                                                const populatedVariants = getPopulatedVariants()
+                                                const populatedVariants = getPopulatedVariants
                                                 if (populatedVariants.length > 0 && Object.keys(selectedVariants).length > 0) {
                                                     const selectedInfo = populatedVariants.map(variant => {
                                                         const selectedOptionId = selectedVariants[variant._id]
@@ -624,10 +625,10 @@ const ProductDetails = () => {
                                                 type="number"
                                                 min="1"
                                                 max={(() => {
-                                                    const populatedVariants = getPopulatedVariants()
-                                                    return populatedVariants.length > 0 
+                                                    const populatedVariants = getPopulatedVariants
+                                                    return populatedVariants.length > 0
                                                         ? (selectedSKU?.stock || 0)
-                                                        : (getTotalAvailableStock() || 999)
+                                                        : (getTotalAvailableStock || 999)
                                                 })()}
                                                 value={quantity}
                                                 onChange={handleQuantityChange}
@@ -636,10 +637,10 @@ const ProductDetails = () => {
                                             <button
                                                 onClick={increaseQuantity}
                                                 disabled={(() => {
-                                                    const populatedVariants = getPopulatedVariants()
-                                                    const maxStock = populatedVariants.length > 0 
+                                                    const populatedVariants = getPopulatedVariants
+                                                    const maxStock = populatedVariants.length > 0
                                                         ? (selectedSKU?.stock || 0)
-                                                        : (getTotalAvailableStock() || 999)
+                                                        : (getTotalAvailableStock || 999)
                                                     return quantity >= maxStock
                                                 })()}
                                                 className="px-3 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -652,11 +653,11 @@ const ProductDetails = () => {
                                     <button
                                         onClick={handleAddToCart}
                                         disabled={(() => {
-                                            const populatedVariants = getPopulatedVariants()
-                                            const maxStock = populatedVariants.length > 0 
+                                            const populatedVariants = getPopulatedVariants
+                                            const maxStock = populatedVariants.length > 0
                                                 ? (selectedSKU?.stock || 0)
-                                                : getTotalAvailableStock()
-                                            
+                                                : getTotalAvailableStock
+
                                             // Disable if: variants exist but not all selected, or no stock, or quantity exceeds stock, or pending
                                             return (populatedVariants.length > 0 && !areAllVariantsSelected()) ||
                                                    maxStock < quantity ||

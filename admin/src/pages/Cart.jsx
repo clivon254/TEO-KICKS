@@ -50,32 +50,17 @@ const Cart = () => {
 
     // Memoize expensive calculations
     const calculateSubtotal = useMemo(() => {
-        const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0)
-        console.log('=== CART CALCULATIONS ===')
-        console.log('Cart Items:', cartItems.map(item => ({
-            product: item.productId?.title,
-            quantity: item.quantity,
-            price: item.price,
-            itemTotal: item.price * item.quantity
-        })))
-        console.log('Calculated Subtotal:', subtotal)
-        return subtotal
+        return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0)
     }, [cartItems])
 
     // Calculate discount and final total
     const discountAmount = useMemo(() => {
-        const discount = appliedCoupon?.discountAmount || 0
-        console.log('Discount Amount:', discount)
-        return discount
+        return appliedCoupon?.discountAmount || 0
     }, [appliedCoupon])
 
     const finalTotal = useMemo(() => {
-        const total = calculateSubtotal - discountAmount
-        console.log('Final Total (Subtotal - Discount):', total)
-        console.log('Applied Coupon in Calculation:', appliedCoupon)
-        console.log('=== CART CALCULATIONS END ===')
-        return total
-    }, [calculateSubtotal, discountAmount, appliedCoupon])
+        return calculateSubtotal - discountAmount
+    }, [calculateSubtotal, discountAmount])
 
     // Memoize event handlers to prevent child component re-renders
     const handleQuantityChange = useCallback(async (skuId, newQuantity) => {
@@ -128,16 +113,11 @@ const Cart = () => {
         setIsApplyingCoupon(true)
 
         try {
-            console.log('=== COUPON APPLICATION START ===')
-            
-
             const result = await validateCoupon.mutateAsync({
                 code: couponCode.toUpperCase(),
                 orderAmount: calculateSubtotal
             })
 
-            console.log(`result: ${JSON.stringify(result, null, 2)}`)
-           
             if (result.data.success) {
             
                 setAppliedCoupon({
@@ -148,46 +128,22 @@ const Cart = () => {
                 toast.success(`Coupon "${result.data.data.coupon.name}" applied successfully!`)
                 setCouponCode('')
 
-                console.log('=== COUPON APPLIED TO CART ===')
-                console.log('Applied Coupon State:', {
-                    code: result.data.data.coupon.code,
-                    discountAmount: result.data.data.discountAmount,
-                    name: result.data.data.coupon.name
-                })
             } else {
-                console.log('=== COUPON VALIDATION FAILED ===')
-                console.log('Error Message:', result.data.message)
                 toast.error(result.data.message)
             }
-
-            console.log('=== COUPON APPLICATION END ===')
             
         } catch (error) {
-            console.error('=== COUPON APPLICATION ERROR ===')
-            console.error('Error Details:', error)
-            console.error('Error Response:', error.response?.data)
-            console.error('Error Status:', error.response?.status)
-            console.error('Error Message:', error.message)
+            console.error('Error applying coupon:', error)
             toast.error('Failed to apply coupon. Please try again.')
         } finally {
-            console.log('Setting isApplyingCoupon to false')
             setIsApplyingCoupon(false)
         }
     }, [couponCode, validateCoupon, calculateSubtotal, isApplyingCoupon, cartItems])
 
     const handleRemoveCoupon = useCallback(() => {
-        console.log('=== COUPON REMOVAL START ===')
-        console.log('Current Applied Coupon:', appliedCoupon)
-        console.log('Cart Subtotal before removal:', calculateSubtotal)
-
         setAppliedCoupon(null)
-
-        console.log('Applied Coupon set to null')
-        console.log('Cart will recalculate without discount')
-        console.log('=== COUPON REMOVAL END ===')
-
         toast.success('Coupon removed successfully')
-    }, [appliedCoupon, calculateSubtotal])
+    }, [])
 
     const handleCheckout = useCallback(() => {
         // TODO: Implement checkout functionality
@@ -277,78 +233,119 @@ const Cart = () => {
                                 <div className="space-y-4">
                                     {cartItems.map((item, index) => (
                                         <div key={item._id}>
-                                            <div className="flex items-start space-x-4 p-4 border border-gray-200 rounded-lg">
-                                                {/* Product Image */}
-                                                <div className="flex-shrink-0">
-                                                    {getProductImage(item.productId) ? (
-                                                        <>
-                                                            <img
-                                                                src={getProductImage(item.productId)}
-                                                                alt={item.productId?.title || 'Product'}
-                                                                className="w-20 h-20 object-cover rounded-lg"
-                                                                onError={(e) => {
-                                                                    e.target.style.display = 'none'
-                                                                    e.target.nextSibling.style.display = 'flex'
-                                                                }}
-                                                            />
+                                            <div className="p-4 border border-gray-200 rounded-lg">
+                                                {/* Main row - Product Image and Details */}
+                                                <div className="flex items-start space-x-4">
+                                                    {/* Product Image */}
+                                                    <div className="flex-shrink-0">
+                                                        {getProductImage(item.productId) ? (
+                                                            <>
+                                                                <img
+                                                                    src={getProductImage(item.productId)}
+                                                                    alt={item.productId?.title || 'Product'}
+                                                                    className="w-20 h-20 object-cover rounded-lg"
+                                                                    onError={(e) => {
+                                                                        e.target.style.display = 'none'
+                                                                        e.target.nextSibling.style.display = 'flex'
+                                                                    }}
+                                                                />
+                                                                <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
+                                                                    <FiShoppingCart className="w-8 h-8 text-gray-400" />
+                                                                </div>
+                                                            </>
+                                                        ) : (
                                                             <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
                                                                 <FiShoppingCart className="w-8 h-8 text-gray-400" />
                                                             </div>
-                                                        </>
-                                                    ) : (
-                                                        <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
-                                                            <FiShoppingCart className="w-8 h-8 text-gray-400" />
+                                                        )}
+                                                    </div>
+
+                                                    {/* Product Details */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="text-base font-semibold text-gray-900 mb-1">
+                                                            {item.productId?.title || 'Product Name'}
+                                                        </h3>
+
+                                                        <p className="text-sm text-gray-500 mb-2">
+                                                            {formatVariantOptions(item.variantOptions)}
+                                                        </p>
+
+                                                        <p className="text-lg font-bold text-primary">
+                                                            KSh {item.price?.toFixed(2) || '0.00'}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Quantity Controls - Hidden on mobile, shown on lg+ screens */}
+                                                    <div className="hidden lg:flex items-center space-x-1">
+                                                        <button
+                                                            onClick={() => handleQuantityChange(item.skuId, item.quantity - 1)}
+                                                            disabled={item.quantity <= 1 || updateCartItem.isPending}
+                                                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center bg-light hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                        >
+                                                            <FiMinus className="w-3 h-3" />
+                                                        </button>
+
+                                                        <span className="w-10 text-center text-sm font-medium">
+                                                            {item.quantity}
+                                                        </span>
+
+                                                        <button
+                                                            onClick={() => handleQuantityChange(item.skuId, item.quantity + 1)}
+                                                            disabled={updateCartItem.isPending}
+                                                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center bg-light hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                        >
+                                                            <FiPlus className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Remove Button - Hidden on mobile, shown on lg+ screens */}
+                                                    <button
+                                                        onClick={() => handleRemoveItem(item.skuId)}
+                                                        disabled={removeFromCart.isPending}
+                                                        className="hidden lg:block text-red-600 hover:text-red-700 transition-colors p-2"
+                                                        title="Remove item"
+                                                    >
+                                                        <FiTrash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+
+                                                {/* Mobile Controls Row - Visible only on mobile */}
+                                                <div className="lg:hidden mt-3">
+                                                    <div className="flex items-center justify-between">
+                                                        {/* Quantity Controls - Aligned with product details */}
+                                                        <div className="flex items-center space-x-2 ml-24">
+                                                            <button
+                                                                onClick={() => handleQuantityChange(item.skuId, item.quantity - 1)}
+                                                                disabled={item.quantity <= 1 || updateCartItem.isPending}
+                                                                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center bg-light hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                            >
+                                                                <FiMinus className="w-3 h-3" />
+                                                            </button>
+
+                                                            <span className="w-10 text-center text-sm font-medium">
+                                                                {item.quantity}
+                                                            </span>
+
+                                                            <button
+                                                                onClick={() => handleQuantityChange(item.skuId, item.quantity + 1)}
+                                                                disabled={updateCartItem.isPending}
+                                                                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center bg-light hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                            >
+                                                                <FiPlus className="w-3 h-3" />
+                                                            </button>
                                                         </div>
-                                                    )}
+
+                                                        {/* Remove Button - Just Icon */}
+                                                        <button
+                                                            onClick={() => handleRemoveItem(item.skuId)}
+                                                            disabled={removeFromCart.isPending}
+                                                            className="text-red-600 hover:text-red-700 transition-colors p-2 hover:bg-red-50 rounded-md"
+                                                            title="Remove item"
+                                                        >
+                                                            <FiTrash2 className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                
-                                                {/* Product Details */}
-                                                <div className="flex-1 min-w-0">
-                                                    <h3 className="text-base font-semibold text-gray-900 mb-1">
-                                                        {item.productId?.title || 'Product Name'}
-                                                    </h3>
-                                                    
-                                                    <p className="text-sm text-gray-500 mb-2">
-                                                        {formatVariantOptions(item.variantOptions)}
-                                                    </p>
-                                                    
-                                                    <p className="text-lg font-bold text-primary">
-                                                        KSh {item.price?.toFixed(2) || '0.00'}
-                                                    </p>
-                                                </div>
-                                                
-                                                {/* Quantity Controls */}
-                                                <div className="flex items-center space-x-1">
-                                                    <button
-                                                        onClick={() => handleQuantityChange(item.skuId, item.quantity - 1)}
-                                                        disabled={item.quantity <= 1 || updateCartItem.isPending}
-                                                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center bg-light hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                                    >
-                                                        <FiMinus className="w-3 h-3" />
-                                                    </button>
-                                                    
-                                                    <span className="w-10 text-center text-sm font-medium">
-                                                        {item.quantity}
-                                                    </span>
-                                                    
-                                                    <button
-                                                        onClick={() => handleQuantityChange(item.skuId, item.quantity + 1)}
-                                                        disabled={updateCartItem.isPending}
-                                                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center bg-light hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                                    >
-                                                        <FiPlus className="w-3 h-3" />
-                                                    </button>
-                                                </div>
-                                                
-                                                {/* Remove Button */}
-                                                <button
-                                                    onClick={() => handleRemoveItem(item.skuId)}
-                                                    disabled={removeFromCart.isPending}
-                                                    className="text-red-600 hover:text-red-700 transition-colors p-2"
-                                                    title="Remove item"
-                                                >
-                                                    <FiTrash2 className="w-4 h-4" />
-                                                </button>
                                             </div>
                                             
                                             {/* Clear All Button - Show after last item */}

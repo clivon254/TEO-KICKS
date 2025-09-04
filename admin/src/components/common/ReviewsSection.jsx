@@ -93,12 +93,12 @@ const ReviewsSection = ({ productId, className = '' }) => {
     }
 
     return (
-        <div className={`space-y-6 ${className}`}>
+        <div className={`space-y-6 p-3 ${className}`}>
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-3">
-                    <FiMessageSquare className="w-6 h-6 text-gray-600" />
-                    <h2 className="text-xl font-semibold text-gray-900">
+                    <FiMessageSquare className="w-6 h-6 text-gray-600 flex-shrink-0" />
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                         Customer Reviews
                     </h2>
                     {stats && (
@@ -111,10 +111,11 @@ const ReviewsSection = ({ productId, className = '' }) => {
                 {canCreateReview && !showReviewForm && (
                     <button
                         onClick={() => setShowReviewForm(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-button transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-button transition-colors self-start sm:self-auto"
                     >
                         <FiPlus className="w-4 h-4" />
-                        Write Review
+                        <span className="hidden sm:inline">Write Review</span>
+                        <span className="sm:hidden">Write</span>
                     </button>
                 )}
             </div>
