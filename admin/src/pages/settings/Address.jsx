@@ -1,47 +1,26 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { FiMapPin, FiPlus, FiEdit, FiTrash2, FiArrowLeft, FiHome, FiBriefcase, FiStar } from 'react-icons/fi'
+import { useNavigate } from 'react-router-dom'
+import { FiMapPin, FiPlus, FiEdit, FiTrash2, FiArrowLeft, FiHome, FiBriefcase, FiStar, FiX, FiAlertTriangle } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import AddressAutocomplete from '../../components/common/AddressAutocomplete'
+import api from '../../utils/api'
 
 const Address = () => {
+  const navigate = useNavigate()
   const [addresses, setAddresses] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingAddress, setEditingAddress] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, address: null })
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  // Mock data - replace with actual API calls
   useEffect(() => {
     const fetchAddresses = async () => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        const mockAddresses = [
-          {
-            id: 1,
-            type: 'home',
-            label: 'Home',
-            street: '123 Main Street',
-            city: 'Nairobi',
-            state: 'Nairobi County',
-            postalCode: '00100',
-            country: 'Kenya',
-            isDefault: true,
-          },
-          {
-            id: 2,
-            type: 'work',
-            label: 'Office',
-            street: '456 Business Avenue',
-            city: 'Nairobi',
-            state: 'Nairobi County',
-            postalCode: '00200',
-            country: 'Kenya',
-            isDefault: false,
-          },
-        ]
-
-        setAddresses(mockAddresses)
+        const res = await api.get('/addresses')
+        const list = res?.data?.data?.addresses || res?.data || []
+        setAddresses(list)
       } catch (error) {
         toast.error('Failed to load addresses')
         console.error('Error fetching addresses:', error)
@@ -55,18 +34,13 @@ const Address = () => {
 
   const handleAddAddress = async (addressData) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      const newAddress = {
-        id: Date.now(),
-        ...addressData,
-        isDefault: addresses.length === 0,
-      }
-
-      setAddresses(prev => [...prev, newAddress])
+      const res = await api.post('/addresses', addressData)
+      const created = res?.data?.data?.address || res?.data
+      if (created) setAddresses(prev => [created, ...prev])
       setShowAddModal(false)
       toast.success('Address added successfully!')
+      // Mirror AddProduct success: ensure we are on the addresses page
+      navigate('/settings/address')
     } catch (error) {
       toast.error('Failed to add address')
       console.error('Error adding address:', error)
@@ -75,12 +49,11 @@ const Address = () => {
 
   const handleUpdateAddress = async (id, addressData) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      setAddresses(prev =>
-        prev.map(addr => addr.id === id ? { ...addr, ...addressData } : addr)
-      )
+      const res = await api.put(`/addresses/${id}`, addressData)
+      const updated = res?.data?.data?.address || res?.data
+      if (updated) {
+        setAddresses(prev => prev.map(addr => (String(addr._id || addr.id) === String(id) ? updated : addr)))
+      }
       setEditingAddress(null)
       toast.success('Address updated successfully!')
     } catch (error) {
@@ -90,15 +63,9 @@ const Address = () => {
   }
 
   const handleDeleteAddress = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this address?')) {
-      return
-    }
-
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      setAddresses(prev => prev.filter(addr => addr.id !== id))
+      await api.delete(`/addresses/${id}`)
+      setAddresses(prev => prev.filter(addr => String(addr._id || addr.id) !== String(id)))
       toast.success('Address deleted successfully!')
     } catch (error) {
       toast.error('Failed to delete address')
@@ -106,14 +73,24 @@ const Address = () => {
     }
   }
 
+  const confirmDeleteAddress = async () => {
+    if (!confirmDelete.address) return
+    setIsDeleting(true)
+    try {
+      const id = confirmDelete.address._id || confirmDelete.address.id
+      await handleDeleteAddress(id)
+      setConfirmDelete({ open: false, address: null })
+    } catch (error) {
+      // error handled in handleDeleteAddress
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const handleSetDefault = async (id) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      setAddresses(prev =>
-        prev.map(addr => ({ ...addr, isDefault: addr.id === id }))
-      )
+      await api.put(`/addresses/${id}/default`)
+      setAddresses(prev => prev.map(addr => ({ ...addr, isDefault: String(addr._id || addr.id) === String(id) })))
       toast.success('Default address updated!')
     } catch (error) {
       toast.error('Failed to update default address')
@@ -156,6 +133,37 @@ const Address = () => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
+      {/* Delete Confirmation Modal */}
+      {confirmDelete.open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <FiAlertTriangle className="h-6 w-6 text-red-500 mr-2" />
+              <h3 className="text-lg font-semibold text-gray-900">Delete Address</h3>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete "{confirmDelete.address?.name || confirmDelete.address?.label || 'this address'}"? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setConfirmDelete({ open: false, address: null })}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteAddress}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-4">
@@ -203,7 +211,7 @@ const Address = () => {
 
             return (
               <div
-                key={address.id}
+                key={address._id || address.id}
                 className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between">
@@ -214,7 +222,7 @@ const Address = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="text-lg font-semibold text-gray-900">
-                          {address.label}
+                          {address.name || address.label}
                         </h3>
                         {address.isDefault && (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary text-white text-xs font-medium rounded-full">
@@ -224,30 +232,50 @@ const Address = () => {
                         )}
                       </div>
                       <div className="text-gray-600 space-y-1">
-                        <p>{address.street}</p>
-                        <p>{address.city}, {address.state} {address.postalCode}</p>
-                        <p>{address.country}</p>
+                        <p>{address.address || address.street}</p>
+                        {address.regions && (
+                          <p>
+                            {(address.regions.locality || '')}{address.regions.locality ? ', ' : ''}
+                            {(address.regions.administrative_area_level_1 || '')}
+                          </p>
+                        )}
+                        {address.regions?.country && <p>{address.regions.country}</p>}
+                      </div>
+                      {/* Small screens: actions below location/details */}
+                      <div className="flex items-center gap-2 mt-2 sm:hidden">
+                        {!address.isDefault && (
+                          <button
+                            onClick={() => handleSetDefault(address._id || address.id)}
+                            className="text-sm text-primary hover:text-primary-dark font-medium"
+                          >
+                            Set as Default
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setConfirmDelete({ open: true, address })}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          aria-label="Delete address"
+                        >
+                          <FiTrash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  {/* Large screens: actions on the right */}
+                  <div className="hidden sm:flex items-center gap-2">
                     {!address.isDefault && (
                       <button
-                        onClick={() => handleSetDefault(address.id)}
+                        onClick={() => handleSetDefault(address._id || address.id)}
                         className="text-sm text-primary hover:text-primary-dark font-medium"
                       >
                         Set as Default
                       </button>
                     )}
+                    {/* Edit action removed per request */}
                     <button
-                      onClick={() => setEditingAddress(address)}
-                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                    >
-                      <FiEdit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteAddress(address.id)}
+                      onClick={() => setConfirmDelete({ open: true, address })}
                       className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      aria-label="Delete address"
                     >
                       <FiTrash2 className="h-4 w-4" />
                     </button>
@@ -260,21 +288,28 @@ const Address = () => {
       </div>
 
       {/* Add/Edit Address Modal */}
-      {(showAddModal || editingAddress) && (
-        <AddressModal
-          address={editingAddress}
-          onClose={() => {
-            setShowAddModal(false)
-            setEditingAddress(null)
-          }}
-          onSave={(addressData) => {
-            if (editingAddress) {
-              handleUpdateAddress(editingAddress.id, addressData)
-            } else {
-              handleAddAddress(addressData)
-            }
-          }}
-        />
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm  flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full h-[70vh] overflow-y-auto p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Search and Add Address</h2>
+              <button onClick={() => setShowAddModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors" aria-label="Close">
+                <FiX className="h-5 w-5" />
+              </button>
+            </div>
+            <AddressAutocomplete
+              onSaved={(resp) => {
+                // Try to read standard response shapes
+                const created = resp?.data?.data?.address || resp?.data || resp
+                if (created) setAddresses(prev => [created, ...prev])
+                setShowAddModal(false)
+                toast.success('Address added successfully!')
+                // Mirror AddProduct success: navigate to list to view the new address
+                navigate('/settings/address')
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   )

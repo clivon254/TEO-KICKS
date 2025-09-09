@@ -66,7 +66,7 @@ router.get('/:addressId', getAddressById)
  * @swagger
  * /api/addresses:
  *   post:
- *     summary: Create new address (supports Google Places API data)
+ *     summary: Create new address (new schema)
  *     tags: [Addresses]
  *     security:
  *       - bearerAuth: []
@@ -77,67 +77,56 @@ router.get('/:addressId', getAddressById)
  *           schema:
  *             type: object
  *             required:
- *               - label
+ *               - name
+ *               - address
+ *               - coordinates
+ *               - regions
  *             properties:
- *               label:
+ *               name:
  *                 type: string
- *                 description: Address label
- *                 example: "Home"
- *               street:
+ *                 description: Place name
+ *                 example: "Red Diamonds Ruaraka"
+ *               address:
  *                 type: string
- *                 description: Street address
- *                 example: "123 Kimathi Street"
- *               city:
- *                 type: string
- *                 description: City name
- *                 example: "Nairobi"
- *               region:
- *                 type: string
- *                 description: Region/County
- *                 example: "Nairobi County"
- *               country:
- *                 type: string
- *                 description: Country name
- *                 example: "Kenya"
- *               postal:
- *                 type: string
- *                 description: Postal code
- *                 example: "00100"
- *               googlePlaceId:
- *                 type: string
- *                 description: Google Places API place ID
- *                 example: "ChIJN1t_tDeuEmsRUsoyG83frY4"
- *               formattedAddress:
- *                 type: string
- *                 description: Formatted address from Google Places
- *                 example: "123 Kimathi Street, Nairobi, Kenya"
+ *                 description: Full formatted address
+ *                 example: "QV2C+CVW, Nairobi, Kenya"
  *               coordinates:
  *                 type: object
  *                 properties:
- *                   latitude:
+ *                   lat:
  *                     type: number
- *                     example: -1.2920659
- *                   longitude:
+ *                     example: -1.2490251
+ *                   lng:
  *                     type: number
- *                     example: 36.82194619999999
- *               locationDetails:
+ *                     example: 36.8721826
+ *               regions:
  *                 type: object
  *                 properties:
- *                   neighborhood:
+ *                   country:
  *                     type: string
- *                     example: "City Center"
+ *                     example: "Kenya"
+ *                   locality:
+ *                     type: string
+ *                     example: "Nairobi"
  *                   sublocality:
  *                     type: string
- *                     example: "Nairobi Central"
- *                   administrativeArea:
+ *                     example: "Ruaraka"
+ *                   sublocality_level_1:
+ *                     type: string
+ *                     example: "Ruaraka"
+ *                   administrative_area_level_1:
  *                     type: string
  *                     example: "Nairobi County"
- *                   route:
+ *                   plus_code:
  *                     type: string
- *                     example: "Kimathi Street"
- *                   streetNumber:
+ *                     example: "QV2C+CVW"
+ *                   political:
  *                     type: string
- *                     example: "123"
+ *                     example: "Kenya"
+ *               details:
+ *                 type: string
+ *                 description: User notes
+ *                 example: "Near gate B"
  *               isDefault:
  *                 type: boolean
  *                 description: Set as default address

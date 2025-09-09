@@ -11,8 +11,7 @@ export const getUserAddresses = async (req, res, next) => {
     try {
 
         const addresses = await Address.find({ 
-            userId: req.user._id, 
-            isActive: true 
+            userId: req.user._id
         }).sort({ isDefault: -1, createdAt: -1 })
 
         res.status(200).json({
@@ -45,8 +44,7 @@ export const getAddressById = async (req, res, next) => {
 
         const address = await Address.findOne({
             _id: addressId,
-            userId: req.user._id,
-            isActive: true
+            userId: req.user._id
         })
 
         if (!address) {
@@ -81,31 +79,29 @@ export const createAddress = async (req, res, next) => {
     try {
 
         const { 
-            label, 
-            street, 
-            city, 
-            region, 
-            country, 
-            postal, 
-            isDefault,
-            googlePlaceId,
+            name,
             coordinates,
-            formattedAddress,
-            locationDetails
+            regions,
+            address: formatted,
+            details,
+            isDefault
         } = req.body
 
-        // Validation
-        if (!label) {
-
-            return next(errorHandler(400, "Address label is required"))
-
+        // Validation for new schema
+        if (!name) {
+            return next(errorHandler(400, "Address name is required"))
         }
 
-        // Allow either traditional address fields OR formatted address from Google Places
-        if (!formattedAddress && (!street || !city || !region)) {
+        if (!coordinates || coordinates.lat === undefined || coordinates.lng === undefined) {
+            return next(errorHandler(400, "Coordinates lat and lng are required"))
+        }
 
-            return next(errorHandler(400, "Either formatted address or street, city, and region are required"))
+        if (!regions || !regions.country) {
+            return next(errorHandler(400, "Region country is required"))
+        }
 
+        if (!formatted) {
+            return next(errorHandler(400, "Full formatted address is required"))
         }
 
         // Check if user exists
@@ -120,26 +116,23 @@ export const createAddress = async (req, res, next) => {
         // Create new address
         const newAddress = new Address({
             userId: req.user._id,
-            label: label.trim(),
-            street: street?.trim(),
-            city: city?.trim(),
-            region: region?.trim(),
-            country: country || "Kenya",
-            postal: postal?.trim(),
-            isDefault: isDefault || false,
-            googlePlaceId: googlePlaceId?.trim(),
-            coordinates: coordinates && coordinates.latitude && coordinates.longitude ? {
-                latitude: parseFloat(coordinates.latitude),
-                longitude: parseFloat(coordinates.longitude)
-            } : undefined,
-            formattedAddress: formattedAddress?.trim(),
-            locationDetails: locationDetails ? {
-                neighborhood: locationDetails.neighborhood?.trim(),
-                sublocality: locationDetails.sublocality?.trim(),
-                administrativeArea: locationDetails.administrativeArea?.trim(),
-                route: locationDetails.route?.trim(),
-                streetNumber: locationDetails.streetNumber?.trim()
-            } : undefined
+            name: name.trim(),
+            coordinates: {
+                lat: parseFloat(coordinates.lat),
+                lng: parseFloat(coordinates.lng)
+            },
+            regions: {
+                country: regions.country?.trim(),
+                locality: regions.locality?.trim(),
+                sublocality: regions.sublocality?.trim(),
+                sublocality_level_1: regions.sublocality_level_1?.trim(),
+                administrative_area_level_1: regions.administrative_area_level_1?.trim(),
+                plus_code: regions.plus_code?.trim(),
+                political: regions.political?.trim()
+            },
+            address: formatted.trim(),
+            details: details ?? null,
+            isDefault: isDefault || false
         })
 
         await newAddress.save()
@@ -181,23 +174,17 @@ export const updateAddress = async (req, res, next) => {
         const { addressId } = req.params
 
         const { 
-            label, 
-            street, 
-            city, 
-            region, 
-            country, 
-            postal, 
-            isDefault,
-            googlePlaceId,
+            name,
             coordinates,
-            formattedAddress,
-            locationDetails
+            regions,
+            address: formatted,
+            details,
+            isDefault
         } = req.body
 
         const address = await Address.findOne({
             _id: addressId,
-            userId: req.user._id,
-            isActive: true
+            userId: req.user._id
         })
 
         if (!address) {
@@ -206,41 +193,34 @@ export const updateAddress = async (req, res, next) => {
 
         }
 
-        // Update fields if provided
-        if (label) address.label = label.trim()
+        // Update fields if provided (new schema)
+        if (name !== undefined) address.name = name?.trim() || address.name
 
-        if (street) address.street = street.trim()
+        if (coordinates && coordinates.lat !== undefined && coordinates.lng !== undefined) {
+            address.coordinates = {
+                lat: parseFloat(coordinates.lat),
+                lng: parseFloat(coordinates.lng)
+            }
+        }
 
-        if (city) address.city = city.trim()
+        if (regions) {
+            address.regions = {
+                ...address.regions?.toObject?.() || address.regions || {},
+                country: regions.country?.trim() ?? address.regions?.country,
+                locality: regions.locality?.trim() ?? address.regions?.locality,
+                sublocality: regions.sublocality?.trim() ?? address.regions?.sublocality,
+                sublocality_level_1: regions.sublocality_level_1?.trim() ?? address.regions?.sublocality_level_1,
+                administrative_area_level_1: regions.administrative_area_level_1?.trim() ?? address.regions?.administrative_area_level_1,
+                plus_code: regions.plus_code?.trim() ?? address.regions?.plus_code,
+                political: regions.political?.trim() ?? address.regions?.political
+            }
+        }
 
-        if (region) address.region = region.trim()
+        if (formatted !== undefined) address.address = formatted?.trim() || address.address
 
-        if (country) address.country = country.trim()
-
-        if (postal !== undefined) address.postal = postal?.trim()
+        if (details !== undefined) address.details = details ?? address.details
 
         if (isDefault !== undefined) address.isDefault = isDefault
-
-        if (googlePlaceId) address.googlePlaceId = googlePlaceId.trim()
-
-        if (coordinates && coordinates.latitude && coordinates.longitude) {
-            address.coordinates = {
-                latitude: parseFloat(coordinates.latitude),
-                longitude: parseFloat(coordinates.longitude)
-            }
-        }
-
-        if (formattedAddress) address.formattedAddress = formattedAddress.trim()
-
-        if (locationDetails) {
-            address.locationDetails = {
-                neighborhood: locationDetails.neighborhood?.trim(),
-                sublocality: locationDetails.sublocality?.trim(),
-                administrativeArea: locationDetails.administrativeArea?.trim(),
-                route: locationDetails.route?.trim(),
-                streetNumber: locationDetails.streetNumber?.trim()
-            }
-        }
 
         await address.save()
 
@@ -282,8 +262,7 @@ export const deleteAddress = async (req, res, next) => {
 
         const address = await Address.findOne({
             _id: addressId,
-            userId: req.user._id,
-            isActive: true
+            userId: req.user._id
         })
 
         if (!address) {
@@ -292,12 +271,8 @@ export const deleteAddress = async (req, res, next) => {
 
         }
 
-        // Soft delete
-        address.isActive = false
-
-        address.isDefault = false
-
-        await address.save()
+        // Hard delete
+        await Address.deleteOne({ _id: address._id })
 
         res.status(200).json({
             success: true,
@@ -326,8 +301,7 @@ export const setDefaultAddress = async (req, res, next) => {
 
         const address = await Address.findOne({
             _id: addressId,
-            userId: req.user._id,
-            isActive: true
+            userId: req.user._id
         })
 
         if (!address) {
@@ -369,8 +343,7 @@ export const getDefaultAddress = async (req, res, next) => {
 
         const defaultAddress = await Address.findOne({
             userId: req.user._id,
-            isDefault: true,
-            isActive: true
+            isDefault: true
         })
 
         if (!defaultAddress) {
@@ -404,18 +377,17 @@ export const getAllAddresses = async (req, res, next) => {
 
     try {
 
-        const { page = 1, limit = 10, userId, city, region } = req.query
+        const { page = 1, limit = 10, userId, locality, country, administrativeArea } = req.query
 
-        const query = { isActive: true }
+        const query = {}
 
-        // Filter by user if provided
         if (userId) query.userId = userId
 
-        // Filter by city if provided
-        if (city) query.city = { $regex: city, $options: 'i' }
+        if (locality) query["regions.locality"] = { $regex: locality, $options: 'i' }
 
-        // Filter by region if provided
-        if (region) query.region = { $regex: region, $options: 'i' }
+        if (country) query["regions.country"] = { $regex: country, $options: 'i' }
+
+        if (administrativeArea) query["regions.administrative_area_level_1"] = { $regex: administrativeArea, $options: 'i' }
 
         const options = {
             page: parseInt(page),
