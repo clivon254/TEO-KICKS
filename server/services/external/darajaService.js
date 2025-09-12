@@ -11,25 +11,34 @@ const getBaseUrl = () => {
 
 
 export const getAccessToken = async () => {
-  const consumerKey = process.env.MPESA_CONSUMER_KEY 
-    
-
-  const consumerSecret = process.env.MPESA_CONSUMER_SECRET 
-    
+  const consumerKey = (process.env.MPESA_CONSUMER_KEY || '').trim()
+  const consumerSecret = (process.env.MPESA_CONSUMER_SECRET || '').trim()
 
   if (!consumerKey || !consumerSecret) {
-    throw new Error('Daraja credentials not configured')
+    throw new Error('Daraja credentials not configured: Missing MPESA_CONSUMER_KEY or MPESA_CONSUMER_SECRET')
   }
 
   const base = getBaseUrl()
   const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64')
 
-  const response = await axios.get(
-    `${base}/oauth/v1/generate?grant_type=client_credentials`,
-    { headers: { Authorization: `Basic ${auth}` } }
-  )
-
-  return response.data?.access_token
+  try {
+    const response = await axios.get(
+      `${base}/oauth/v1/generate?grant_type=client_credentials`,
+      { headers: { Authorization: `Basic ${auth}` } }
+    )
+    if (!response.data?.access_token) {
+      throw new Error('Daraja OAuth response missing access_token')
+    }
+    return response.data.access_token
+  } catch (err) {
+    const status = err?.response?.status
+    const data = err?.response?.data
+    const message = `Daraja OAuth failed${status ? ` (HTTP ${status})` : ''}`
+    const details = typeof data === 'object' ? JSON.stringify(data) : (data || err.message)
+    const error = new Error(`${message}: ${details}`)
+    error.cause = err
+    throw error
+  }
 }
 
 
@@ -112,6 +121,50 @@ export const parseCallback = (body) => {
     amount,
     phone,
     raw: body
+  }
+}
+
+
+// Query STK push status (M-Pesa Express Query)
+export const queryStkPushStatus = async ({ checkoutRequestId, shortCode, passkey }) => {
+  const resolvedShortCode = (shortCode || process.env.MPESA_SHORT_CODE || '').trim()
+  const resolvedPasskey = (passkey || process.env.MPESA_PASSKEY || '').trim()
+
+  if (!resolvedShortCode || !resolvedPasskey) {
+    throw new Error('Daraja short code or passkey not configured')
+  }
+
+  const accessToken = await getAccessToken()
+  const base = getBaseUrl()
+  const timestamp = buildTimestamp()
+  const password = buildPassword(resolvedShortCode, resolvedPasskey, timestamp)
+
+  try {
+    const resp = await axios.post(
+      `${base}/mpesa/stkpushquery/v1/query`,
+      {
+        BusinessShortCode: Number(resolvedShortCode),
+        Password: password,
+        Timestamp: timestamp,
+        CheckoutRequestID: checkoutRequestId
+      },
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    )
+
+    return {
+      ok: true,
+      resultCode: resp.data?.ResultCode,
+      resultDesc: resp.data?.ResultDesc,
+      raw: resp.data
+    }
+  } catch (err) {
+    const status = err?.response?.status
+    const data = err?.response?.data
+    return {
+      ok: false,
+      error: `Daraja STK Query failed${status ? ` (HTTP ${status})` : ''}`,
+      details: typeof data === 'object' ? JSON.stringify(data) : (data || err.message)
+    }
   }
 }
 

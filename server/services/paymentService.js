@@ -62,7 +62,12 @@ export const initiateMpesaForInvoice = async ({ invoice, payment, amount, phone,
   const accountReference = invoice.number || invoice._id
   const res = await initiateStkPush({ amount, phone, accountReference, callbackUrl })
   payment.status = 'PENDING'
-  payment.processorRefs = { ...payment.processorRefs, daraja: { merchantRequestId: res.merchantRequestId, checkoutRequestId: res.checkoutRequestId } }
+  // Update only the daraja nested subdocument to avoid assigning undefined to paystack
+  if (!payment.processorRefs) payment.processorRefs = {}
+  payment.processorRefs.daraja = {
+    merchantRequestId: res.merchantRequestId,
+    checkoutRequestId: res.checkoutRequestId
+  }
   await payment.save()
   return res
 }
@@ -72,7 +77,9 @@ export const initiatePaystackForInvoice = async ({ invoice, payment, amount, ema
   const reference = `INV-${invoice._id}-${Date.now()}`
   const res = await initTransaction({ amount, email, reference, callbackUrl, currency: process.env.PAYSTACK_CURRENCY || 'KES' })
   payment.status = 'PENDING'
-  payment.processorRefs = { ...payment.processorRefs, paystack: { reference } }
+  // Update only the paystack nested subdocument to avoid assigning undefined to daraja
+  if (!payment.processorRefs) payment.processorRefs = {}
+  payment.processorRefs.paystack = { reference }
   await payment.save()
   return res
 }

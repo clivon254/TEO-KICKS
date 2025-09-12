@@ -1,6 +1,6 @@
 import express from "express"
 import { authenticateToken } from "../middlewares/auth.js"
-import { initiatePayment, getPaymentById, markCashCollected, mpesaWebhook, paystackWebhook, payInvoice } from "../controllers/paymentController.js"
+import { initiatePayment, getPaymentById, markCashCollected, mpesaWebhook, paystackWebhook, payInvoice, queryMpesaStatus } from "../controllers/paymentController.js"
 
 
 const router = express.Router()
@@ -24,6 +24,9 @@ router.post('/webhooks/mpesa', mpesaWebhook)
 
 
 router.post('/webhooks/paystack', paystackWebhook)
+
+// Fallback polling for M-Pesa status
+router.get('/:id/mpesa-status', authenticateToken, queryMpesaStatus)
 
 
 export default router

@@ -3,7 +3,7 @@ import Invoice from "../models/invoiceModel.js"
 import Order from "../models/orderModel.js"
 import Receipt from "../models/receiptModel.js"
 import { initiateMpesaForInvoice, initiatePaystackForInvoice, createPaymentRecord, applySuccessfulPayment } from "../services/paymentService.js"
-import { parseCallback as parseDarajaCallback } from "../services/external/darajaService.js"
+import { parseCallback as parseDarajaCallback, queryStkPushStatus } from "../services/external/darajaService.js"
 import { parseWebhook as parsePaystackWebhook } from "../services/external/paystackService.js"
 
 
@@ -248,12 +248,29 @@ export const payInvoice = async (req, res, next) => {
     if (method === 'mpesa_stk') {
       if (!payerPhone) return res.status(400).json({ success: false, message: 'payerPhone is required for mpesa_stk' })
 
-      const callback = callbackUrl || `${process.env.API_BASE_URL || ''}/api/payments/webhooks/mpesa`
+      // Normalize and validate Kenyan MSISDN to E.164 without plus, e.g., 2547XXXXXXXX
+      const digitsOnly = String(payerPhone).replace(/[^0-9]/g, '')
+      let msisdn = digitsOnly
+      if (msisdn.startsWith('0')) {
+        msisdn = `254${msisdn.slice(1)}`
+      }
+      if (!msisdn.startsWith('254')) {
+        // If user provided +254..., digitsOnly already removed the plus; handle any remaining cases
+        if (digitsOnly.startsWith('254')) msisdn = digitsOnly
+      }
+      if (!/^254\d{9}$/.test(msisdn)) {
+        return res.status(400).json({ success: false, message: 'Invalid Kenyan phone format. Use 2547XXXXXXXX' })
+      }
+
+      // Ensure absolute callback URL (prefer env, fallback to request host)
+      const baseUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}`
+      const callback = callbackUrl || `${baseUrl}/api/payments/webhooks/mpesa`
+
       const { merchantRequestId, checkoutRequestId } = await initiateMpesaForInvoice({
         invoice,
         payment,
         amount,
-        phone: payerPhone,
+        phone: msisdn,
         callbackUrl: callback
       })
 
@@ -278,6 +295,37 @@ export const payInvoice = async (req, res, next) => {
     }
 
     return res.status(400).json({ success: false, message: 'Unsupported payment method' })
+  } catch (err) {
+    return next(err)
+  }
+}
+
+
+// New: Query M-Pesa Express status for a payment (fallback polling)
+export const queryMpesaStatus = async (req, res, next) => {
+  try {
+    const { paymentId } = req.params
+    const { invoiceId } = req.query || {}
+    let payment = await Payment.findById(paymentId)
+    if (!payment && invoiceId) {
+      // Try to locate the latest mpesa payment for this invoice as a fallback
+      payment = await Payment.findOne({ invoiceId, method: 'mpesa_stk' }).sort({ createdAt: -1 })
+    }
+    if (!payment) return res.status(404).json({ success: false, message: 'Payment not found' })
+
+    const checkoutRequestId = payment?.processorRefs?.daraja?.checkoutRequestId
+    if (!checkoutRequestId) {
+      return res.status(400).json({ success: false, message: 'No Daraja reference for this payment' })
+    }
+
+    const result = await queryStkPushStatus({ checkoutRequestId })
+    if (!result.ok) {
+      return res.status(502).json({ success: false, message: result.error, details: result.details })
+    }
+
+    // Map Daraja result codes: 0 = success, others are pending/failure
+    const status = result.resultCode === 0 ? 'SUCCESS' : (payment.status === 'SUCCESS' ? 'SUCCESS' : 'PENDING')
+    return res.json({ success: true, data: { status, resultCode: result.resultCode, resultDesc: result.resultDesc } })
   } catch (err) {
     return next(err)
   }

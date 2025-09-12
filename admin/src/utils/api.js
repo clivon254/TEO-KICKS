@@ -303,6 +303,7 @@ export const paymentAPI = {
     payInvoice: (data) => api.post('/payments/pay-invoice', data),
     getPaymentById: (paymentId) => api.get(`/payments/${paymentId}`),
     markCashCollected: (paymentId, amount) => api.patch(`/payments/${paymentId}/cash`, { amount }),
+    getMpesaStatus: (paymentId) => api.get(`/payments/${paymentId}/mpesa-status`),
 }
 
 
