@@ -30,13 +30,20 @@ const Cart = () => {
     // Memoize utility functions to prevent unnecessary re-computations
     const getProductImage = useCallback((product) => {
         if (product?.images && product.images.length > 0) {
-            return product.images[0]
+            // Find the primary image first
+            const primaryImage = product.images.find(img => img.isPrimary === true)
+            if (primaryImage) {
+                return primaryImage.url
+            }
+            // If no primary image, use the first image
+            return product.images[0].url
         }
         if (product?.primaryImage) {
             return product.primaryImage
         }
         return null // Return null to trigger placeholder
     }, [])
+
 
     const formatVariantOptions = useCallback((variantOptions) => {
         if (!variantOptions || Object.keys(variantOptions).length === 0) {
@@ -248,9 +255,7 @@ const Cart = () => {
                                                                         e.target.nextSibling.style.display = 'flex'
                                                                     }}
                                                                 />
-                                                                <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
-                                                                    <FiShoppingCart className="w-8 h-8 text-gray-400" />
-                                                                </div>
+                                                                
                                                             </>
                                                         ) : (
                                                             <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
