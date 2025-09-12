@@ -103,6 +103,7 @@ const EditProduct = () => {
         console.log('Product data received:', productData)
         console.log('Product extracted:', product)
         console.log('Product variants:', product?.variants)
+        console.log('Product images:', product?.images)
         console.log('FormData variants:', formData.variants)
         console.log('Available variants:', variants)
 
@@ -127,6 +128,7 @@ const EditProduct = () => {
             })
 
             // Set existing images - exactly like the user's pattern
+            console.log('Setting existing images:', product.images || [])
             setExistingImages(product.images || [])
 
             setIsLoading(false)
@@ -330,11 +332,14 @@ const EditProduct = () => {
             console.log('FormData entries:')
             for (let [key, value] of fd.entries()) {
                 if (key === 'images') {
-                    console.log(`  ${key}: File - ${value.name} (${value.size} bytes)`)
+                    console.log(`  ${key}: File - ${value.name} (${value.size} bytes, type: ${value.type})`)
+                } else if (key === 'keepImages') {
+                    console.log(`  ${key}: ${value} (length: ${JSON.parse(value).length})`)
                 } else {
                     console.log(`  ${key}: ${value}`)
                 }
             }
+            console.log('FormData total size:', [...fd.entries()].length, 'entries')
 
             await updateProduct.mutateAsync({ productId: id, productData: fd })
             navigate('/products')
