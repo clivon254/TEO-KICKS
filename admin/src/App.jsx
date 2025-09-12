@@ -35,6 +35,9 @@ import ProductDetails from './pages/products/ProductDetails'
 import Cart from './pages/Cart'
 import ProductDetailDemo from './components/demo/ProductDetailDemo'
 import Coupons from './pages/coupons/Coupons'
+import Checkout from './pages/Checkout'
+import Orders from './pages/orders/Orders'
+import OrderDetail from './pages/orders/OrderDetail'
 import AddCoupon from './pages/coupons/AddCoupon'
 import EditCoupon from './pages/coupons/EditCoupon'
 
@@ -97,6 +100,9 @@ function App() {
               <Route path="/coupons/add" element={<AddCoupon />} />
               <Route path="/coupons/:couponId/edit" element={<EditCoupon />} />
               <Route path="/cart" element={<Cart />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/checkout" element={<Checkout />} />
               <Route path="/demo/product-detail" element={<ProductDetailDemo />} />
               <Route path="/categories" element={<Categories />} />
               <Route path="/categories/add" element={<AddCategory />} />

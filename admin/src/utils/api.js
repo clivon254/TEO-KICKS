@@ -283,6 +283,33 @@ export const cartAPI = {
     validateCart: () => api.get('/cart/validate'),
 }
 
+
+// Checkout APIs
+export const orderAPI = {
+    createOrder: (payload) => api.post('/orders', payload),
+    getOrders: (params) => api.get('/orders', { params }),
+    getOrderById: (orderId) => api.get(`/orders/${orderId}`),
+    updateOrderStatus: (orderId, status) => api.patch(`/orders/${orderId}/status`, { status }),
+    deleteOrder: (orderId) => api.delete(`/orders/${orderId}`),
+}
+
+
+export const invoiceAPI = {
+    getInvoiceById: (invoiceId) => api.get(`/invoices/${invoiceId}`),
+}
+
+
+export const paymentAPI = {
+    payInvoice: (data) => api.post('/payments/pay-invoice', data),
+    getPaymentById: (paymentId) => api.get(`/payments/${paymentId}`),
+    markCashCollected: (paymentId, amount) => api.patch(`/payments/${paymentId}/cash`, { amount }),
+}
+
+
+export const receiptAPI = {
+    getReceiptById: (receiptId) => api.get(`/receipts/${receiptId}`),
+}
+
 // Review API calls
 export const reviewAPI = {
     // Get reviews for a product

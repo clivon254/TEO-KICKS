@@ -22,6 +22,10 @@ import brandRoute from "./routes/brandRoute.js"
 import tagRoute from "./routes/tagRoute.js"
 import collectionRoute from "./routes/collectionRoute.js"
 import cartRoute from "./routes/cartRoute.js"
+import orderRoute from "./routes/orderRoute.js"
+import invoiceRoute from "./routes/invoiceRoute.js"
+import paymentRoute from "./routes/paymentRoute.js"
+import receiptRoute from "./routes/receiptRoute.js"
 import reviewRoute from "./routes/reviewRoute.js"
 import couponRoute from "./routes/couponRoute.js"
 import storeConfigRoute from "./routes/storeConfigRoute.js"
@@ -33,14 +37,19 @@ const app = express()
 
 const PORT = process.env.PORT || 5000
 
-// CORS configuration
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : [];
+
 app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
-    origin: [process.env.CLIENT_BASE_URL, process.env.ADMIN_BASE_URL],
 
-    credentials: true
-
-}))
+app.options('*', cors())
 
 app.use(express.json())
 
@@ -62,17 +71,34 @@ app.use("/api/users", userRoute)
 app.use("/api/roles", roleRoute)
 
 app.use("/api/addresses", addressRoute)
+
 app.use("/api/variants", variantRoute)
+
 app.use("/api/products", productRoute)
+
 app.use("/api/categories", categoryRoute)
+
 app.use("/api/brands", brandRoute)
+
 app.use("/api/tags", tagRoute)
+
 app.use("/api/collections", collectionRoute)
+
 app.use("/api/cart", cartRoute)
+
+app.use("/api/orders", orderRoute)
+
+app.use("/api/invoices", invoiceRoute)
+
+app.use("/api/payments", paymentRoute)
+
+app.use("/api/receipts", receiptRoute)
+
 app.use("/api/reviews", reviewRoute)
+
 app.use("/api/coupons", couponRoute)
+
 app.use("/api/store-config", storeConfigRoute)
-// app.use("/api/orders", orderRoute)
 // app.use("/api/payments", paymentRoute)
 
 
@@ -87,7 +113,7 @@ const server = createServer(app)
 // Attach Socket.io to the HTTP server
 const io = new Server(server, {
   cors: {
-    origin: [process.env.CLIENT_BASE_URL, process.env.ADMIN_BASE_URL],
+    origin: [process.env.CORS_ORIGIN],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
   }
 })
@@ -219,6 +245,7 @@ server.listen(PORT, (err) => {
     console.log(`🚀 TEO KICKS Server running on http://localhost:${PORT}`)
     console.log(`�� API Documentation: http://localhost:${PORT}/api/docs`)
     console.log(`🌍 Environment: ${process.env.NODE_ENV}`)
+    console.log(`🌍 CORS: ${process.env.CORS_ORIGIN}`)
     console.log(`💰 Currency: KES (Kenyan Shillings)`)
     console.log(`🔌 Socket.io enabled for real-time features`)
     console.log(`📱 Express app is accessible via the HTTP server`)

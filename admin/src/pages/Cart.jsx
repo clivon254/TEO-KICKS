@@ -146,9 +146,8 @@ const Cart = () => {
     }, [])
 
     const handleCheckout = useCallback(() => {
-        // TODO: Implement checkout functionality
-        toast('Checkout functionality coming soon!')
-    }, [])
+        navigate('/checkout')
+    }, [navigate])
 
 
 

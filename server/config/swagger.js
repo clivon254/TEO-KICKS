@@ -36,6 +36,109 @@ const options = {
         }
       },
       schemas: {
+        Order: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            customerId: { type: 'string' },
+            createdBy: { type: 'string' },
+            location: { type: 'string', enum: ['in_shop', 'away'] },
+            type: { type: 'string', enum: ['pickup', 'delivery'] },
+            items: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  skuId: { type: 'string' },
+                  productId: { type: 'string' },
+                  title: { type: 'string' },
+                  variantOptions: { type: 'object', additionalProperties: { type: 'string' } },
+                  quantity: { type: 'integer' },
+                  unitPrice: { type: 'number' },
+                  packagingChoice: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string' },
+                      name: { type: 'string' },
+                      fee: { type: 'number' }
+                    }
+                  }
+                }
+              }
+            },
+            pricing: {
+              type: 'object',
+              properties: {
+                subtotal: { type: 'number' },
+                discounts: { type: 'number' },
+                packagingFee: { type: 'number' },
+                schedulingFee: { type: 'number' },
+                deliveryFee: { type: 'number' },
+                tax: { type: 'number' },
+                total: { type: 'number' }
+              }
+            },
+            timing: { type: 'object', properties: { isScheduled: { type: 'boolean' }, scheduledAt: { type: 'string', nullable: true } } },
+            addressId: { type: 'string', nullable: true },
+            paymentPreference: {
+              type: 'object',
+              properties: {
+                mode: { type: 'string', enum: ['post_to_bill', 'pay_now', 'cash', 'cod'] },
+                method: { type: 'string', nullable: true }
+              }
+            },
+            status: { type: 'string' },
+            paymentStatus: { type: 'string', enum: ['UNPAID', 'PENDING', 'PAID', 'PARTIALLY_REFUNDED', 'REFUNDED'] },
+            invoiceId: { type: 'string', nullable: true },
+            receiptId: { type: 'string', nullable: true },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' }
+          }
+        },
+        Invoice: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            orderId: { type: 'string' },
+            number: { type: 'string' },
+            lineItems: { type: 'array', items: { type: 'object', properties: { label: { type: 'string' }, amount: { type: 'number' } } } },
+            subtotal: { type: 'number' },
+            fees: { type: 'number' },
+            tax: { type: 'number' },
+            total: { type: 'number' },
+            balanceDue: { type: 'number' },
+            paymentStatus: { type: 'string', enum: ['PENDING', 'PAID', 'CANCELLED'] },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' }
+          }
+        },
+        Payment: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            invoiceId: { type: 'string' },
+            method: { type: 'string', enum: ['mpesa_stk', 'paystack_card', 'cash', 'post_to_bill', 'cod'] },
+            amount: { type: 'number' },
+            currency: { type: 'string' },
+            status: { type: 'string', enum: ['INITIATED', 'PENDING', 'SUCCESS', 'FAILED', 'CANCELLED'] },
+            processorRefs: { type: 'object' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' }
+          }
+        },
+        Receipt: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            orderId: { type: 'string' },
+            invoiceId: { type: 'string' },
+            receiptNumber: { type: 'string' },
+            amountPaid: { type: 'number' },
+            paymentMethod: { type: 'string', enum: ['mpesa_stk', 'paystack_card', 'cash'] },
+            issuedAt: { type: 'string', format: 'date-time' },
+            pdfUrl: { type: 'string' }
+          }
+        },
         User: {
           type: 'object',
           properties: {
@@ -924,6 +1027,14 @@ const options = {
       {
         name: 'Payments',
         description: 'Payment processing (M-Pesa, Paystack)'
+      },
+      {
+        name: 'Invoices',
+        description: 'Order invoice management'
+      },
+      {
+        name: 'Receipts',
+        description: 'Receipt generation and retrieval'
       }
     ]
   },
