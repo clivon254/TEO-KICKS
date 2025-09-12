@@ -100,14 +100,24 @@ const EditProduct = () => {
 
     // Load product data into form
     useEffect(() => {
-        console.log('Product data received:', productData)
-        console.log('Product extracted:', product)
-        console.log('Product variants:', product?.variants)
-        console.log('Product images:', product?.images)
-        console.log('FormData variants:', formData.variants)
-        console.log('Available variants:', variants)
-
         if (product) {
+            console.log('=== LOADING PRODUCT DATA ===')
+            console.log('Product variants:', product.variants)
+            
+            // Process variants to ensure they are in the correct format (string IDs)
+            const processedVariants = Array.isArray(product.variants) 
+                ? product.variants.map(variant => {
+                    // If variant is an object with _id, extract the ID
+                    if (typeof variant === 'object' && variant._id) {
+                        return variant._id
+                    }
+                    // If it's already a string, use it as is
+                    return variant
+                })
+                : []
+            
+            console.log('Processed variants for formData:', processedVariants)
+            
             setFormData({
                 title: product.title || '',
                 description: product.description || '',
@@ -118,7 +128,7 @@ const EditProduct = () => {
                 tags: Array.isArray(product.tags) ? product.tags : [],
                 basePrice: product.basePrice?.toString() || '',
                 comparePrice: product.comparePrice?.toString() || '',
-                variants: Array.isArray(product.variants) ? product.variants : [],
+                variants: processedVariants,
                 status: product.status || 'draft',
                 metaTitle: product.metaTitle || '',
                 metaDescription: product.metaDescription || '',
@@ -127,13 +137,11 @@ const EditProduct = () => {
                 features: product.features || []
             })
 
-            // Set existing images - exactly like the user's pattern
-            console.log('Setting existing images:', product.images || [])
+            // Set existing images
             setExistingImages(product.images || [])
-
             setIsLoading(false)
         }
-    }, [product, productData, variants, formData.variants])
+    }, [product]) // Removed formData.variants from dependencies to prevent infinite loop
 
     // Memoize tabs configuration to prevent re-creation
     const tabs = useMemo(() => [
@@ -178,12 +186,44 @@ const EditProduct = () => {
 
 
     const handleArrayChange = useCallback((field, value, checked) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: checked
-                ? [...prev[field], value]
-                : prev[field].filter(item => item !== value)
-        }))
+        console.log(`=== HANDLE ARRAY CHANGE ===`)
+        console.log('Field:', field, 'Value:', value, 'Checked:', checked)
+        
+        setFormData(prev => {
+            const currentArray = prev[field] || []
+            console.log('Current array:', currentArray)
+            
+            // Convert value to string ID for consistent comparison
+            const valueId = typeof value === 'object' && value._id ? value._id : value
+            
+            let newArray
+            if (checked) {
+                // Add if not already present
+                const isPresent = currentArray.some(item => {
+                    const itemId = typeof item === 'object' && item._id ? item._id : item
+                    return itemId === valueId
+                })
+                
+                if (!isPresent) {
+                    newArray = [...currentArray, valueId]
+                    console.log('Added variant:', valueId, 'New array:', newArray)
+                } else {
+                    newArray = currentArray
+                    console.log('Variant already present:', valueId)
+                }
+            } else {
+                // Remove variant
+                newArray = currentArray.filter(item => {
+                    const itemId = typeof item === 'object' && item._id ? item._id : item
+                    return itemId !== valueId
+                })
+                console.log('Removed variant:', valueId, 'New array:', newArray)
+            }
+            
+            const result = { ...prev, [field]: newArray }
+            console.log('Final form data variants:', result.variants)
+            return result
+        })
     }, [])
 
     // Memoize image handling functions
@@ -589,9 +629,18 @@ const EditProduct = () => {
                             ) : variants.length > 0 ? (
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                     {variants.map(variant => {
-                                        const isSelected = formData.variants.includes(variant._id)
+                                        // Handle both string IDs and variant objects in formData.variants
+                                        const isSelected = formData.variants.some(item => {
+                                            if (typeof item === 'string') {
+                                                return item === variant._id
+                                            } else if (typeof item === 'object' && item._id) {
+                                                return item._id === variant._id
+                                            }
+                                            return false
+                                        })
+                                        
+                                        // Debug: Check variant selection state
                                         console.log(`Variant ${variant.name} (${variant._id}): isSelected = ${isSelected}`)
-                                        console.log('formData.variants:', formData.variants)
                                         return (
                                             <label key={variant._id} className={`flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors ${
                                                 isSelected 
@@ -655,18 +704,31 @@ const EditProduct = () => {
                                         Selected Variants:
                                     </h4>
                                     <div className="flex flex-wrap gap-2">
-                                        {formData.variants.map(variantId => {
-                                            const variant = variants.find(v => v._id === variantId)
-                                            console.log('Looking for variant ID:', variantId)
-                                            console.log('Available variants:', variants.map(v => ({ id: v._id, name: v.name })))
-                                            console.log('Found variant:', variant)
-                                            return (
-                                                <span key={variantId} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20">
-                                                    <FiCheck className="mr-1 h-3 w-3" />
-                                                    {variant?.name || `Variant ID: ${variantId}`}
-                                                </span>
-                                            )
-                                        })}
+                                        {formData.variants.length > 0 ? (
+                                            formData.variants.map((variantId, index) => {
+                                                // Handle both string IDs and variant objects
+                                                let variant = null
+                                                if (typeof variantId === 'string') {
+                                                    variant = variants.find(v => v._id === variantId)
+                                                } else if (typeof variantId === 'object' && variantId._id) {
+                                                    variant = variants.find(v => v._id === variantId._id)
+                                                }
+                                                
+                                                return (
+                                                    <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20">
+                                                        <FiCheck className="mr-1 h-3 w-3" />
+                                                        {variant?.name || 'Unknown Variant'}
+                                                        {variant?.options && variant.options.length > 0 && (
+                                                            <span className="ml-1 text-xs opacity-75">
+                                                                ({variant.options.length} options)
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                )
+                                            })
+                                        ) : (
+                                            <p className="text-sm text-gray-500 italic">No variants selected</p>
+                                        )}
                                     </div>
                                     {variants.length === 0 && (
                                         <p className="text-sm text-gray-500 mt-2">
