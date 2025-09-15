@@ -5,38 +5,39 @@
   --color-secondary: #E879F9;
   --color-primary-button: #3A1F66;
   --color-secondary-button: #FDE7FF;
+  --color-light: #F8F5FF;
 }
 
 @layer components {
   /* Custom Button Styles */
   .btn-primary {
-    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer border inline-block bg-primary-button text-white border-primary-button hover:bg-primary hover:border-primary hover:scale-105;
+    @apply px-6 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer border inline-block bg-primary-button text-white border-primary-button hover:bg-primary hover:border-primary hover:scale-105;
   }
 
   .btn-secondary {
-    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer border inline-block bg-secondary-button text-primary border-secondary-button hover:bg-secondary hover:text-white hover:border-secondary;
+    @apply px-6 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer border inline-block bg-secondary-button text-primary border-secondary-button hover:bg-secondary hover:text-white hover:border-secondary;
   }
 
   .btn-outline {
-    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer border inline-block bg-transparent text-primary border-primary hover:bg-primary hover:text-white;
+    @apply px-6 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer border inline-block bg-transparent text-primary border-primary hover:bg-primary hover:text-white;
   }
 
   /* Custom Title Styles */
   .title {
-    @apply text-4xl font-bold text-primary mb-4;
+    @apply text-4xl font-bold text-primary mb-3;
   }
 
   .title2 {
-    @apply text-3xl font-semibold text-primary mb-3;
+    @apply text-3xl font-semibold text-primary mb-2;
   }
 
   .title3 {
-    @apply text-2xl font-medium text-primary mb-2;
+    @apply text-2xl font-medium text-primary mb-1;
   }
 
   /* Custom Input Styles */
   .input {
-    @apply w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-200;
+    @apply w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-200;
   }
 
   .input2 {
@@ -58,6 +59,16 @@
 
   .container-xs {
     @apply max-w-2xl mx-auto px-4;
+  }
+
+  /* Rich Text Editor Styles */
+  .rich-text-editor textarea {
+    font-family: inherit;
+    line-height: 1.5;
+  }
+
+  .rich-text-editor textarea:focus {
+    box-shadow: 0 0 0 3px rgba(75, 46, 131, 0.1);
   }
 }
 
