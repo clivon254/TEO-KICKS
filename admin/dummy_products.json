@@ -1,0 +1,410 @@
+[
+  {
+    "title": "Nike Air Max 270",
+    "description": "<p>Experience ultimate comfort with the Nike Air Max 270. Features a large Air unit for maximum cushioning and a breathable mesh upper.</p>",
+    "shortDescription": "Maximum comfort with large Air unit and breathable mesh upper",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 1500,
+    "comparePrice": 2000,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "7", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" },
+          { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4f" },
+          { "value": "11", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d50" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Nike Air Max 270 - Ultimate Comfort",
+    "metaDescription": "Buy the Nike Air Max 270 with maximum cushioning and style",
+    "trackInventory": true,
+    "weight": 0.1,
+    "features": ["Large Air unit for maximum cushioning", "Breathable mesh upper", "Rubber outsole for durability", "Lightweight design"]
+  },
+  {
+    "title": "Nike Air Force 1 '07",
+    "description": "<p>The iconic Nike Air Force 1 '07 delivers legendary style and all-day comfort. Features durable leather construction and Air cushioning technology.</p>",
+    "shortDescription": "Nike Air Force 1 '07",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 1300,
+    "comparePrice": 1600,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "7", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" },
+          { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4f" },
+          { "value": "11", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d50" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Nike Air Force 1 '07 - Iconic Style",
+    "metaDescription": "Legendary Nike Air Force 1 '07 with leather and Air technology",
+    "trackInventory": true,
+    "weight": 0.12,
+    "features": ["Durable leather upper", "Air cushioning technology", "Iconic design", "All-day comfort"]
+  },
+  {
+    "title": "Adidas Ultraboost 22",
+    "description": "<p>The Adidas Ultraboost 22 delivers energy return with every step. Featuring BOOST technology and a responsive midsole for superior comfort.</p>",
+    "shortDescription": "Energy return running shoes with BOOST technology",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 1800,
+    "comparePrice": 2200,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "7", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" },
+          { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4f" },
+          { "value": "11", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d50" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Adidas Ultraboost 22 - Energy Return",
+    "metaDescription": "Experience the Adidas Ultraboost 22 with superior energy return",
+    "trackInventory": true,
+    "weight": 0.12,
+    "features": ["BOOST technology for energy return", "Responsive midsole", "Breathable upper", "Lightweight construction"]
+  },
+  {
+    "title": "Adidas Stan Smith",
+    "description": "<p>The Adidas Stan Smith delivers clean, minimalist style with premium leather construction. Features the iconic green heel tab and superior comfort.</p>",
+    "shortDescription": "Clean minimalist sneakers with premium leather",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 1200,
+    "comparePrice": 1500,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "7", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" },
+          { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4f" },
+          { "value": "11", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d50" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Adidas Stan Smith - Clean Style",
+    "metaDescription": "Classic Adidas Stan Smith with premium leather and minimalist design",
+    "trackInventory": true,
+    "weight": 0.11,
+    "features": ["Premium leather upper", "Iconic green heel tab", "Clean design", "Superior comfort"]
+  },
+  {
+    "title": "Puma RS-X3",
+    "description": "<p>The Puma RS-X3 combines retro style with modern performance. Features a bold design with excellent cushioning and support.</p>",
+    "shortDescription": "Retro style meets modern performance in bold design",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 1200,
+    "comparePrice": 1500,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "7", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" },
+          { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4f" },
+          { "value": "11", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d50" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Puma RS-X3 - Retro Style",
+    "metaDescription": "Bold retro style with modern performance - Puma RS-X3",
+    "trackInventory": true,
+    "weight": 0.11,
+    "features": ["Retro-inspired design", "Excellent cushioning", "Bold colorways", "Durable construction"]
+  },
+  {
+    "title": "Puma Suede Classic",
+    "description": "<p>The Puma Suede Classic delivers iconic style with premium suede construction. Features the signature Formstrip and superior comfort.</p>",
+    "shortDescription": "Iconic suede sneakers with signature Formstrip",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 1100,
+    "comparePrice": 1300,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "7", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" },
+          { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4f" },
+          { "value": "11", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d50" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Puma Suede Classic - Iconic Style",
+    "metaDescription": "Classic Puma Suede with premium construction and Formstrip design",
+    "trackInventory": true,
+    "weight": 0.10,
+    "features": ["Premium suede upper", "Signature Formstrip", "Iconic design", "Superior comfort"]
+  },
+  {
+    "title": "Jordan Air 1 High",
+    "description": "<p>The iconic Jordan Air 1 High delivers legendary style and comfort. Features premium leather construction and Air cushioning technology.</p>",
+    "shortDescription": "Iconic high-top basketball shoes with legendary style",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 1600,
+    "comparePrice": 1900,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "7", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" },
+          { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4f" },
+          { "value": "11", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d50" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Jordan Air 1 High - Iconic Style",
+    "metaDescription": "Legendary Jordan Air 1 High with premium leather and Air technology",
+    "trackInventory": true,
+    "weight": 0.13,
+    "features": ["Premium leather upper", "Air cushioning technology", "Iconic design", "Durable construction"]
+  },
+  {
+    "title": "Jordan Retro 4",
+    "description": "<p>The Jordan Retro 4 delivers classic basketball performance with mesh upper construction and visible Air cushioning for superior comfort and style.</p>",
+    "shortDescription": "Classic basketball shoes with visible Air cushioning",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 1700,
+    "comparePrice": 2000,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "7", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" },
+          { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4f" },
+          { "value": "11", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d51" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Jordan Retro 4 - Classic Basketball",
+    "metaDescription": "Classic Jordan Retro 4 with visible Air and mesh construction",
+    "trackInventory": true,
+    "weight": 0.12,
+    "features": ["Mesh upper construction", "Visible Air cushioning", "Classic design", "Basketball performance"]
+  },
+  {
+    "title": "New Balance 990v5",
+    "description": "<p>The New Balance 990v5 offers premium comfort and support. Made in the USA with high-quality materials and exceptional craftsmanship.</p>",
+    "shortDescription": "Premium running shoes made in the USA",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 1750,
+    "comparePrice": 2100,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "New Balance 990v5 - Made in USA",
+    "metaDescription": "Premium New Balance 990v5 running shoes crafted in the USA",
+    "trackInventory": true,
+    "weight": 0.14,
+    "features": ["Made in USA", "Premium materials", "Exceptional comfort", "Superior support"]
+  },
+  {
+    "title": "Converse Chuck Taylor All Star",
+    "description": "<p>The classic Converse Chuck Taylor All Star is a timeless design that never goes out of style. Features durable canvas upper and iconic rubber sole.</p>",
+    "shortDescription": "Timeless canvas sneakers with iconic design",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 800,
+    "comparePrice": 1000,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "7", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Converse Chuck Taylor - Classic Design",
+    "metaDescription": "Timeless Converse Chuck Taylor All Star sneakers",
+    "trackInventory": true,
+    "weight": 0.09,
+    "features": ["Classic design", "Durable canvas upper", "Iconic rubber sole", "Timeless style"]
+  },
+  {
+    "title": "Vans Old Skools",
+    "description": "<p>Vans Old Skools feature the classic skate shoe design with durable canvas upper and signature waffle outsole for excellent grip.</p>",
+    "shortDescription": "Classic skate shoes with waffle outsole grip",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 900,
+    "comparePrice": 1100,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Vans Old Skools - Classic Skate",
+    "metaDescription": "Classic Vans Old Skools with waffle outsole and skate heritage",
+    "trackInventory": true,
+    "weight": 0.10,
+    "features": ["Canvas upper", "Waffle outsole", "Excellent grip", "Skate heritage"]
+  },
+  {
+    "title": "Reebok Club C 85",
+    "description": "<p>The Reebok Club C 85 combines vintage style with modern comfort. Features soft leather upper and classic design elements.</p>",
+    "shortDescription": "Vintage-inspired leather sneakers with modern comfort",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 1100,
+    "comparePrice": 1300,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "7", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Reebok Club C 85 - Vintage Style",
+    "metaDescription": "Vintage-inspired leather sneakers with modern comfort",
+    "trackInventory": true,
+    "weight": 0.11,
+    "features": ["Soft leather upper", "Classic design", "Modern comfort", "Timeless style"]
+  },
+  {
+    "title": "Under Armour Curry 9",
+    "description": "<p>The Under Armour Curry 9 delivers performance and style on the court. Features responsive cushioning and secure fit for competitive play.</p>",
+    "shortDescription": "Performance basketball shoes with responsive cushioning",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 1400,
+    "comparePrice": 1700,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "11", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d51" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Under Armour Curry 9 - Court Performance",
+    "metaDescription": "Performance basketball shoes designed for competitive play",
+    "trackInventory": true,
+    "weight": 0.12,
+    "features": ["Responsive cushioning", "Secure fit", "Court performance", "Durability"]
+  },
+  {
+    "title": "Asics Gel-Kayano 28",
+    "description": "<p>The Asics Gel-Kayano 28 provides stability and cushioning for long-distance running. Features advanced GEL technology and supportive structure.</p>",
+    "shortDescription": "Stability running shoes with GEL technology",
+    "brand": "68a962f0f9a023b053607feb",
+    "categories": ["68a63f1a9f8a1f721a63d392"],
+    "collections": ["68a96daa17988c6e89805a3d"],
+    "tags": ["68a86c375e5ed74017441805"],
+    "basePrice": 1600,
+    "comparePrice": 1900,
+    "variants": [
+      {
+        "_id": "68a9a75c0614f4956b256d4b",
+        "name": "Size",
+        "options": [
+          { "value": "8", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4c" },
+          { "value": "9", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4d" },
+          { "value": "10", "isActive": true, "sortOrder": 0, "_id": "68a9a75c0614f4956b256d4e" }
+        ]
+      }
+    ],
+    "status": "active",
+    "metaTitle": "Asics Gel-Kayano 28 - Stability Running",
+    "metaDescription": "Advanced stability running shoes with GEL technology",
+    "trackInventory": true,
+    "weight": 0.13,
+    "features": ["GEL technology", "Stability support", "Cushioning", "Long-distance comfort"]
+  }
+]
