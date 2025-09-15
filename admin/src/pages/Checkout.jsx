@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { io } from 'socket.io-client'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { cartAPI, orderAPI, paymentAPI, invoiceAPI, receiptAPI } from '../utils/api'
+import { cartAPI, orderAPI, paymentAPI } from '../utils/api'
+import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
 
@@ -37,6 +37,7 @@ const Stepper = ({ current, onGoto }) => {
 
 const Checkout = () => {
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [currentStep, setCurrentStep] = useState(0)
   const [cart, setCart] = useState(null)
@@ -51,21 +52,33 @@ const Checkout = () => {
   const [addressId, setAddressId] = useState(null)
   const [paymentMode, setPaymentMode] = useState('post_to_bill')
   const [paymentMethod, setPaymentMethod] = useState(null) // mpesa_stk | paystack_card | null
+  // Format phone number to M-Pesa format (254XXXXXXXXX)
+  const formatPhoneForMpesa = (phone) => {
+    if (!phone) return ''
+    // Remove any non-digit characters
+    const digits = phone.replace(/\D/g, '')
+    // If it starts with 0, replace with 254
+    if (digits.startsWith('0')) {
+      return '254' + digits.substring(1)
+    }
+    // If it starts with 254, return as is
+    if (digits.startsWith('254')) {
+      return digits
+    }
+    // If it's 9 digits, add 254 prefix
+    if (digits.length === 9) {
+      return '254' + digits
+    }
+    // Return as is if it doesn't match expected patterns
+    return digits
+  }
+
   const [payerPhone, setPayerPhone] = useState('')
   const [payerEmail, setPayerEmail] = useState('')
 
   const [orderId, setOrderId] = useState(null)
   const [invoiceId, setInvoiceId] = useState(null)
   const [receiptId, setReceiptId] = useState(null)
-
-  // Payment modal & tracking
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [activePaymentId, setActivePaymentId] = useState(null)
-  const [paymentView, setPaymentView] = useState({ status: 'PENDING', title: 'Payment Processing', message: 'Awaiting approval on your phone…', provider: null })
-  const [orderBreakdown, setOrderBreakdown] = useState(null)
-  const pollRef = useRef(null)
-  const timeoutRef = useRef(null)
-  const socketRef = useRef(null)
 
   const canShowAddress = orderType === 'delivery'
   const canShowPackaging = (cart?.items || []).some((it) => Boolean(it.packagingOptions?.length))
@@ -83,6 +96,26 @@ const Checkout = () => {
     }
     load()
   }, [])
+
+  // Cart protection - redirect to cart if empty
+  useEffect(() => {
+    if (cart && (!cart.items || cart.items.length === 0)) {
+      toast.error('Your cart is empty')
+      navigate('/cart')
+    }
+  }, [cart, navigate])
+
+  // Prefill user phone and email
+  useEffect(() => {
+    if (user) {
+      if (user.phone) {
+        setPayerPhone(formatPhoneForMpesa(user.phone))
+      }
+      if (user.email) {
+        setPayerEmail(user.email)
+      }
+    }
+  }, [user])
 
   const totals = useMemo(() => {
     const items = cart?.items || []
@@ -118,7 +151,16 @@ const Checkout = () => {
       const inv = orderDetail.data?.data?.order?.invoiceId
       const createdInvoiceId = inv?._id || inv
       setInvoiceId(createdInvoiceId)
-      toast.success('Order created')
+      
+      // Refresh cart after successful order creation (items will be removed by backend)
+      try {
+        const cartRes = await cartAPI.getCart()
+        setCart(cartRes.data?.data)
+      } catch (cartError) {
+        console.warn('Failed to refresh cart:', cartError)
+        // Don't fail the order creation if cart refresh fails
+      }
+      
       return { orderId: createdOrderId, invoiceId: createdInvoiceId }
     } catch (e) {
       toast.error(e?.response?.data?.message || 'Failed to create order')
@@ -138,20 +180,38 @@ const Checkout = () => {
         const res = await paymentAPI.payInvoice({ invoiceId: targetInvoiceId, method: 'mpesa_stk', payerPhone })
         if (res.data?.success) {
           const paymentId = res.data?.data?.paymentId
-          setActivePaymentId(paymentId)
-          setShowPaymentModal(true)
-          setPaymentView({ status: 'PENDING', title: 'Payment Processing', message: 'Awaiting approval on your phone…', provider: 'mpesa' })
-          startPaymentTracking({ paymentId, provider: 'mpesa', ensuredOrderId: orderId })
+          const checkoutRequestId = res.data?.data?.daraja?.checkoutRequestId
+          
+          // Navigate to payment status page instead of showing modal
+          const params = new URLSearchParams({
+            paymentId,
+            orderId: orderId,
+            provider: 'mpesa',
+            checkoutRequestId: checkoutRequestId || '',
+            invoiceId: targetInvoiceId,
+            payerPhone: payerPhone
+          })
+          navigate(`/payment-status?${params.toString()}`)
+          
           toast.success('STK push sent. Complete on your phone.')
         }
       } else if (paymentMethod === 'paystack_card') {
         if (!payerEmail) return toast.error('Email required')
         const res = await paymentAPI.payInvoice({ invoiceId: targetInvoiceId, method: 'paystack_card', payerEmail })
         const paymentId = res.data?.data?.paymentId
-        setActivePaymentId(paymentId)
-        setShowPaymentModal(true)
-        setPaymentView({ status: 'PENDING', title: 'Payment Processing', message: 'Complete the Paystack flow in the opened tab…', provider: 'paystack' })
-        startPaymentTracking({ paymentId, provider: 'paystack', ensuredOrderId: orderId })
+        const reference = res.data?.data?.reference
+        
+        // Navigate to payment status page instead of showing modal
+        const params = new URLSearchParams({
+          paymentId,
+          orderId: orderId,
+          provider: 'paystack',
+          reference: reference || '',
+          invoiceId: targetInvoiceId,
+          payerEmail: payerEmail
+        })
+        navigate(`/payment-status?${params.toString()}`)
+        
         const url = res.data?.data?.authorizationUrl
         if (url) window.open(url, '_blank')
       }
@@ -162,122 +222,6 @@ const Checkout = () => {
     }
   }
 
-  const clearPaymentTimers = () => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current)
-      pollRef.current = null
-    }
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-      timeoutRef.current = null
-    }
-    if (socketRef.current) {
-      try { socketRef.current.disconnect() } catch {}
-      socketRef.current = null
-    }
-  }
-
-  const startPaymentTracking = ({ paymentId, provider, ensuredOrderId }) => {
-    clearPaymentTimers()
-
-    // Socket.IO subscription (best-effort)
-    try {
-      const baseUrl = (import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '')
-      socketRef.current = io(baseUrl, { transports: ['websocket', 'polling'], withCredentials: false })
-      socketRef.current.on('connect', () => {
-        // subscribe to payment room
-        socketRef.current.emit('subscribe-to-payment', String(paymentId))
-      })
-      socketRef.current.on('payment.updated', async (payload) => {
-        if (!payload || String(payload.paymentId) !== String(paymentId)) return
-        if (payload.status === 'SUCCESS') {
-          clearPaymentTimers()
-          setPaymentView({ status: 'SUCCESS', title: 'Order paid successfully', message: 'Payment confirmed.' , provider })
-          const oid = ensuredOrderId || orderId
-          if (oid) {
-            try {
-              const detail = await orderAPI.getOrderById(oid)
-              const ord = detail?.data?.data?.order
-              setOrderBreakdown(ord?.pricing || null)
-            } catch {}
-          }
-        } else if (payload.status === 'FAILED') {
-          clearPaymentTimers()
-          setPaymentView({ status: 'FAILED', title: 'Order payment failed', message: 'The payment was not completed.' , provider })
-        }
-      })
-      socketRef.current.on('receipt.created', (payload) => {
-        // Optional: we could also use this to mark success and show receipt link later
-      })
-    } catch {}
-
-    // Timeout after 75s
-    timeoutRef.current = setTimeout(() => {
-      setPaymentView((prev) => ({ ...prev, status: 'FAILED', title: 'Payment timed out', message: 'No confirmation received. You can retry the payment.' }))
-      clearPaymentTimers()
-    }, 75 * 1000)
-
-    const poll = async () => {
-      try {
-        const payRes = await paymentAPI.getPaymentById(paymentId)
-        const status = payRes?.data?.data?.payment?.status
-
-        if (status === 'SUCCESS') {
-          clearPaymentTimers()
-          setPaymentView({ status: 'SUCCESS', title: 'Order paid successfully', message: 'Payment confirmed.' , provider })
-          // Fetch fresh order breakdown
-          const oid = ensuredOrderId || orderId
-          if (oid) {
-            try {
-              const detail = await orderAPI.getOrderById(oid)
-              const ord = detail?.data?.data?.order
-              setOrderBreakdown(ord?.pricing || null)
-            } catch {}
-          }
-          return
-        }
-
-        if (status === 'FAILED') {
-          clearPaymentTimers()
-          const desc = payRes?.data?.data?.payment?.rawPayload?.Body?.stkCallback?.ResultDesc
-          setPaymentView({ status: 'FAILED', title: 'Order payment failed', message: desc || 'The payment was not completed.' , provider })
-          return
-        }
-
-        // Pending — enrich message using provider-specific query
-        if (provider === 'mpesa') {
-          try {
-            const q = await paymentAPI.getMpesaStatus(paymentId)
-            const rc = q?.data?.data?.resultCode
-            const rd = q?.data?.data?.resultDesc
-            if (rc === 0) {
-              // Success just in — next poll will capture SUCCESS; we can proactively treat as success
-              clearPaymentTimers()
-              setPaymentView({ status: 'SUCCESS', title: 'Order paid successfully', message: 'Payment confirmed.' , provider })
-              const oid = ensuredOrderId || orderId
-              if (oid) {
-                try {
-                  const detail = await orderAPI.getOrderById(oid)
-                  const ord = detail?.data?.data?.order
-                  setOrderBreakdown(ord?.pricing || null)
-                } catch {}
-              }
-              return
-            }
-            if (rd) {
-              setPaymentView((prev) => ({ ...prev, message: rd }))
-            }
-          } catch {}
-        }
-
-      } catch {}
-    }
-
-    // Start interval every 3s
-    pollRef.current = setInterval(poll, 3000)
-    // Fire immediately for faster feedback
-    poll()
-  }
 
   const handleCompleteOrder = async () => {
     // 1) Ensure order (+ invoice) exists
@@ -309,7 +253,6 @@ const Checkout = () => {
   }
 
   return (
-    <>
     <div className="container py-6">
       <div className="max-w-4xl mx-auto">
         <h1 className="title3">Checkout</h1>
@@ -426,76 +369,6 @@ const Checkout = () => {
         </div>
       </div>
     </div>
-
-    {/* Payment Modal */}
-    {showPaymentModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">{paymentView.title}</h3>
-          <p className="text-sm text-gray-600 mb-4">{paymentView.message}</p>
-
-          {paymentView.status === 'PENDING' && (
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-              <span>Processing...</span>
-            </div>
-          )}
-
-          {paymentView.status === 'SUCCESS' && orderBreakdown && (
-            <div className="bg-gray-50 rounded-md p-3 text-sm text-gray-700 mb-4">
-              <div className="flex justify-between"><span>Subtotal</span><span>KSh {Number(orderBreakdown.subtotal || 0).toFixed(2)}</span></div>
-              {Number(orderBreakdown.discounts || 0) > 0 && (
-                <div className="flex justify-between text-green-700"><span>Discounts</span><span>-KSh {Number(orderBreakdown.discounts).toFixed(2)}</span></div>
-              )}
-              {Number(orderBreakdown.packagingFee || 0) > 0 && (
-                <div className="flex justify-between"><span>Packaging</span><span>KSh {Number(orderBreakdown.packagingFee).toFixed(2)}</span></div>
-              )}
-              {Number(orderBreakdown.schedulingFee || 0) > 0 && (
-                <div className="flex justify-between"><span>Scheduling</span><span>KSh {Number(orderBreakdown.schedulingFee).toFixed(2)}</span></div>
-              )}
-              {Number(orderBreakdown.deliveryFee || 0) > 0 && (
-                <div className="flex justify-between"><span>Delivery</span><span>KSh {Number(orderBreakdown.deliveryFee).toFixed(2)}</span></div>
-              )}
-              {Number(orderBreakdown.tax || 0) > 0 && (
-                <div className="flex justify-between"><span>Tax</span><span>KSh {Number(orderBreakdown.tax).toFixed(2)}</span></div>
-              )}
-              <div className="flex justify-between font-semibold border-t pt-2 mt-2"><span>Total</span><span>KSh {Number(orderBreakdown.total || 0).toFixed(2)}</span></div>
-            </div>
-          )}
-
-          <div className="flex gap-3">
-            {paymentView.status === 'SUCCESS' ? (
-              <button onClick={() => navigate('/orders')} className="flex-1 btn-primary">Go to Orders</button>
-            ) : paymentView.status === 'FAILED' ? (
-              <>
-                <button
-                  onClick={() => {
-                    setShowPaymentModal(false)
-                    clearPaymentTimers()
-                    // Retry payment
-                    if (invoiceId) {
-                      payInvoiceNow(invoiceId)
-                    }
-                  }}
-                  className="flex-1 btn-primary"
-                >
-                  Retry Payment
-                </button>
-                <button
-                  onClick={() => { setShowPaymentModal(false); clearPaymentTimers() }}
-                  className="flex-1 btn-outline"
-                >
-                  Close
-                </button>
-              </>
-            ) : (
-              <button onClick={() => { setShowPaymentModal(false); clearPaymentTimers() }} className="flex-1 btn-outline">Hide</button>
-            )}
-          </div>
-        </div>
-      </div>
-    )}
-  </>
   )
 }
 

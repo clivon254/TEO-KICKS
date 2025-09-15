@@ -40,6 +40,7 @@ import Orders from './pages/orders/Orders'
 import OrderDetail from './pages/orders/OrderDetail'
 import AddCoupon from './pages/coupons/AddCoupon'
 import EditCoupon from './pages/coupons/EditCoupon'
+import PaymentStatus from './pages/PaymentStatus'
 
 // Settings Pages
 import Settings from './pages/settings/Settings'
@@ -134,6 +135,7 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route path="/auth/google/callback" element={<GoogleCallback />} />
+            <Route path="/payment-status" element={<PaymentStatus />} />
 
             {/* 404 Page */}
             <Route path="*" element={<NotFound />} />

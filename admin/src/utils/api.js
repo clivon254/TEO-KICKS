@@ -310,6 +310,7 @@ export const paymentAPI = {
     getPaymentById: (paymentId) => api.get(`/payments/${paymentId}`),
     markCashCollected: (paymentId, amount) => api.patch(`/payments/${paymentId}/cash`, { amount }),
     getMpesaStatus: (paymentId) => api.get(`/payments/${paymentId}/mpesa-status`),
+    queryMpesaByCheckoutId: (checkoutRequestId) => api.get(`/payments/mpesa-status/${checkoutRequestId}`),
 }
 
 
