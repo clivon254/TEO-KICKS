@@ -10,7 +10,6 @@ export const getProductReviews = async (req, res, next) => {
         const { productId } = req.params
         const { page = 1, limit = 10, sort = '-createdAt' } = req.query
 
-        console.log('getProductReviews called with:', { productId, page, limit, sort })
 
         const skip = (page - 1) * limit
 
@@ -28,7 +27,6 @@ export const getProductReviews = async (req, res, next) => {
             isApproved: true 
         })
 
-        console.log('Found reviews:', { reviewsCount: reviews.length, total })
 
         // Calculate average rating
         const avgRating = await Review.aggregate([
@@ -62,7 +60,6 @@ export const getProductReviews = async (req, res, next) => {
             }
         }
         
-        console.log('Backend sending response:', response)
         res.status(200).json(response)
     } catch (error) {
         next(error)
@@ -78,7 +75,6 @@ export const createReview = async (req, res, next) => {
 
         // Check if user is verified or admin
         const user = await User.findById(userId)
-        console.log('User verification check:', { userId, user: user ? { isVerified: user.isVerified, roles: user.roles } : 'User not found' })
         
         // Temporarily allow all authenticated users for testing
         // if (!user.isVerified && !user.roles.includes('admin')) {
