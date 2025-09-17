@@ -300,6 +300,7 @@ const Checkout = () => {
 
         {/* Step content */}
         <div className="">
+          {/* STEP 0: Location */}
           {currentStep === 0 && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800">Where are you ordering from?</h3>
@@ -312,10 +313,15 @@ const Checkout = () => {
                   }`} 
                   onClick={() => setLocation('in_shop')}
                 >
-                  <div className="text-center">
+                  <div className="flex  gap-x-5">
                     <div className="text-2xl mb-2">🏪</div>
+
+                    <div className="flex flex-col items-start ">
+
                     <div className="font-medium">In Shop</div>
                     <div className="text-sm text-gray-500">Ordering while in the store</div>
+
+                    </div>
                   </div>
                 </button>
                 <button 
@@ -326,16 +332,22 @@ const Checkout = () => {
                   }`} 
                   onClick={() => setLocation('away')}
                 >
-                  <div className="text-center">
+                  <div className="flex  gap-x-5">
                     <div className="text-2xl mb-2">🏠</div>
+                    <div className="flex flex-col items-start ">
+                    
+                    <div className="flex flex-col items-start ">
                     <div className="font-medium">Away</div>
                     <div className="text-sm text-gray-500">Ordering from home or office</div>
+                    </div>
+                    </div>
                   </div>
                 </button>
               </div>
             </div>
           )}
 
+          {/* STEP 1: Order Type */}
           {currentStep === 1 && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800">How would you like to receive your order?</h3>
@@ -348,10 +360,13 @@ const Checkout = () => {
                   }`} 
                   onClick={() => setOrderType('pickup')}
                 >
-                  <div className="text-center">
+                  <div className="flex i gap-x-5">
                     <div className="text-2xl mb-2">📦</div>
-                    <div className="font-medium">Pickup</div>
-                    <div className="text-sm text-gray-500">Collect from store</div>
+                    <div className="flex flex-col items-start ">
+                      <div className="font-medium">Pickup</div>
+                      <div className="text-sm text-gray-500">Collect from store</div>
+                    
+                    </div>
                   </div>
                 </button>
                 <button 
@@ -362,16 +377,19 @@ const Checkout = () => {
                   }`} 
                   onClick={() => setOrderType('delivery')}
                 >
-                  <div className="text-center">
+                  <div className="flex  gap-x-5">
                     <div className="text-2xl mb-2">🚚</div>
-                    <div className="font-medium">Delivery</div>
-                    <div className="text-sm text-gray-500">Delivered to your address</div>
+                    <div className="flex flex-col items-start ">
+                      <div className="font-medium">Delivery</div>
+                      <div className="text-sm text-gray-500">Delivered to your address</div>
+                    </div>
                   </div>
                 </button>
               </div>
             </div>
           )}
 
+          {/* STEP 2: Packaging */}
           {currentStep === 2 && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800">Packaging Options</h3>
@@ -387,6 +405,7 @@ const Checkout = () => {
             </div>
           )}
 
+          {/* STEP 3: Timing */}
           {currentStep === 3 && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800">When would you like your order?</h3>
@@ -436,6 +455,7 @@ const Checkout = () => {
             </div>
           )}
 
+          {/* STEP 4: Address */}
           {currentStep === 4 && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800">Delivery Address</h3>
@@ -463,6 +483,7 @@ const Checkout = () => {
             </div>
           )}
 
+          {/* STEP 5: Payment */}
           {currentStep === 5 && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-800">Payment Method</h3>
@@ -477,10 +498,12 @@ const Checkout = () => {
                     }`} 
                     onClick={() => setPaymentMode('post_to_bill')}
                   >
-                    <div className="text-center">
+                    <div className="flex  gap-x-5">
                       <div className="text-2xl mb-2">📋</div>
+                      <div className="flex flex-col items-start ">
                       <div className="font-medium">Post to Bill</div>
                       <div className="text-sm text-gray-500">Pay later</div>
+                      </div>
                     </div>
                   </button>
                   
@@ -492,11 +515,14 @@ const Checkout = () => {
                     }`} 
                     onClick={() => setPaymentMode('pay_now')}
                   >
-                    <div className="text-center">
+                    <div className="flex  gap-x-5">
                       <div className="text-2xl mb-2">💳</div>
+                      <div className="flex flex-col items-start ">
                       <div className="font-medium">Pay Now</div>
                       <div className="text-sm text-gray-500">Pay immediately</div>
+                     </div>
                     </div>
+
                   </button>
                 </div>
 
@@ -512,9 +538,9 @@ const Checkout = () => {
                         }`} 
                         onClick={() => setPaymentMethod('cash')}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className="text-xl">💵</div>
-                          <div>
+                        <div className="flex  gap-x-5">
+                          <div className="text-2xl mb-2">💵</div>
+                          <div className="flex flex-col items-start ">
                             <div className="font-medium">Cash</div>
                             <div className="text-sm text-gray-500">Pay on delivery</div>
                           </div>
@@ -529,9 +555,9 @@ const Checkout = () => {
                         }`} 
                         onClick={() => setPaymentMethod('mpesa_stk')}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className="text-xl">📱</div>
-                          <div>
+                        <div className="flex  gap-x-5">
+                          <div className="text-2xl mb-2">📱</div>
+                          <div className="flex flex-col items-start ">
                             <div className="font-medium">M-Pesa</div>
                             <div className="text-sm text-gray-500">STK Push</div>
                           </div>
@@ -546,9 +572,9 @@ const Checkout = () => {
                         }`} 
                         onClick={() => setPaymentMethod('paystack_card')}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className="text-xl">💳</div>
-                          <div>
+                        <div className="flex  gap-x-5">
+                          <div className="text-2xl mb-2">💳</div>
+                          <div className="flex flex-col items-start ">
                             <div className="font-medium">Card</div>
                             <div className="text-sm text-gray-500">Visa/Mastercard</div>
                           </div>
@@ -585,6 +611,7 @@ const Checkout = () => {
             </div>
           )}
 
+          {/* STEP 6: Summary */}
           {currentStep === 6 && (
             <div className="space-y-6">
               <div className="flex items-center gap-2 mb-4">
@@ -682,8 +709,7 @@ const Checkout = () => {
         <div className="flex items-center justify-between mt-10">
           <button 
             className="btn-outline flex items-center gap-2" 
-            onClick={back} 
-            disabled={currentStep === 0}
+            onClick={() => currentStep === 0 ? navigate('/cart') : back()}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -733,6 +759,7 @@ const Checkout = () => {
 
 
 export default Checkout
+
 
 
 
