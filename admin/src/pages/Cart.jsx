@@ -229,9 +229,9 @@ const Cart = () => {
                     </span>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className=" space-y-8">
                     {/* Cart Items */}
-                    <div className="lg:col-span-2">
+                    <div className="">
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                             <div className="p-6">
                                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Cart Items</h2>
@@ -373,7 +373,7 @@ const Cart = () => {
                     </div>
 
                     {/* Cart Summary */}
-                    <div className="lg:col-span-1">
+                    <div className="">
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-4">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">Cart Summary</h2>
 

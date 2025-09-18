@@ -71,7 +71,7 @@ const Sidebar = ({ isSidebarOpen = false, toggleSidebar = () => {} }) => {
                     transform transition-transform duration-300
                     flex flex-col
                     ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-                    lg:static lg:translate-x-0 lg:w-[25%] lg:max-w-56 lg:h-full lg:shadow-none lg:border-r-4 lg:bg-light
+                    lg:static lg:translate-x-0 lg:w-[25%] lg:max-w-56 lg:h-full lg:shadow-none lg:border-r-4
                     overflow-hidden
                 `}
                 style={{ minWidth: "180px", maxWidth: "280px" }}
@@ -172,7 +172,7 @@ const Sidebar = ({ isSidebarOpen = false, toggleSidebar = () => {} }) => {
                             </nav>
 
                 {/* Bottom section - absolutely positioned */}
-                        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
+                <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white lg:bg-light">
                             <div className="space-y-2">
                                 {/* Settings button */}
                                 <NavLink
