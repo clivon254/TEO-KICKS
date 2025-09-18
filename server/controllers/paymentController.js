@@ -113,8 +113,10 @@ export const mpesaWebhook = async (req, res, next) => {
   try {
     const io = req.app.get('io')
 
-    const payload = req.body || {}
+    const payload = req.body 
+
     const parsed = parseDarajaCallback(payload)
+
     if (!parsed.valid) return res.status(400).json({ success: false, message: 'Invalid payload' })
 
     const payment = await Payment.findOne({ 'processorRefs.daraja.checkoutRequestId': parsed.checkoutRequestId })

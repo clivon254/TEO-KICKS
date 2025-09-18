@@ -49,7 +49,8 @@ const PaymentStatus = () => {
 
     // Socket.IO subscription (real-time updates)
     try {
-      const baseUrl = (import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '')
+      const baseUrl = import.meta?.env?.VITE_API_BASE_URL 
+      
       socketRef.current = io(baseUrl, { 
         transports: ['websocket', 'polling'], 
         withCredentials: false,
@@ -167,6 +168,7 @@ const PaymentStatus = () => {
       
       clearPaymentTimers()
     }, 75 * 1000)
+
   }
 
   useEffect(() => {

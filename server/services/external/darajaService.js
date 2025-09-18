@@ -99,7 +99,7 @@ export const initiateStkPush = async ({ amount, phone, accountReference, callbac
 
 
 export const parseCallback = (body) => {
-  const stk = body?.Body?.stkCallback
+  const stk = body?.Body?.stkCallback || {}
   if (!stk) return { valid: false }
 
   const resultCode = stk.ResultCode
@@ -109,6 +109,9 @@ export const parseCallback = (body) => {
   let amount = null
   let phone = null
   const items = stk?.CallbackMetadata?.Item || []
+
+  console.log(stk?.CallbackMetadata)
+
   for (const item of items) {
     if (item?.Name === 'Amount') amount = item?.Value
     if (item?.Name === 'PhoneNumber') phone = item?.Value
@@ -120,7 +123,8 @@ export const parseCallback = (body) => {
     checkoutRequestId,
     amount,
     phone,
-    raw: body
+    raw: body,
+    stk
   }
 }
 

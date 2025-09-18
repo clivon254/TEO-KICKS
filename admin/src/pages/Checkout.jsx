@@ -3,16 +3,17 @@ import { useNavigate } from 'react-router-dom'
 import { cartAPI, orderAPI, paymentAPI } from '../utils/api'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
+import { FiEdit2, FiShoppingBag, FiClock, FiCreditCard, FiList } from 'react-icons/fi'
 
 
-const steps = [
-  'Location',
-  'Order Type',
-  'Packaging',
-  'Timing',
-  'Address',
-  'Payment',
-  'Summary',
+const ALL_STEPS = [
+  { key: 'location', label: 'Location' },
+  { key: 'orderType', label: 'Order Type' },
+  { key: 'packaging', label: 'Packaging' },
+  { key: 'timing', label: 'Timing' },
+  { key: 'address', label: 'Address' },
+  { key: 'payment', label: 'Payment' },
+  { key: 'summary', label: 'Summary' },
 ]
 
 
@@ -30,9 +31,9 @@ const ProgressBar = ({ currentStep, totalSteps }) => {
 
 
 
-const CheckmarksRow = ({ current }) => {
+const CheckmarksRow = ({ current, steps }) => {
   return (
-    <div className="flex items-center justify-center gap-2 mb-4">
+    <div className="flex items-center justify-between gap-2 mb-4">
       {steps.map((_, idx) => (
         <div key={idx} className="flex items-center">
           <div className={` w-5 h-5 sm:w-8 sm:h-8 text-xs sm:text-sm md:text-base  font-semibold rounded-full flex items-center justify-center ${
@@ -51,7 +52,7 @@ const CheckmarksRow = ({ current }) => {
           {idx < steps.length - 1 && (
             <div className={`sm:w-12 h-0.5 mx-2 ${
               idx < current ? 'bg-primary' : 'bg-gray-200'
-            }`}></div>
+            }`}/>
           )}
         </div>
       ))}
@@ -125,7 +126,7 @@ const Checkout = () => {
   // Cart protection - redirect to cart if empty
   useEffect(() => {
     if (cart && (!cart.items || cart.items.length === 0)) {
-      toast.error('Your cart is empty')
+      //toast.error('Your cart is empty')
       navigate('/cart')
     }
   }, [cart, navigate])
@@ -148,8 +149,41 @@ const Checkout = () => {
     return { subtotal, total: subtotal }
   }, [cart])
 
-  const next = () => setCurrentStep((s) => Math.min(s + 1, steps.length - 1))
-  const back = () => setCurrentStep((s) => Math.max(s - 1, 0))
+  const formatVariantOptions = (variantOptions) => {
+    if (!variantOptions || Object.keys(variantOptions).length === 0) return null
+    return Object.entries(variantOptions).map(([k, v]) => `${k}: ${v}`).join(', ')
+  }
+
+  const gotoStep = (key) => {
+    const idx = activeSteps.findIndex((s) => s.key === key)
+    if (idx >= 0) setCurrentStep(idx)
+  }
+
+  const activeSteps = useMemo(() => {
+    const isPickup = orderType === 'pickup'
+    if (isPickup) {
+      return ALL_STEPS.filter((s) => s.key !== 'address')
+    }
+    return ALL_STEPS
+  }, [orderType])
+
+  const currentStepKey = activeSteps[currentStep]?.key
+
+
+  const next = () => {
+    setCurrentStep((s) => Math.min(s + 1, activeSteps.length - 1))
+  }
+
+
+  const back = () => {
+    setCurrentStep((s) => Math.max(s - 1, 0))
+  }
+
+  useEffect(() => {
+    if (currentStep >= activeSteps.length) {
+      setCurrentStep(Math.max(0, activeSteps.length - 1))
+    }
+  }, [activeSteps, currentStep])
 
   const createOrder = async () => {
     try {
@@ -286,21 +320,22 @@ const Checkout = () => {
       <div className="max-w-4xl mx-auto">
       <h1 className="title3">Checkout</h1>
         <div className="flex items-center justify-between mb-6">
-        <h1 className="text-sm text-primary font-semibold">{steps[currentStep]}</h1>
+        <h1 className="text-sm text-primary font-semibold">{activeSteps[currentStep]?.label}</h1>
           <div className="text-xs text-gray-600">
-            Step {currentStep + 1} of {steps.length}
+            Step {currentStep + 1} of {activeSteps.length}
           </div>
         </div>
 
         {/* Progress Bar */}
-        <ProgressBar currentStep={currentStep} totalSteps={steps.length} />
+        <ProgressBar currentStep={currentStep} totalSteps={activeSteps.length} />
 
         {/* Checkmarks Row */}
-        <CheckmarksRow current={currentStep} />
+        <CheckmarksRow current={currentStep} steps={activeSteps} />
 
         {/* Step content */}
         <div className="">
-          {currentStep === 0 && (
+          {/* STEP 0: Location */}
+          {currentStepKey === 'location' && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800">Where are you ordering from?</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -312,10 +347,15 @@ const Checkout = () => {
                   }`} 
                   onClick={() => setLocation('in_shop')}
                 >
-                  <div className="text-center">
+                  <div className="flex  gap-x-5">
                     <div className="text-2xl mb-2">🏪</div>
+
+                    <div className="flex flex-col items-start ">
+
                     <div className="font-medium">In Shop</div>
                     <div className="text-sm text-gray-500">Ordering while in the store</div>
+
+                    </div>
                   </div>
                 </button>
                 <button 
@@ -326,17 +366,23 @@ const Checkout = () => {
                   }`} 
                   onClick={() => setLocation('away')}
                 >
-                  <div className="text-center">
+                  <div className="flex  gap-x-5">
                     <div className="text-2xl mb-2">🏠</div>
+                    <div className="flex flex-col items-start ">
+                    
+                    <div className="flex flex-col items-start ">
                     <div className="font-medium">Away</div>
                     <div className="text-sm text-gray-500">Ordering from home or office</div>
+                    </div>
+                    </div>
                   </div>
                 </button>
               </div>
             </div>
           )}
 
-          {currentStep === 1 && (
+          {/* STEP 1: Order Type */}
+          {currentStepKey === 'orderType' && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800">How would you like to receive your order?</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -348,10 +394,13 @@ const Checkout = () => {
                   }`} 
                   onClick={() => setOrderType('pickup')}
                 >
-                  <div className="text-center">
+                  <div className="flex i gap-x-5">
                     <div className="text-2xl mb-2">📦</div>
-                    <div className="font-medium">Pickup</div>
-                    <div className="text-sm text-gray-500">Collect from store</div>
+                    <div className="flex flex-col items-start ">
+                      <div className="font-medium">Pickup</div>
+                      <div className="text-sm text-gray-500">Collect from store</div>
+                    
+                    </div>
                   </div>
                 </button>
                 <button 
@@ -362,17 +411,20 @@ const Checkout = () => {
                   }`} 
                   onClick={() => setOrderType('delivery')}
                 >
-                  <div className="text-center">
+                  <div className="flex  gap-x-5">
                     <div className="text-2xl mb-2">🚚</div>
-                    <div className="font-medium">Delivery</div>
-                    <div className="text-sm text-gray-500">Delivered to your address</div>
+                    <div className="flex flex-col items-start ">
+                      <div className="font-medium">Delivery</div>
+                      <div className="text-sm text-gray-500">Delivered to your address</div>
+                    </div>
                   </div>
                 </button>
               </div>
             </div>
           )}
 
-          {currentStep === 2 && (
+          {/* STEP 2: Packaging */}
+          {currentStepKey === 'packaging' && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800">Packaging Options</h3>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -387,7 +439,8 @@ const Checkout = () => {
             </div>
           )}
 
-          {currentStep === 3 && (
+          {/* STEP 3: Timing */}
+          {currentStepKey === 'timing' && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800">When would you like your order?</h3>
               <div className="space-y-4">
@@ -436,7 +489,8 @@ const Checkout = () => {
             </div>
           )}
 
-          {currentStep === 4 && (
+          {/* STEP 4: Address */}
+          {currentStepKey === 'address' && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800">Delivery Address</h3>
               {canShowAddress ? (
@@ -463,7 +517,8 @@ const Checkout = () => {
             </div>
           )}
 
-          {currentStep === 5 && (
+          {/* STEP 5: Payment */}
+          {currentStepKey === 'payment' && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-800">Payment Method</h3>
               
@@ -477,10 +532,12 @@ const Checkout = () => {
                     }`} 
                     onClick={() => setPaymentMode('post_to_bill')}
                   >
-                    <div className="text-center">
+                    <div className="flex  gap-x-5">
                       <div className="text-2xl mb-2">📋</div>
+                      <div className="flex flex-col items-start ">
                       <div className="font-medium">Post to Bill</div>
                       <div className="text-sm text-gray-500">Pay later</div>
+                      </div>
                     </div>
                   </button>
                   
@@ -492,11 +549,14 @@ const Checkout = () => {
                     }`} 
                     onClick={() => setPaymentMode('pay_now')}
                   >
-                    <div className="text-center">
+                    <div className="flex  gap-x-5">
                       <div className="text-2xl mb-2">💳</div>
+                      <div className="flex flex-col items-start ">
                       <div className="font-medium">Pay Now</div>
                       <div className="text-sm text-gray-500">Pay immediately</div>
+                     </div>
                     </div>
+
                   </button>
                 </div>
 
@@ -512,9 +572,9 @@ const Checkout = () => {
                         }`} 
                         onClick={() => setPaymentMethod('cash')}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className="text-xl">💵</div>
-                          <div>
+                        <div className="flex  gap-x-5">
+                          <div className="text-2xl mb-2">💵</div>
+                          <div className="flex flex-col items-start ">
                             <div className="font-medium">Cash</div>
                             <div className="text-sm text-gray-500">Pay on delivery</div>
                           </div>
@@ -529,9 +589,9 @@ const Checkout = () => {
                         }`} 
                         onClick={() => setPaymentMethod('mpesa_stk')}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className="text-xl">📱</div>
-                          <div>
+                        <div className="flex  gap-x-5">
+                          <div className="text-2xl mb-2">📱</div>
+                          <div className="flex flex-col items-start ">
                             <div className="font-medium">M-Pesa</div>
                             <div className="text-sm text-gray-500">STK Push</div>
                           </div>
@@ -546,9 +606,9 @@ const Checkout = () => {
                         }`} 
                         onClick={() => setPaymentMethod('paystack_card')}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className="text-xl">💳</div>
-                          <div>
+                        <div className="flex  gap-x-5">
+                          <div className="text-2xl mb-2">💳</div>
+                          <div className="flex flex-col items-start ">
                             <div className="font-medium">Card</div>
                             <div className="text-sm text-gray-500">Visa/Mastercard</div>
                           </div>
@@ -585,92 +645,119 @@ const Checkout = () => {
             </div>
           )}
 
-          {currentStep === 6 && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-4">
+          {/* STEP 6: Summary */}
+          {currentStepKey === 'summary' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-medium">
-                  {steps.length}
+                  {activeSteps.length}
                 </div>
                 <h2 className="text-xl font-semibold text-gray-800">Summary</h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Left Column - Order Details */}
-                <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-medium text-gray-800 mb-3">Fulfillment</h3>
-                    <div className="text-sm text-gray-600">
-                      Method: <span className="font-medium capitalize">{orderType}</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-medium text-gray-800 mb-3">Timing</h3>
-                    <div className="text-sm text-gray-600">
-                      When: <span className="font-medium">
-                        {timing.isScheduled 
-                          ? `Scheduled for ${new Date(timing.scheduledAt).toLocaleString()}` 
-                          : 'Order now (30-45 mins)'
-                        }
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-medium text-gray-800 mb-3">Payment Method</h3>
-                    <div className="text-sm text-gray-600">
-                      Method: <span className="font-medium capitalize">
-                        {paymentMode === 'post_to_bill' ? 'Post to Bill' : 
-                         paymentMode === 'pay_now' ? (
-                           paymentMethod === 'cash' ? 'Cash' :
-                           paymentMethod === 'mpesa_stk' ? 'M-Pesa' : 
-                           paymentMethod === 'paystack_card' ? 'Card' : 'Not selected'
-                         ) : 'Not selected'}
-                      </span>
-                    </div>
-                    {paymentMode === 'pay_now' && paymentMethod === 'mpesa_stk' && payerPhone && (
-                      <div className="text-sm text-gray-600 mt-1">
-                        Phone: <span className="font-medium">{payerPhone}</span>
-                      </div>
-                    )}
-                    {paymentMode === 'pay_now' && paymentMethod === 'paystack_card' && payerEmail && (
-                      <div className="text-sm text-gray-600 mt-1">
-                        Email: <span className="font-medium">{payerEmail}</span>
-                      </div>
-                    )}
+              {/* Order Items (no edit) */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    
+                    <span className="font-medium text-gray-800 flex items-center gap-2">
+                      <FiList className="text-gray-600" /> Order Items
+                    </span>
                   </div>
                 </div>
-
-                {/* Right Column - Price Breakdown */}
-            <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-medium text-gray-800 mb-3">Price Breakdown</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Subtotal:</span>
-                        <span className="font-medium">KES {totals.subtotal.toFixed(0)}</span>
+                <div className="space-y-3">
+                  {(cart?.items || []).map((it) => (
+                    <div key={it._id} className="flex items-start justify-between text-sm">
+                      <div className="min-w-0">
+                        <div className="font-medium text-gray-900 truncate">{it.productId?.title || 'Product'}</div>
+                        {formatVariantOptions(it.variantOptions) && (
+                          <div className="text-gray-500">{formatVariantOptions(it.variantOptions)}</div>
+                        )}
+                        <div className="text-gray-500">Qty: {it.quantity}</div>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Service Charge:</span>
-                        <span className="font-medium">KES 53</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Packaging:</span>
-                        <span className="font-medium">KES 60</span>
-                      </div>
-                      <hr className="my-2" />
-                      <div className="flex justify-between text-base font-semibold">
-                        <span>Total:</span>
-                        <span>KES {(totals.subtotal + 53 + 60).toFixed(0)}</span>
-                      </div>
+                      <div className="font-medium text-gray-900">KES {(it.price * it.quantity).toFixed(0)}</div>
                     </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Fulfillment */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    
+                    <span className="font-medium text-gray-800 flex items-center gap-2">
+                      <FiShoppingBag className="text-gray-600" /> Fulfillment
+                    </span>
                   </div>
+                  <button onClick={() => gotoStep('orderType')} className="text-gray-400 hover:text-gray-600">
+                    <FiEdit2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="text-sm text-gray-600">
+                  Method: <span className="font-medium capitalize">{orderType}</span>
+                </div>
+              </div>
 
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <h3 className="font-medium text-green-800 mb-2">Order Items</h3>
-                    <div className="text-sm text-green-700">
-                      {cart?.items?.length || 0} item{(cart?.items?.length || 0) !== 1 ? 's' : ''} in your order
-                    </div>
+              {/* Timing */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    
+                    <span className="font-medium text-gray-800 flex items-center gap-2">
+                      <FiClock className="text-gray-600" /> Timing
+                    </span>
+                  </div>
+                  <button onClick={() => gotoStep('timing')} className="text-gray-400 hover:text-gray-600">
+                    <FiEdit2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="text-sm text-gray-600">
+                  When: <span className="font-medium">{timing.isScheduled ? `Scheduled for ${new Date(timing.scheduledAt).toLocaleString()}` : 'Order now (30-45 mins)'}</span>
+                </div>
+              </div>
+
+              {/* Payment Method */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    
+                    <span className="font-medium text-gray-800 flex items-center gap-2">
+                      <FiCreditCard className="text-gray-600" /> Payment Method
+                    </span>
+                  </div>
+                  <button onClick={() => gotoStep('payment')} className="text-gray-400 hover:text-gray-600">
+                    <FiEdit2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="text-sm text-gray-600">
+                  Method: <span className="font-medium capitalize">{paymentMode === 'post_to_bill' ? 'Post to Bill' : paymentMode === 'pay_now' ? (paymentMethod === 'cash' ? 'Cash' : paymentMethod === 'mpesa_stk' ? 'M-Pesa' : paymentMethod === 'paystack_card' ? 'Card' : 'Not selected') : 'Not selected'}</span>
+                </div>
+                {paymentMode === 'pay_now' && paymentMethod === 'mpesa_stk' && payerPhone && (
+                  <div className="text-sm text-gray-600 mt-1">Phone: <span className="font-medium">{payerPhone}</span></div>
+                )}
+                {paymentMode === 'pay_now' && paymentMethod === 'paystack_card' && payerEmail && (
+                  <div className="text-sm text-gray-600 mt-1">Email: <span className="font-medium">{payerEmail}</span></div>
+                )}
+              </div>
+
+              {/* Price Breakdown */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    
+                    <span className="font-medium text-gray-800">Price Breakdown</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="font-medium">KES {totals.subtotal.toFixed(0)}</span>
+                  </div>
+                  <hr className="my-2" />
+                  <div className="flex justify-between text-base font-semibold">
+                    <span>Total:</span>
+                    <span>KES {totals.total.toFixed(0)}</span>
                   </div>
                 </div>
               </div>
@@ -682,8 +769,7 @@ const Checkout = () => {
         <div className="flex items-center justify-between mt-10">
           <button 
             className="btn-outline flex items-center gap-2" 
-            onClick={back} 
-            disabled={currentStep === 0}
+            onClick={() => currentStep === 0 ? navigate('/cart') : back()}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -691,7 +777,7 @@ const Checkout = () => {
             Back
           </button>
 
-          {currentStep < steps.length - 1 ? (
+          {currentStep < activeSteps.length - 1 ? (
             <button 
               className="btn-primary flex items-center gap-2" 
               onClick={next}
@@ -733,6 +819,7 @@ const Checkout = () => {
 
 
 export default Checkout
+
 
 
 
