@@ -32,7 +32,7 @@ const ProgressBar = ({ currentStep, totalSteps }) => {
 
 const CheckmarksRow = ({ current }) => {
   return (
-    <div className="flex items-center justify-center gap-2 mb-4">
+    <div className="flex items-center justify-between gap-2 mb-4">
       {steps.map((_, idx) => (
         <div key={idx} className="flex items-center">
           <div className={` w-5 h-5 sm:w-8 sm:h-8 text-xs sm:text-sm md:text-base  font-semibold rounded-full flex items-center justify-center ${
@@ -148,8 +148,35 @@ const Checkout = () => {
     return { subtotal, total: subtotal }
   }, [cart])
 
-  const next = () => setCurrentStep((s) => Math.min(s + 1, steps.length - 1))
-  const back = () => setCurrentStep((s) => Math.max(s - 1, 0))
+  const shouldSkipAddress = location === 'in_shop' && orderType === 'pickup'
+
+
+  const next = () => {
+    setCurrentStep((s) => {
+      let nextStep = Math.min(s + 1, steps.length - 1)
+      if (shouldSkipAddress && nextStep === 4) {
+        nextStep = 5
+      }
+      return nextStep
+    })
+  }
+
+
+  const back = () => {
+    setCurrentStep((s) => {
+      let prevStep = Math.max(s - 1, 0)
+      if (shouldSkipAddress && (s === 5 || prevStep === 4)) {
+        prevStep = 3
+      }
+      return prevStep
+    })
+  }
+
+  useEffect(() => {
+    if (shouldSkipAddress && currentStep === 4) {
+      setCurrentStep(5)
+    }
+  }, [shouldSkipAddress, currentStep])
 
   const createOrder = async () => {
     try {
@@ -614,13 +641,9 @@ const Checkout = () => {
           {/* STEP 6: Summary */}
           {currentStep === 6 && (
             <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-medium">
-                  {steps.length}
-                </div>
-                <h2 className="text-xl font-semibold text-gray-800">Summary</h2>
-              </div>
-
+                  
+              <h2 className="text-xl font-semibold text-gray-800">Summary</h2>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left Column - Order Details */}
                 <div className="space-y-4">
