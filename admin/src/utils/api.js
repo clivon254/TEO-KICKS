@@ -318,6 +318,21 @@ export const receiptAPI = {
     getReceiptById: (receiptId) => api.get(`/receipts/${receiptId}`),
 }
 
+// Packaging API calls
+export const packagingAPI = {
+    // Admin list/search/filter/sort
+    getPackaging: (params) => api.get('/packaging', { params }),
+    getById: (id) => api.get(`/packaging/${id}`),
+    create: (data) => api.post('/packaging', data),
+    update: (id, data) => api.patch(`/packaging/${id}`, data),
+    remove: (id) => api.delete(`/packaging/${id}`),
+    setDefault: (id) => api.patch(`/packaging/${id}/default`),
+
+    // Public for checkout
+    getActivePublic: () => api.get('/packaging/public'),
+    getDefaultPublic: () => api.get('/packaging/public/default'),
+}
+
 // Review API calls
 export const reviewAPI = {
     // Get reviews for a product

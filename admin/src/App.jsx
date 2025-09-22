@@ -41,6 +41,9 @@ import OrderDetail from './pages/orders/OrderDetail'
 import AddCoupon from './pages/coupons/AddCoupon'
 import EditCoupon from './pages/coupons/EditCoupon'
 import PaymentStatus from './pages/PaymentStatus'
+import Packaging from './pages/packaging/Packaging'
+import AddPackaging from './pages/packaging/AddPackaging'
+import EditPackaging from './pages/packaging/EditPackaging'
 
 // Settings Pages
 import Settings from './pages/settings/Settings'
@@ -100,6 +103,9 @@ function App() {
               <Route path="/coupons" element={<Coupons />} />
               <Route path="/coupons/add" element={<AddCoupon />} />
               <Route path="/coupons/:couponId/edit" element={<EditCoupon />} />
+              <Route path="/packaging" element={<Packaging />} />
+              <Route path="/packaging/add" element={<AddPackaging />} />
+              <Route path="/packaging/:id/edit" element={<EditPackaging />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/orders/:id" element={<OrderDetail />} />
