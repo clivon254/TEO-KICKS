@@ -2,6 +2,7 @@ import Order from "../models/orderModel.js"
 import Invoice from "../models/invoiceModel.js"
 import Cart from "../models/cartModel.js"
 import Product from "../models/productModel.js"
+import PackagingOption from "../models/packagingOptionModel.js"
 
 
 // Helper: generate incremental-ish numbers (placeholder; replace with robust generator)
@@ -19,6 +20,7 @@ export const createOrder = async (req, res, next) => {
       timing = { isScheduled: false, scheduledAt: null },
       addressId = null,
       paymentPreference,
+      packagingOptionId = null,
       packagingSelections = [],
       cartId = null,
       metadata = {}
@@ -36,9 +38,9 @@ export const createOrder = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Cart is empty' })
     }
 
-    // Map packaging selections for quick lookup
+    // Map per-item packaging selections (not primary path; order-level selection preferred)
     const packagingMap = new Map()
-    for (const sel of packagingSelections) {
+    for (const sel of (packagingSelections || [])) {
       if (sel?.skuId && sel?.choiceId) packagingMap.set(String(sel.skuId), sel.choiceId)
     }
 
@@ -55,12 +57,24 @@ export const createOrder = async (req, res, next) => {
       variantOptions: ci.variantOptions || {},
       quantity: ci.quantity,
       unitPrice: ci.price,
+      // keep optional per-item snapshot if provided; fee is captured at order level
       packagingChoice: packagingMap.has(String(ci.skuId)) ? { id: packagingMap.get(String(ci.skuId)), name: null, fee: 0 } : undefined
     }))
 
+    // Resolve packaging option (order-level)
+    let selectedPackaging = null
+    if (packagingOptionId) {
+      const opt = await PackagingOption.findOne({ _id: packagingOptionId, isActive: true })
+      if (opt) selectedPackaging = { id: String(opt._id), name: opt.name, price: opt.price }
+    }
+    if (!selectedPackaging) {
+      const def = await PackagingOption.findOne({ isActive: true, isDefault: true })
+      if (def) selectedPackaging = { id: String(def._id), name: def.name, price: def.price }
+    }
+
     // Recalculate pricing
     const subtotal = items.reduce((sum, it) => sum + (it.unitPrice * it.quantity), 0)
-    const packagingFee = items.reduce((sum, it) => sum + (it.packagingChoice?.fee || 0), 0)
+    const packagingFee = selectedPackaging ? Number(selectedPackaging.price || 0) : 0
     const schedulingFee = timing?.isScheduled ? 0 : 0 // TODO: derive from config
     const deliveryFee = (type === 'delivery') ? 0 : 0 // TODO: compute distance-based
     const discounts = 0 // TODO: apply coupons if any
@@ -80,7 +94,10 @@ export const createOrder = async (req, res, next) => {
       paymentPreference,
       status: 'PLACED',
       paymentStatus: paymentPreference?.mode === 'pay_now' ? 'PENDING' : 'UNPAID',
-      metadata
+      metadata: {
+        ...metadata,
+        packaging: selectedPackaging || null
+      }
     })
 
     // Create Invoice linked to Order
@@ -89,7 +106,7 @@ export const createOrder = async (req, res, next) => {
       number: generateInvoiceNumber(),
       lineItems: [
         { label: 'Items subtotal', amount: subtotal },
-        ...(packagingFee ? [{ label: 'Packaging', amount: packagingFee }] : []),
+        ...(packagingFee ? [{ label: `Packaging${selectedPackaging?.name ? ` - ${selectedPackaging.name}` : ''}`, amount: packagingFee }] : []),
         ...(schedulingFee ? [{ label: 'Scheduling', amount: schedulingFee }] : []),
         ...(deliveryFee ? [{ label: 'Delivery', amount: deliveryFee }] : []),
         ...(tax ? [{ label: 'Tax', amount: tax }] : [])
