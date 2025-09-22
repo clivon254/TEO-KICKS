@@ -3,6 +3,7 @@ import Invoice from "../models/invoiceModel.js"
 import Cart from "../models/cartModel.js"
 import Product from "../models/productModel.js"
 import PackagingOption from "../models/packagingOptionModel.js"
+import Coupon from "../models/couponModel.js"
 
 
 // Helper: generate incremental-ish numbers (placeholder; replace with robust generator)
@@ -22,6 +23,7 @@ export const createOrder = async (req, res, next) => {
       paymentPreference,
       packagingOptionId = null,
       packagingSelections = [],
+      couponCode = null,
       cartId = null,
       metadata = {}
     } = req.body || {}
@@ -77,7 +79,28 @@ export const createOrder = async (req, res, next) => {
     const packagingFee = selectedPackaging ? Number(selectedPackaging.price || 0) : 0
     const schedulingFee = timing?.isScheduled ? 0 : 0 // TODO: derive from config
     const deliveryFee = (type === 'delivery') ? 0 : 0 // TODO: compute distance-based
-    const discounts = 0 // TODO: apply coupons if any
+    // Apply coupon discount if provided
+    let couponSnapshot = null
+    let discounts = 0
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ code: String(couponCode).toUpperCase() })
+      if (coupon) {
+        // Validate against current user and subtotal
+        const validation = coupon.validateCoupon(String(ownerCustomerId), subtotal)
+        if (validation.isValid) {
+          const discountAmount = coupon.calculateDiscount(subtotal)
+          discounts = Math.max(0, Number(discountAmount) || 0)
+          couponSnapshot = {
+            _id: coupon._id,
+            code: coupon.code,
+            name: coupon.name,
+            discountType: coupon.discountType,
+            discountValue: coupon.discountValue,
+            discountAmount: discounts
+          }
+        }
+      }
+    }
     const tax = 0 // TODO: compute from config
     const total = subtotal - discounts + packagingFee + schedulingFee + deliveryFee + tax
 
@@ -96,7 +119,8 @@ export const createOrder = async (req, res, next) => {
       paymentStatus: paymentPreference?.mode === 'pay_now' ? 'PENDING' : 'UNPAID',
       metadata: {
         ...metadata,
-        packaging: selectedPackaging || null
+        packaging: selectedPackaging || null,
+        coupon: couponSnapshot || null
       }
     })
 
@@ -112,15 +136,29 @@ export const createOrder = async (req, res, next) => {
         ...(tax ? [{ label: 'Tax', amount: tax }] : [])
       ],
       subtotal,
+      discounts,
       fees: packagingFee + schedulingFee + deliveryFee,
       tax,
       total,
       balanceDue: total,
-      paymentStatus: 'PENDING'
+      paymentStatus: 'PENDING',
+      metadata: {
+        coupon: couponSnapshot || null
+      }
     })
 
     order.invoiceId = invoice._id
     await order.save()
+
+    // Mark coupon as used (increment usage) on order creation if applied
+    if (couponSnapshot) {
+      try {
+        const c = await Coupon.findById(couponSnapshot._id)
+        if (c) await c.incrementUsage(String(ownerCustomerId))
+      } catch (_) {
+        // Do not block order on coupon usage write
+      }
+    }
 
     // Optionally mark cart converted
     cart.status = 'converted'

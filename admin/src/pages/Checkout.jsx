@@ -79,6 +79,15 @@ const Checkout = () => {
   const [addressId, setAddressId] = useState(null)
   const [paymentMode, setPaymentMode] = useState('post_to_bill')
   const [paymentMethod, setPaymentMethod] = useState(null) // mpesa_stk | paystack_card | null
+  // Coupon: load from localStorage if set by Cart page
+  const [coupon, setCoupon] = useState(() => {
+    try {
+      const raw = localStorage.getItem('appliedCoupon')
+      return raw ? JSON.parse(raw) : null
+    } catch {
+      return null
+    }
+  })
   // Format phone number to M-Pesa format (254XXXXXXXXX)
   const formatPhoneForMpesa = (phone) => {
     if (!phone) return ''
@@ -119,6 +128,12 @@ const Checkout = () => {
       try {
         const res = await cartAPI.getCart()
         setCart(res.data?.data)
+        // If no items, clear persisted coupon
+        const items = res.data?.data?.items || []
+        if (!items || items.length === 0) {
+          try { localStorage.removeItem('appliedCoupon') } catch {}
+          setCoupon(null)
+        }
       } catch (e) {
         toast.error('Failed to load cart')
       } finally {
@@ -160,9 +175,10 @@ const Checkout = () => {
     const items = cart?.items || []
     const subtotal = items.reduce((sum, it) => sum + (it.price * it.quantity), 0)
     const packagingFee = canShowPackaging ? Number((packagingOptions.find(p => p._id === selectedPackagingId)?.price) || 0) : 0
-    const total = subtotal + packagingFee
-    return { subtotal, packagingFee, total }
-  }, [cart])
+    const discount = Math.min(subtotal, Math.max(0, Number(coupon?.discountAmount || 0)))
+    const total = subtotal + packagingFee - discount
+    return { subtotal, packagingFee, discount, total }
+  }, [cart, canShowPackaging, packagingOptions, selectedPackagingId, coupon])
 
   const formatVariantOptions = (variantOptions) => {
     if (!variantOptions || Object.keys(variantOptions).length === 0) return null
@@ -214,6 +230,7 @@ const Checkout = () => {
           method: paymentMode === 'pay_now' ? paymentMethod : null,
         },
         packagingOptionId: canShowPackaging ? selectedPackagingId : null,
+        couponCode: coupon?.code || null,
         cartId: null,
         metadata: {},
       }
@@ -800,6 +817,12 @@ const Checkout = () => {
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Packaging:</span>
                       <span className="font-medium">KES {Number(totals.packagingFee || 0).toFixed(0)}</span>
+                    </div>
+                  )}
+                  {coupon?.code && (
+                    <div className="flex justify-between text-sm text-green-700">
+                      <span>Coupon ({coupon.code}):</span>
+                      <span>- KES {Number(totals.discount || 0).toFixed(0)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-base font-semibold mt-2">

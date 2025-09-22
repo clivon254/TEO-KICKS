@@ -10,7 +10,10 @@ const receiptSchema = new mongoose.Schema({
     amountPaid: { type: Number, required: true, min: 0 },
     paymentMethod: { type: String, enum: ["mpesa_stk", "paystack_card", "cash"], required: true },
     issuedAt: { type: Date, required: true },
-    pdfUrl: { type: String }
+    pdfUrl: { type: String },
+
+    // Optional metadata snapshot (e.g., coupon used)
+    metadata: { type: mongoose.Schema.Types.Mixed, default: {} }
 
 }, { timestamps: true })
 
