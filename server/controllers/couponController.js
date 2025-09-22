@@ -282,13 +282,13 @@ export const validateCoupon = async (req, res, next) => {
     try {
         const { code } = req.body
         const { orderAmount = 0 } = req.query
-        const userId = req.user?.userId
+    const userId = req.user?._id || req.user?.userId
 
         if (!code) {
             return next(errorHandler(400, 'Coupon code is required'))
         }
 
-        const coupon = await Coupon.findOne({ code: code.toUpperCase() })
+    const coupon = await Coupon.findOne({ code: code.toUpperCase() })
 
         if (!coupon) {
             return res.status(200).json({
@@ -298,7 +298,7 @@ export const validateCoupon = async (req, res, next) => {
         }
 
         // Validate coupon
-        const validation = coupon.validateCoupon(userId, parseFloat(orderAmount))
+    const validation = coupon.validateCoupon(userId ? String(userId) : null, parseFloat(orderAmount))
 
         if (!validation.isValid) {
             return res.status(200).json({

@@ -43,7 +43,10 @@ export const applySuccessfulPayment = async ({ invoice, payment, io, method }) =
     amountPaid: payment.amount,
     paymentMethod: method,
     issuedAt: new Date(),
-    pdfUrl: null
+    pdfUrl: null,
+    metadata: {
+      coupon: invoice?.metadata?.coupon || null
+    }
   })
 
   if (order) {

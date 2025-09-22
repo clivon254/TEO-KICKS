@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGetCart, useUpdateCartItem, useRemoveFromCart, useClearCart } from '../hooks/useCart'
 import { useValidateCoupon, useApplyCoupon } from '../hooks/useCoupons'
@@ -69,6 +69,8 @@ const Cart = () => {
         return calculateSubtotal - discountAmount
     }, [calculateSubtotal, discountAmount])
 
+    const hasValidTotal = useMemo(() => finalTotal > 0, [finalTotal])
+
     // Memoize event handlers to prevent child component re-renders
     const handleQuantityChange = useCallback(async (skuId, newQuantity) => {
         if (newQuantity < 1) {
@@ -126,12 +128,16 @@ const Cart = () => {
             })
 
             if (result.data.success) {
-            
-                setAppliedCoupon({
+
+                const applied = {
                     code: result.data.data.coupon.code,
                     discountAmount: result.data.data.discountAmount,
-                    name: result.data.data.coupon.name
-                })
+                    name: result.data.data.coupon.name,
+                    discountType: result.data.data.coupon.discountType,
+                    discountValue: result.data.data.coupon.discountValue
+                }
+                setAppliedCoupon(applied)
+                try { localStorage.setItem('appliedCoupon', JSON.stringify(applied)) } catch {}
                 toast.success(`Coupon "${result.data.data.coupon.name}" applied successfully!`)
                 setCouponCode('')
 
@@ -149,12 +155,48 @@ const Cart = () => {
 
     const handleRemoveCoupon = useCallback(() => {
         setAppliedCoupon(null)
+        try { localStorage.removeItem('appliedCoupon') } catch {}
         toast.success('Coupon removed successfully')
     }, [])
 
     const handleCheckout = useCallback(() => {
+        if (!hasValidTotal) {
+            toast.error('Total should be above zero')
+            return
+        }
+
         navigate('/checkout')
-    }, [navigate])
+    }, [navigate, hasValidTotal])
+
+    // Re-validate applied coupon when subtotal changes to keep discount accurate
+    useEffect(() => {
+        const revalidate = async () => {
+            if (!appliedCoupon?.code) return
+
+            try {
+                const res = await validateCoupon.mutateAsync({
+                    code: appliedCoupon.code,
+                    orderAmount: calculateSubtotal
+                })
+
+                if (res?.data?.success) {
+                    setAppliedCoupon((prev) => prev ? {
+                        ...prev,
+                        discountAmount: res.data.data.discountAmount
+                    } : prev)
+                } else {
+                    // If coupon is no longer valid, remove it
+                    setAppliedCoupon(null)
+                }
+            } catch (e) {
+                // Keep previous coupon state on transient errors
+                console.error('Coupon revalidation failed:', e)
+            }
+        }
+
+        revalidate()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [calculateSubtotal])
 
 
 
@@ -438,7 +480,15 @@ const Cart = () => {
                                 {appliedCoupon ? (
                                     <>
                                         <div className="flex justify-between text-sm text-green-600">
-                                            <span>Discount ({appliedCoupon.name})</span>
+                                            <span>
+                                                Discount (
+                                                KSh {discountAmount.toFixed(2)} /
+                                                {' '}
+                                                {appliedCoupon.discountType === 'percent'
+                                                    ? `${appliedCoupon.discountValue}%`
+                                                    : `KSh ${Number(appliedCoupon.discountValue || 0).toFixed(2)}`}
+                                                )
+                                            </span>
                                             <span className="font-medium">-KSh {discountAmount.toFixed(2)}</span>
                                         </div>
 
@@ -462,12 +512,15 @@ const Cart = () => {
                                         </div>
                                     </div>
                                 )}
+                                {!hasValidTotal && (
+                                    <p className="text-sm text-red-600 mt-2">Total should be above zero</p>
+                                )}
                             </div>
                             
                             <button
                                 onClick={handleCheckout}
                                 className="w-full btn-primary py-3"
-                                disabled={cartItems.length === 0}
+                                disabled={cartItems.length === 0 || !hasValidTotal}
                             >
                                 Proceed to Checkout
                             </button>
