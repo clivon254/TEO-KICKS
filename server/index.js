@@ -29,8 +29,7 @@ import receiptRoute from "./routes/receiptRoute.js"
 import reviewRoute from "./routes/reviewRoute.js"
 import couponRoute from "./routes/couponRoute.js"
 import storeConfigRoute from "./routes/storeConfigRoute.js"
-// import orderRoute from "./routes/orderRoute.js"
-// import paymentRoute from "./routes/paymentRoute.js"
+
 
 
 const app = express()
@@ -99,7 +98,7 @@ app.use("/api/reviews", reviewRoute)
 app.use("/api/coupons", couponRoute)
 
 app.use("/api/store-config", storeConfigRoute)
-// app.use("/api/payments", paymentRoute)
+
 
 
 // Swagger Documentation
@@ -113,7 +112,7 @@ const server = createServer(app)
 // Attach Socket.io to the HTTP server
 const io = new Server(server, {
   cors: {
-    origin: [process.env.CORS_ORIGIN],
+    origin:allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
   }
 })
