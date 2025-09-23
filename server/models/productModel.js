@@ -256,13 +256,39 @@ productSchema.methods.generateSKUs = async function() {
     // Generate all possible combinations
     const combinations = this.generateCombinations(variants)
 
-    // Create SKUs for each combination
-    this.skus = combinations.map(combination => ({
-        attributes: combination,
-        price: this.basePrice,
-        stock: 0,
-        skuCode: this.generateSKUCode(combination)
-    }))
+    // Create a map of existing SKUs by their attribute combination for stock preservation
+    const existingSkusMap = new Map()
+    this.skus.forEach(sku => {
+        const key = JSON.stringify(sku.attributes.sort((a, b) => {
+            if (a.variantId.toString() !== b.variantId.toString()) {
+                return a.variantId.toString().localeCompare(b.variantId.toString())
+            }
+            return a.optionId.toString().localeCompare(b.optionId.toString())
+        }))
+        existingSkusMap.set(key, sku)
+    })
+
+    // Create SKUs for each combination, preserving existing stock levels
+    this.skus = combinations.map(combination => {
+        const key = JSON.stringify(combination.sort((a, b) => {
+            if (a.variantId.toString() !== b.variantId.toString()) {
+                return a.variantId.toString().localeCompare(b.variantId.toString())
+            }
+            return a.optionId.toString().localeCompare(b.optionId.toString())
+        }))
+        
+        const existingSku = existingSkusMap.get(key)
+        
+        return {
+            attributes: combination,
+            price: existingSku?.price || this.basePrice,
+            stock: existingSku?.stock || 0,
+            skuCode: existingSku?.skuCode || this.generateSKUCode(combination),
+            barcode: existingSku?.barcode || null,
+            lowStockThreshold: existingSku?.lowStockThreshold || 0,
+            allowPreOrder: existingSku?.allowPreOrder || false
+        }
+    })
 
     return this.save()
 

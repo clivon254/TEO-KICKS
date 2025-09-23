@@ -549,13 +549,23 @@ export const removeOption = async (req, res) => {
 
         }
 
+        // Check if option exists before deletion
+        const option = variant.options.id(optionId)
+        if (!option) {
+            return res.status(404).json({
+                success: false,
+                message: "Option not found"
+            })
+        }
+
+        // Perform cascade deletion (removes related SKUs)
         await variant.removeOption(optionId)
 
         res.json({
 
             success: true,
 
-            message: "Option removed successfully",
+            message: "Option and related SKUs removed successfully",
 
             data: variant
 
