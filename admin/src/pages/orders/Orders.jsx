@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { orderAPI } from '../../utils/api'
 import { FiSearch, FiX, FiFilter, FiList, FiAlertTriangle, FiEye, FiTrash2, FiTag } from 'react-icons/fi'
 import Pagination from '../../components/common/Pagination'
+import OrderStatusBadge from '../../components/common/OrderStatusBadge'
+import PaymentStatusBadge from '../../components/common/PaymentStatusBadge'
 import toast from 'react-hot-toast'
 
 
@@ -126,7 +128,7 @@ const Orders = () => {
               <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <input
                 type="text"
-                placeholder="Search by item title..."
+                placeholder="Search by invoice number..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-9 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
@@ -219,7 +221,7 @@ const Orders = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <input type="checkbox" checked={selectedOrders.length === orders.length && orders.length > 0} onChange={handleSelectAll} className="rounded border-gray-300 text-primary focus:ring-primary" />
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
@@ -234,12 +236,12 @@ const Orders = () => {
                         <input type="checkbox" checked={selectedOrders.includes(order._id)} onChange={() => handleSelectOrder(order._id)} className="rounded border-gray-300 text-primary focus:ring-primary" />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{order?.invoiceId?.number || order._id}</div>
+                        <div className="text-sm font-medium text-gray-900">{order?.invoice?.number || order._id}</div>
                         <div className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleString()}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.customerId || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.status}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.paymentStatus}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order?.customer?.name || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><OrderStatusBadge status={order.status} /></td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><PaymentStatusBadge status={order.paymentStatus} /></td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">KSh {order?.pricing?.total?.toFixed(2) || '0.00'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end space-x-2">
