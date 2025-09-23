@@ -182,6 +182,8 @@ export const getOrderById = async (req, res, next) => {
       .populate('invoiceId')
       .populate('receiptId')
       .populate('addressId')
+      .populate({ path: 'customerId', select: 'name email phone' })
+      .populate({ path: 'items.productId', select: 'primaryImage images' })
 
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' })
     return res.json({ success: true, data: { order } })
@@ -241,10 +243,45 @@ export const getOrders = async (req, res, next) => {
 
     const pipeline = [
       { $match: filters },
-      ...(q ? [{ $match: { 'items.title': { $regex: q, $options: 'i' } } }] : []),
+      // Join invoice and customer first
+      {
+        $lookup: {
+          from: 'invoices',
+          localField: 'invoiceId',
+          foreignField: '_id',
+          as: 'invoice'
+        }
+      },
+      { $unwind: { path: '$invoice', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'customerId',
+          foreignField: '_id',
+          as: 'customer'
+        }
+      },
+      { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
+      // Search by invoice number only
+      ...(q ? [{ $match: { 'invoice.number': { $regex: q, $options: 'i' } } }] : []),
       { $sort: { createdAt: -1 } },
-      { $facet: {
-          data: [ { $skip: skip }, { $limit: Number(limit) } ],
+      {
+        $facet: {
+          data: [
+            { $skip: skip },
+            { $limit: Number(limit) },
+            {
+              $project: {
+                _id: 1,
+                createdAt: 1,
+                status: 1,
+                paymentStatus: 1,
+                pricing: 1,
+                invoice: { _id: '$invoice._id', number: '$invoice.number' },
+                customer: { _id: '$customer._id', name: '$customer.name', email: '$customer.email' }
+              }
+            }
+          ],
           meta: [ { $count: 'total' } ]
         }
       }
