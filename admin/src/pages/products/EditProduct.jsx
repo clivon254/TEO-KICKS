@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { useGetProductById, useUpdateProduct, useUpdateSKU, useGenerateSKUs } from '../../hooks/useProducts'
+import { useGetProductById, useUpdateProduct } from '../../hooks/useProducts'
 import { useGetBrands } from '../../hooks/useBrands'
 import { useGetCategories } from '../../hooks/useCategories'
 import { useGetCollections } from '../../hooks/useCollections'
@@ -17,8 +17,7 @@ const EditProduct = () => {
     const navigate = useNavigate()
     const { id } = useParams()
     const updateProduct = useUpdateProduct()
-    const updateSKU = useUpdateSKU()
-    const generateSKUs = useGenerateSKUs()
+    
 
     // Tab state
     const [activeTab, setActiveTab] = useState('basic')
@@ -46,8 +45,7 @@ const EditProduct = () => {
         features: []
     })
 
-    // SKU management state
-    const [skuUpdates, setSkuUpdates] = useState({})
+    
 
     const [newFeature, setNewFeature] = useState('')
     const [isLoading, setIsLoading] = useState(true)
@@ -149,7 +147,6 @@ const EditProduct = () => {
         { id: 'organization', label: 'Organization', icon: FiGrid },
         { id: 'pricing', label: 'Pricing', icon: FiDollarSign },
         { id: 'variants', label: 'Variants', icon: FiBox },
-        { id: 'skus', label: 'SKU Management', icon: FiPackage },
         { id: 'images', label: 'Images', icon: FiImage },
         { id: 'settings', label: 'Settings', icon: FiPackage },
         { id: 'summary', label: 'Summary', icon: FiEye }
@@ -274,62 +271,7 @@ const EditProduct = () => {
         }))
     }, [])
 
-        // Memoize SKU update handlers
-    const handleSkuUpdate = useCallback((skuId, field, value) => {
-        // Update local state only (no API call yet)
-        setSkuUpdates(prev => ({
-            ...prev,
-            [skuId]: {
-                ...prev[skuId],
-                [field]: value
-            }
-        }))
-    }, [])
-
-    const handleUpdateSKU = useCallback(async (skuId) => {
-        const updates = skuUpdates[skuId]
-        if (!updates || Object.keys(updates).length === 0) {
-            toast.error('No changes to update')
-            return
-        }
-
-        try {
-            await updateSKU.mutateAsync({
-                productId: id,
-                skuId: skuId,
-                skuData: updates
-            })
-
-            // Clear the updates for this SKU after successful update
-            setSkuUpdates(prev => {
-                const newState = { ...prev }
-                delete newState[skuId]
-                return newState
-            })
-
-            // Navigate back to products page after successful update
-            toast.success('SKU updated successfully! Redirecting to products page...')
-            setTimeout(() => {
-                navigate('/products')
-            }, 1500) // 1.5 second delay to show success message
-        } catch (error) {
-            console.error('Failed to update SKU:', error)
-        }
-    }, [skuUpdates, updateSKU, id, navigate])
-
-    // Memoize SKU value getter with skuUpdates dependency
-    const getSkuValue = useCallback((sku, field) => {
-        const update = skuUpdates[sku._id]
-        return update && update[field] !== undefined ? update[field] : sku[field]
-    }, [skuUpdates])
-
-    const handleRegenerateSKUs = useCallback(async () => {
-        try {
-            await generateSKUs.mutateAsync(id)
-        } catch (error) {
-            console.error('Failed to regenerate SKUs:', error)
-        }
-    }, [generateSKUs, id])
+    
 
 
     const handleVariantOptionSelect = useCallback((variantId, optionId) => {
@@ -761,206 +703,7 @@ const EditProduct = () => {
                     </div>
                 )
 
-            case 'skus':
-                return (
-                    <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-gray-900">SKU Management</h3>
-                            <button
-                                type="button"
-                                onClick={handleRegenerateSKUs}
-                                disabled={generateSKUs.isPending}
-                                className="btn-secondary text-sm"
-                            >
-                                {generateSKUs.isPending ? 'Regenerating...' : 'Regenerate SKUs'}
-                            </button>
-                        </div>
-
-                        {product?.skus && product.skus.length > 0 ? (
-                            <div className="space-y-4">
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                    <p className="text-sm text-gray-600">
-                                        Manage individual SKU prices, stock levels, and settings. 
-                                        Make your changes and click "Update SKU" to save each SKU individually.
-                                    </p>
-                                </div>
-
-                                <div className="grid gap-4">
-                                    {product.skus.map((sku) => (
-                                        <div key={sku._id} className="border border-gray-200 rounded-lg p-4">
-                                            <div className="flex items-center justify-between mb-4">
-                                                <div>
-                                                    <h4 className="font-medium text-gray-900">SKU: {sku.skuCode}</h4>
-                                                    <div className="flex flex-wrap gap-2 mt-1">
-                                                        {sku.attributes && sku.attributes.length > 0 ? (
-                                                            sku.attributes.map(attr => {
-                                                                // Find variant in the variants array (not product.variants which are just IDs)
-                                                                const variant = variants.find(v => v._id === attr.variantId)
-                                                                const option = variant?.options?.find(o => o._id === attr.optionId)
-                                                                return (
-                                                                    <span key={attr._id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                                                                        {variant?.name || 'Unknown'}: {option?.value || 'Unknown'}
-                                                                    </span>
-                                                                )
-                                                            })
-                                                        ) : (
-                                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
-                                                                Default SKU
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                    <label className="flex items-center">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={getSkuValue(sku, 'isActive')}
-                                                            onChange={(e) => {
-                                                                handleSkuUpdate(sku._id, 'isActive', e.target.checked)
-                                                            }}
-                                                            className="rounded border-gray-300 text-primary focus:ring-primary"
-                                                        />
-                                                        <span className="ml-2 text-sm text-gray-700">Active</span>
-                                                    </label>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                {/* Price */}
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        Price
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        value={getSkuValue(sku, 'price') === 0 ? '' : getSkuValue(sku, 'price') || ''}
-                                                        onChange={(e) => {
-                                                            const value = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0
-                                                            handleSkuUpdate(sku._id, 'price', value)
-                                                        }}
-                                                        min="0"
-                                                        step="0.01"
-                                                        className="input text-sm"
-                                                    />
-                                                </div>
-
-                                                {/* Stock */}
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        Stock
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        value={getSkuValue(sku, 'stock') === 0 ? '' : getSkuValue(sku, 'stock') || ''}
-                                                        onChange={(e) => {
-                                                            const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0
-                                                            handleSkuUpdate(sku._id, 'stock', value)
-                                                        }}
-                                                        min="0"
-                                                        className="input text-sm"
-                                                    />
-                                                </div>
-
-                                                {/* Low Stock Threshold */}
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        Low Stock Alert
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        value={getSkuValue(sku, 'lowStockThreshold') === 5 ? '' : getSkuValue(sku, 'lowStockThreshold') || ''}
-                                                        onChange={(e) => {
-                                                            const value = e.target.value === '' ? 5 : parseInt(e.target.value) || 5
-                                                            handleSkuUpdate(sku._id, 'lowStockThreshold', value)
-                                                        }}
-                                                        min="0"
-                                                        className="input text-sm"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                {/* Pre-order Settings */}
-                                                <div className="flex items-center space-x-4">
-                                                    <label className="flex items-center">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={getSkuValue(sku, 'allowPreOrder') || false}
-                                                            onChange={(e) => {
-                                                                handleSkuUpdate(sku._id, 'allowPreOrder', e.target.checked)
-                                                            }}
-                                                            className="rounded border-gray-300 text-primary focus:ring-primary"
-                                                        />
-                                                        <span className="ml-2 text-sm text-gray-700">Allow Pre-order</span>
-                                                    </label>
-                                                </div>
-
-                                                {/* Pre-order Stock */}
-                                                {getSkuValue(sku, 'allowPreOrder') && (
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            Pre-order Stock
-                                                        </label>
-                                                        <input
-                                                            type="number"
-                                                            value={getSkuValue(sku, 'preOrderStock') === 0 ? '' : getSkuValue(sku, 'preOrderStock') || ''}
-                                                            onChange={(e) => {
-                                                                const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0
-                                                                handleSkuUpdate(sku._id, 'preOrderStock', value)
-                                                            }}
-                                                            min="0"
-                                                            className="input text-sm"
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Stock Status */}
-                                            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-gray-600">Stock Status:</span>
-                                                    <span className={`font-medium ${
-                                                        getSkuValue(sku, 'stock') > (getSkuValue(sku, 'lowStockThreshold') || 5) 
-                                                            ? 'text-green-600' 
-                                                            : getSkuValue(sku, 'stock') > 0 
-                                                            ? 'text-yellow-600' 
-                                                            : 'text-red-600'
-                                                    }`}>
-                                                        {getSkuValue(sku, 'stock') > (getSkuValue(sku, 'lowStockThreshold') || 5) 
-                                                            ? 'In Stock' 
-                                                            : getSkuValue(sku, 'stock') > 0 
-                                                            ? 'Low Stock' 
-                                                            : 'Out of Stock'}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            {/* Update Button */}
-                                            <div className="mt-4 flex justify-end">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleUpdateSKU(sku._id)}
-                                                    disabled={!skuUpdates[sku._id] || Object.keys(skuUpdates[sku._id] || {}).length === 0 || updateSKU.isPending}
-                                                    className="btn-primary text-sm px-4 py-2"
-                                                >
-                                                    {updateSKU.isPending ? 'Updating...' : 'Update SKU'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-center py-8">
-                                <FiPackage className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                                <h3 className="text-sm font-medium text-gray-900 mb-2">No SKUs available</h3>
-                                <p className="text-sm text-gray-500">
-                                    SKUs will be automatically generated when you save the product with variants.
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                )
+            
 
             case 'images':
                 return (
