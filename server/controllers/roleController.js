@@ -87,21 +87,30 @@ export const getAllRoles = async (req, res, next) => {
 
         }
 
-        const options = {
-            page: parseInt(page),
-            limit: parseInt(limit),
-            populate: [
-                { path: 'createdBy', select: 'name email' },
-                { path: 'updatedBy', select: 'name email' }
-            ],
-            sort: { createdAt: -1 }
-        }
+        const pageNum = parseInt(page)
+        const limitNum = parseInt(limit)
 
-        const roles = await Role.paginate(query, options)
+        const total = await Role.countDocuments(query)
+
+        const roles = await Role.find(query)
+            .populate('createdBy', 'name email')
+            .populate('updatedBy', 'name email')
+            .sort({ createdAt: -1 })
+            .skip((pageNum - 1) * limitNum)
+            .limit(limitNum)
 
         res.status(200).json({
             success: true,
-            data: { roles }
+            data: {
+                roles,
+                pagination: {
+                    currentPage: pageNum,
+                    totalPages: Math.max(1, Math.ceil(total / (limitNum || 1))),
+                    total,
+                    hasNextPage: pageNum < Math.ceil(total / (limitNum || 1)),
+                    hasPrevPage: pageNum > 1
+                }
+            }
         })
 
     } catch (error) {

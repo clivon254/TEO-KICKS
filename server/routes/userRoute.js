@@ -12,6 +12,7 @@ import {
     getUserRoles
 } from "../controllers/userController.js"
 import { verifyBearerToken, requireRole, requireAdmin } from "../utils/verify.js"
+import { deleteUser } from "../controllers/userController.js"
 
 
 const router = express.Router()
@@ -42,6 +43,8 @@ router.get('/', requireAdmin, getAllUsers)
 router.get('/:userId', requireAdmin, getUserById)
 
 router.put('/:userId/status', requireAdmin, updateUserStatus)
+
+router.delete('/:userId', requireAdmin, deleteUser)
 
 /**
  * @swagger
@@ -171,6 +174,10 @@ router.put('/:userId/admin', requireAdmin, setUserAdmin)
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get('/:userId/roles', requireAdmin, getUserRoles)
+
+// Admin onboard customer with phone as initial password
+import { adminCreateCustomer } from "../controllers/userController.js"
+router.post('/admin-create', requireAdmin, adminCreateCustomer)
 
 
 export default router
