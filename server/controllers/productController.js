@@ -366,6 +366,32 @@ export const updateProduct = async (req, res, next) => {
             product.slug = slug
         }
 
+        // Handle image retention/removal using keep arrays
+        const parseJsonArray = (raw) => {
+            try { const arr = JSON.parse(raw); return Array.isArray(arr) ? arr : [] } catch { return [] }
+        }
+
+        const keepPublicIds = new Set([
+            ...parseJsonArray(req.body.keepImagePublicIds || '[]'),
+            ...parseJsonArray(req.body.keepImages || '[]'), // backward compat
+        ].filter(Boolean))
+
+        const keepDocIds = new Set(parseJsonArray(req.body.keepImageDocIds || '[]').map(String))
+
+        if (keepPublicIds.size > 0 || keepDocIds.size > 0) {
+            const currentImages = Array.isArray(product.images) ? product.images : []
+            const toDelete = currentImages.filter(img => !keepPublicIds.has(img.public_id) && !keepDocIds.has(String(img._id)))
+
+            for (const image of toDelete) {
+                if (image.public_id) {
+                    try { await deleteFromCloudinary(image.public_id) } catch (e) { console.warn('Cloudinary delete failed:', e?.message) }
+                }
+            }
+
+            // Retain only images that are kept
+            product.images = currentImages.filter(img => keepPublicIds.has(img.public_id) || keepDocIds.has(String(img._id)))
+        }
+
         // Handle new image uploads
         if (req.files && req.files.length > 0) {
             for (const file of req.files) {
@@ -425,6 +451,14 @@ export const updateProduct = async (req, res, next) => {
         if (trackInventory !== undefined) product.trackInventory = trackInventory
         if (weight !== undefined) product.weight = weight
         if (status !== undefined) product.status = status
+
+        // Ensure one image is primary
+        if (Array.isArray(product.images) && product.images.length > 0) {
+            const hasPrimary = product.images.some(img => img.isPrimary)
+            if (!hasPrimary) {
+                product.images[0].isPrimary = true
+            }
+        }
 
         await product.save()
 
@@ -507,9 +541,6 @@ export const generateSKUs = async (req, res) => {
     try {
 
         const product = await Product.findById(req.params.id)
-
-
-
 
 
         if (!product) {

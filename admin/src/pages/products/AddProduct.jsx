@@ -6,7 +6,7 @@ import { useGetCategories } from '../../hooks/useCategories'
 import { useGetCollections } from '../../hooks/useCollections'
 import { useGetTags } from '../../hooks/useTags'
 import { useGetVariants } from '../../hooks/useVariants'
-import { FiPlus, FiX, FiImage, FiSave, FiArrowLeft, FiArrowRight, FiPackage, FiGrid, FiTag, FiLayers, FiDollarSign, FiBox, FiInfo, FiEye, FiCheck } from 'react-icons/fi'
+import { FiPlus, FiX, FiImage, FiSave, FiArrowLeft, FiArrowRight, FiPackage, FiGrid,FiEdit2, FiTag, FiLayers, FiDollarSign, FiBox, FiInfo, FiEye, FiCheck } from 'react-icons/fi'
 import RichTextEditor from '../../components/common/RichTextEditor'
 import ToggleSwitch from '../../components/common/ToggleSwitch'
 
@@ -612,68 +612,80 @@ const AddProduct = () => {
 
             case 'summary':
                 return (
-                    <div className="space-y-6">
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Product Summary</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <span className="font-medium text-gray-700">Title:</span>
-                                    <p className="text-gray-900">{formData.title || 'Not specified'}</p>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-gray-700">Brand:</span>
-                                    <p className="text-gray-900">
-                                        {brands.find(b => b._id === formData.brand)?.name || 'Not specified'}
-                                    </p>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-gray-700">Categories:</span>
-                                    <p className="text-gray-900">
-                                        {formData.categories.length > 0
-                                            ? categories.filter(c => formData.categories.includes(c._id)).map(c => c.name).join(', ')
-                                            : 'None selected'
-                                        }
-                                    </p>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-gray-700">Base Price:</span>
-                                    <p className="text-gray-900">${formData.basePrice || '0.00'}</p>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-gray-700">Variants:</span>
-                                    <p className="text-gray-900">
-                                        {formData.variants.length > 0
-                                            ? variants.filter(v => formData.variants.includes(v._id)).map(v => v.name).join(', ')
-                                            : 'No variants'
-                                        }
-                                    </p>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-gray-700">Images:</span>
-                                    <p className="text-gray-900">{files.length} uploaded</p>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-gray-700">Status:</span>
-                                    <p className="text-gray-900 capitalize">{formData.status}</p>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-gray-700">Features:</span>
-                                    <p className="text-gray-900">{formData.features.length} added</p>
-                                </div>
+                    <div className="space-y-4">
+                        <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="font-medium text-gray-800">Basic Info</span>
+                                <button onClick={() => setActiveTab('basic')} className="text-gray-400 hover:text-gray-600">
+                                    <FiEdit2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="text-sm text-gray-700 space-y-1">
+                                <div>Title: <span className="font-medium text-gray-900">{formData.title || 'Not specified'}</span></div>
+                                <div>Short Description: <span className="text-gray-900">{formData.shortDescription || '—'}</span></div>
+                            </div>
+                        </div>
+                    
+
+                        <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="font-medium text-gray-800">Organization</span>
+                                <button onClick={() => setActiveTab('organization')} className="text-gray-400 hover:text-gray-600">
+                                    <FiEdit2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="text-sm text-gray-700 space-y-1">
+                                <div>Brand: <span className="font-medium text-gray-900">{brands.find(b => b._id === formData.brand)?.name || 'Not specified'}</span></div>
+                                <div>Categories: <span className="text-gray-900">{formData.categories.length > 0 ? categories.filter(c => formData.categories.includes(c._id)).map(c => c.name).join(', ') : 'None selected'}</span></div>
                             </div>
                         </div>
 
-                        <div className="bg-blue-50 p-4 rounded-lg">
-                            <h4 className="text-md font-semibold text-blue-900 mb-2">Ready to Create</h4>
-                            <p className="text-blue-800 text-sm">
-                                Review the information above and click "Create Product" when ready.
-                                {formData.variants.length > 0 && (
-                                    <span className="block mt-2">
-                                        <FiCheck className="inline mr-1 h-4 w-4" />
-                                        SKUs will be automatically generated based on selected variants.
-                                    </span>
-                                )}
-                            </p>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="font-medium text-gray-800">Pricing</span>
+                                <button onClick={() => setActiveTab('pricing')} className="text-gray-400 hover:text-gray-600">
+                                    <FiEdit2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="text-sm text-gray-700 space-y-1">
+                                <div>Base Price: <span className="font-medium text-gray-900">KES {formData.basePrice || '0.00'}</span></div>
+                                <div>Compare at: <span className="text-gray-900">{formData.comparePrice ? `KES ${formData.comparePrice}` : '—'}</span></div>
+                            </div>
+                        </div>
+
+                        <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="font-medium text-gray-800">Variants</span>
+                                <button onClick={() => setActiveTab('variants')} className="text-gray-400 hover:text-gray-600">
+                                    <FiEdit2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="text-sm text-gray-700">
+                                {formData.variants.length > 0 ? variants.filter(v => formData.variants.includes(v._id)).map(v => v.name).join(', ') : 'No variants'}
+                            </div>
+                        </div>
+
+                        <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="font-medium text-gray-800">Images</span>
+                                <button onClick={() => setActiveTab('images')} className="text-gray-400 hover:text-gray-600">
+                                    <FiEdit2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="text-sm text-gray-700">{files.length} uploaded</div>
+                        </div>
+
+                        <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="font-medium text-gray-800">Settings</span>
+                                <button onClick={() => setActiveTab('settings')} className="text-gray-400 hover:text-gray-600">
+                                    <FiEdit2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="text-sm text-gray-700 space-y-1">
+                                <div>Status: <span className="font-medium capitalize text-gray-900">{formData.status}</span></div>
+                                <div>Features: <span className="text-gray-900">{formData.features.length} added</span></div>
+                            </div>
                         </div>
                     </div>
                 )

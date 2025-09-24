@@ -4,7 +4,7 @@ import { useGetProducts, useDeleteProduct } from '../../hooks/useProducts'
 import { useGetBrands } from '../../hooks/useBrands'
 import { useGetCategories } from '../../hooks/useCategories'
 
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiPackage, FiAlertTriangle, FiX, FiList, FiImage, FiDollarSign, FiGrid, FiEye } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiPackage, FiAlertTriangle, FiX, FiList, FiImage, FiGrid, FiEye } from 'react-icons/fi'
 import Pagination from '../../components/common/Pagination'
 
 import StatusBadge from '../../components/common/StatusBadge'
@@ -403,12 +403,6 @@ const Products = () => {
                                             </div>
                                             <div>
                                                 <div className="text-sm font-medium text-gray-900">{product.title}</div>
-                                                <div className="text-sm text-gray-500">{product.slug}</div>
-                                                {product.skus && product.skus.length > 0 && (
-                                                    <div className="text-xs text-blue-600 mt-1">
-                                                        {product.skus.length} variant{product.skus.length !== 1 ? 's' : ''}
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </td>
@@ -419,13 +413,11 @@ const Products = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm text-gray-900">
-                                            <FiDollarSign className="inline h-3 w-3" />
-                                            {product.basePrice?.toLocaleString() || '0'}
+                                            KES {product.basePrice?.toLocaleString() || '0'}
                                         </div>
                                         {product.comparePrice && (
                                             <div className="text-xs text-gray-500 line-through">
-                                                <FiDollarSign className="inline h-2 w-2" />
-                                                {product.comparePrice.toLocaleString()}
+                                                KES {product.comparePrice.toLocaleString()}
                                             </div>
                                         )}
                                     </td>
