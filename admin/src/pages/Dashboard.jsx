@@ -1,8 +1,12 @@
 import { useAuth } from '../contexts/AuthContext'
 import { FiUser, FiMail, FiCalendar } from 'react-icons/fi'
+import { useOverviewStats } from '../hooks/useStats'
 
 const Dashboard = () => {
     const { user } = useAuth()
+    const { data, isLoading } = useOverviewStats()
+
+    const stats = data?.data || {}
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -125,7 +129,7 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Stats Placeholder */}
+                {/* Stats */}
                 <div className="px-4 py-6 sm:px-0">
                     <div className="bg-white overflow-hidden shadow-lg rounded-lg">
                         <div className="px-4 py-5 sm:p-6">
@@ -134,20 +138,32 @@ const Dashboard = () => {
                             </h3>
                             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                                 <div className="bg-gray-50 p-4 rounded-lg">
-                                    <div className="text-2xl font-bold text-primary">0</div>
+                                    <div className="text-2xl font-bold text-primary">{isLoading ? '…' : stats.totalProducts || 0}</div>
                                     <div className="text-sm text-gray-500">Total Products</div>
                                 </div>
                                 <div className="bg-gray-50 p-4 rounded-lg">
-                                    <div className="text-2xl font-bold text-primary">0</div>
+                                    <div className="text-2xl font-bold text-primary">{isLoading ? '…' : stats.totalCategories || 0}</div>
                                     <div className="text-sm text-gray-500">Total Categories</div>
                                 </div>
                                 <div className="bg-gray-50 p-4 rounded-lg">
-                                    <div className="text-2xl font-bold text-primary">0</div>
+                                    <div className="text-2xl font-bold text-primary">{isLoading ? '…' : stats.totalBrands || 0}</div>
                                     <div className="text-sm text-gray-500">Total Brands</div>
                                 </div>
                                 <div className="bg-gray-50 p-4 rounded-lg">
-                                    <div className="text-2xl font-bold text-primary">0</div>
+                                    <div className="text-2xl font-bold text-primary">{isLoading ? '…' : stats.totalOrders || 0}</div>
                                     <div className="text-sm text-gray-500">Total Orders</div>
+                                </div>
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <div className="text-2xl font-bold text-primary">{isLoading ? '…' : (stats.totalRevenue || 0).toLocaleString()}</div>
+                                    <div className="text-sm text-gray-500">Total Revenue (KES)</div>
+                                </div>
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <div className="text-2xl font-bold text-primary">{isLoading ? '…' : stats.totalCustomers || 0}</div>
+                                    <div className="text-sm text-gray-500">Total Customers</div>
+                                </div>
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <div className="text-2xl font-bold text-primary">{isLoading ? '…' : stats.recentOrders || 0}</div>
+                                    <div className="text-sm text-gray-500">Orders (last 7 days)</div>
                                 </div>
                             </div>
                         </div>

@@ -333,6 +333,12 @@ export const receiptAPI = {
     getReceiptById: (receiptId) => api.get(`/receipts/${receiptId}`),
 }
 
+// Stats API calls (Admin)
+export const statsAPI = {
+    getOverview: () => api.get('/stats/overview'),
+    getAnalytics: (params) => api.get('/stats/analytics', { params }),
+}
+
 // Packaging API calls
 export const packagingAPI = {
     // Admin list/search/filter/sort

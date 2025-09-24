@@ -30,6 +30,7 @@ import reviewRoute from "./routes/reviewRoute.js"
 import couponRoute from "./routes/couponRoute.js"
 import storeConfigRoute from "./routes/storeConfigRoute.js"
 import packagingRoute from "./routes/packagingRoute.js"
+import statsRoute from "./routes/statsRoute.js"
 // import orderRoute from "./routes/orderRoute.js"
 // import paymentRoute from "./routes/paymentRoute.js"
 
@@ -101,6 +102,7 @@ app.use("/api/coupons", couponRoute)
 
 app.use("/api/store-config", storeConfigRoute)
 app.use("/api/packaging", packagingRoute)
+app.use("/api/stats", statsRoute)
 // app.use("/api/payments", paymentRoute)
 
 
