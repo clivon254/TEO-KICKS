@@ -310,6 +310,7 @@ export const getAllUsers = async (req, res, next) => {
 
         const users = await User.find(query)
             .select(options.select)
+            .populate('roles', 'name description')
             .sort(options.sort)
             .limit(options.limit * 1)
             .skip((options.page - 1) * options.limit)
@@ -544,6 +545,121 @@ export const getUserRoles = async (req, res, next) => {
         console.error('Get user roles error:', error)
 
         next(errorHandler(500, "Server error while fetching user roles"))
+
+    }
+
+}
+
+
+// @desc    Delete user (Admin only)
+// @route   DELETE /api/users/:userId
+// @access  Private (Admin)
+export const deleteUser = async (req, res, next) => {
+
+    try {
+
+        const { userId } = req.params
+
+        // Prevent deleting self
+        if (req.user && String(req.user._id) === String(userId)) {
+            return next(errorHandler(400, "You cannot delete your own account"))
+        }
+
+        const user = await User.findById(userId)
+
+        if (!user) {
+            return next(errorHandler(404, "User not found"))
+        }
+
+        await User.findByIdAndDelete(userId)
+
+        res.status(200).json({
+            success: true,
+            message: "User deleted successfully",
+        })
+
+    } catch (error) {
+
+        console.error('Delete user error:', error)
+
+        next(errorHandler(500, "Server error while deleting user"))
+
+    }
+
+}
+
+
+// @desc    Admin onboard customer (password set to phone)
+// @route   POST /api/users/admin-create
+// @access  Private (Admin)
+export const adminCreateCustomer = async (req, res, next) => {
+
+    try {
+
+        // Expect: { name, email, phone, roles?[] }
+        const { name, email, phone, roles } = req.body
+
+        if (!name || !email || !phone) {
+            return next(errorHandler(400, "name, email and phone are required"))
+        }
+
+        // Check duplicates (email/phone)
+        const existing = await User.findOne({ $or: [ { email }, { phone } ] })
+        if (existing) {
+            const field = existing.email === email ? 'email' : 'phone'
+            return next(errorHandler(400, `A user with this ${field} already exists`))
+        }
+
+        // Derive password from phone and hash
+        const passwordHash = bcrypt.hashSync(String(phone), 12)
+
+        // Determine roles: provided or default 'customer'
+        let roleIds = []
+        if (Array.isArray(roles) && roles.length > 0) {
+            roleIds = roles
+        } else {
+            const customerRole = await Role.findOne({ name: 'customer' })
+            if (customerRole) {
+                roleIds = [customerRole._id]
+            }
+        }
+
+        // Create user
+        const user = await User.create({
+            name,
+            email,
+            phone,
+            password: passwordHash,
+            roles: roleIds,
+            isActive: true,
+            isVerified: false,
+        })
+
+        await user.populate('roles', 'name description')
+
+        res.status(201).json({
+            success: true,
+            message: 'Customer created successfully',
+            data: {
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    phone: user.phone,
+                    roles: user.roles,
+                    isActive: user.isActive,
+                    isVerified: user.isVerified,
+                    avatar: user.avatar,
+                    createdAt: user.createdAt,
+                }
+            }
+        })
+
+    } catch (error) {
+
+        console.error('Admin create customer error:', error)
+
+        next(errorHandler(500, "Server error while creating customer"))
 
     }
 

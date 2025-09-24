@@ -105,6 +105,21 @@ export const userAPI = {
     
     // Change password
     changePassword: (passwordData) => api.put('/users/change-password', passwordData),
+
+    // Admin: Get all users
+    getAllUsers: (params) => api.get('/users', { params }),
+
+    // Admin: Get user by ID
+    getUserById: (userId) => api.get(`/users/${userId}`),
+
+    // Admin: Update user status / roles
+    updateUserStatus: (userId, data) => api.put(`/users/${userId}/status`, data),
+
+    // Admin: Delete user
+    deleteUser: (userId) => api.delete(`/users/${userId}`),
+
+    // Admin: Create customer (password = phone)
+    adminCreateCustomer: (data) => api.post('/users/admin-create', data),
 }
 
 // Product API calls

@@ -33,6 +33,7 @@ const Sidebar = ({ isSidebarOpen = false, toggleSidebar = () => {} }) => {
         { name: 'Coupons', href: '/coupons', icon: FiTag },
         { name: 'Orders', href: '/orders', icon: FiShoppingBag },
         { name: 'Customers', href: '/customers', icon: FiUsers },
+        { name: 'Roles', href: '/roles', icon: FiUsers },
         { name: 'Inventory', href: '/inventory', icon: FiTruck },
         { name: 'Analytics', href: '/analytics', icon: FiBarChart2 },
         { name: 'Reports', href: '/reports', icon: FiFileText },

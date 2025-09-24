@@ -46,6 +46,16 @@ import Packaging from './pages/packaging/Packaging'
 import AddPackaging from './pages/packaging/AddPackaging'
 import EditPackaging from './pages/packaging/EditPackaging'
 
+// Customers
+import Customers from './pages/customers/Customers'
+import EditCustomer from './pages/customers/EditCustomer'
+import AddCustomer from './pages/customers/AddCustomer'
+
+// Roles
+import Roles from './pages/roles/Roles'
+import AddRole from './pages/roles/AddRole'
+import EditRole from './pages/roles/EditRole'
+
 // Settings Pages
 import Settings from './pages/settings/Settings'
 import Profile from './pages/settings/Profile'
@@ -113,6 +123,12 @@ function App() {
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/demo/product-detail" element={<ProductDetailDemo />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/customers/new" element={<AddCustomer />} />
+              <Route path="/customers/:id/edit" element={<EditCustomer />} />
+              <Route path="/roles" element={<Roles />} />
+              <Route path="/roles/add" element={<AddRole />} />
+              <Route path="/roles/:id/edit" element={<EditRole />} />
               <Route path="/categories" element={<Categories />} />
               <Route path="/categories/add" element={<AddCategory />} />
               <Route path="/categories/:id/edit" element={<EditCategory />} />
