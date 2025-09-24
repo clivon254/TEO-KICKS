@@ -82,11 +82,26 @@ variantSchema.pre('save', function(next) {
 
 
 // Instance method to add an option
-variantSchema.methods.addOption = function(optionData) {
+variantSchema.methods.addOption = async function(optionData) {
 
     this.options.push(optionData)
 
-    return this.save()
+    await this.save()
+
+    // Auto-regenerate SKUs for all products using this variant
+    try {
+        const { default: Product } = await import('./productModel.js')
+        const products = await Product.find({ variants: this._id })
+        
+        for (const product of products) {
+            await product.generateSKUs()
+        }
+    } catch (error) {
+        console.error('Error regenerating SKUs after adding option:', error)
+        // Don't throw error - option was added successfully
+    }
+
+    return this
 
 }
 
@@ -95,11 +110,56 @@ variantSchema.methods.addOption = function(optionData) {
 
 
 // Instance method to remove an option
-variantSchema.methods.removeOption = function(optionId) {
+variantSchema.methods.removeOption = async function(optionId) {
 
-    this.options = this.options.filter(option => option._id.toString() !== optionId.toString())
+    // Import Product model here to avoid circular dependency
+    const { default: Product } = await import('./productModel.js')
 
-    return this.save()
+    try {
+
+        // First, find and delete all SKUs that reference this option
+
+        const productsToUpdate = await Product.find({ 'skus.attributes.optionId': optionId })
+
+        for (const product of productsToUpdate) {
+
+            // Remove SKUs that have this optionId in their attributes
+
+            product.skus = product.skus.filter(sku => 
+                !sku.attributes.some(attr => attr.optionId.toString() === optionId.toString())
+            )
+
+            await product.save()
+
+        }
+
+        // Then remove the option from the variant
+
+        this.options = this.options.filter(option => option._id.toString() !== optionId.toString())
+
+        await this.save()
+
+        // Auto-regenerate SKUs for all products using this variant
+        try {
+            const products = await Product.find({ variants: this._id })
+            
+            for (const product of products) {
+                await product.generateSKUs()
+            }
+        } catch (error) {
+            console.error('Error regenerating SKUs after removing option:', error)
+            // Don't throw error - option was removed successfully
+        }
+
+        return this
+
+    } catch (error) {
+
+        console.error('Error in removeOption cascade deletion:', error)
+
+        throw error
+
+    }
 
 }
 

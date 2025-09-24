@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { FiEdit, FiPlus, FiTrash2, FiLoader } from 'react-icons/fi'
+import { FiEdit, FiPlus, FiTrash2, FiLoader, FiAlertTriangle, FiX } from 'react-icons/fi'
 import { useGetVariantById, useUpdateVariant } from '../../hooks/useVariants'
+import { variantAPI } from '../../utils/api'
 import { variantSchema } from '../../utils/validation'
 import toast from 'react-hot-toast'
 
@@ -20,6 +21,8 @@ const EditVariant = () => {
 
     const [validationErrors, setValidationErrors] = useState({})
     const [optionInput, setOptionInput] = useState('')
+    const [confirmDelete, setConfirmDelete] = useState({ open: false, option: null, index: null })
+    const initialOptionsRef = useRef([])
 
     // Handle options management
     const addOption = () => {
@@ -33,10 +36,22 @@ const EditVariant = () => {
     }
 
     const removeOption = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            options: prev.options.filter((_, i) => i !== index)
-        }))
+        const option = formData.options[index]
+        setConfirmDelete({ open: true, option, index })
+    }
+
+    const confirmDeleteOption = () => {
+        if (confirmDelete.index !== null) {
+            setFormData(prev => ({
+                ...prev,
+                options: prev.options.filter((_, i) => i !== confirmDelete.index)
+            }))
+        }
+        setConfirmDelete({ open: false, option: null, index: null })
+    }
+
+    const cancelDeleteOption = () => {
+        setConfirmDelete({ open: false, option: null, index: null })
     }
 
     const handleOptionKeyPress = (e) => {
@@ -48,40 +63,24 @@ const EditVariant = () => {
 
     // Populate form when variant data is loaded
     useEffect(() => {
-        if (data?.data) {
-            // Server returns: { success: true, data: variant }
-            const variant = data.data
+        if (!data) return
+
+        // Axios response shape: data.data => { success, data }
+        const payload = data?.data
+
+        const variant = payload?.data
+            || payload?.variant
+            || data?.variant
+            || data
+
+        if (variant && (variant.name || Array.isArray(variant.options))) {
             setFormData({
                 name: variant.name || '',
-                options: variant.options || []
+                options: Array.isArray(variant.options) ? variant.options : []
             })
-        } else if (data?.data?.data?.variant) {
-            // Alternative nested structure (if any)
-            const variant = data.data.data.variant
-            setFormData({
-                name: variant.name || '',
-                options: variant.options || []
-            })
-        } else if (data?.data?.variant) {
-            // Another alternative structure
-            const variant = data.data.variant
-            setFormData({
-                name: variant.name || '',
-                options: variant.options || []
-            })
-        } else if (data?.variant) {
-            // Direct variant structure
-            const variant = data.variant
-            setFormData({
-                name: variant.name || '',
-                options: variant.options || []
-            })
-        } else if (data) {
-            // Fallback - try to use the data directly
-            setFormData({
-                name: data.name || '',
-                options: data.options || []
-            })
+
+            // Keep the original options for diffing on submit
+            initialOptionsRef.current = Array.isArray(variant.options) ? variant.options : []
         }
     }, [data])
 
@@ -108,13 +107,45 @@ const EditVariant = () => {
             // Validate form data
             await variantSchema.validate(formData, { abortEarly: false })
 
-            // Prepare payload
-            const payload = {
+            // 1) Update base variant fields (include sanitized options to satisfy backend validation)
+            const namePayload = {
                 name: formData.name.trim(),
-                options: formData.options
+                options: (formData.options || [])
+                    .filter(o => (o?.value || '').trim().length > 0)
+                    .map(o => ({ value: o.value.trim() }))
+            }
+            await updateVariantMutation.mutateAsync({ variantId: id, ...namePayload })
+
+            // 2) Diff options and sync via dedicated endpoints
+            const original = initialOptionsRef.current || []
+            const current = formData.options || []
+
+            const originalIds = new Set(original.filter(o => o && o._id).map(o => String(o._id)))
+            const currentIds = new Set(current.filter(o => o && o._id).map(o => String(o._id)))
+
+            // New options: no _id present
+            const optionsToAdd = current.filter(o => !o._id && (o.value || '').trim().length > 0)
+            // Removed options: present in original but not in current
+            const optionsToRemove = original.filter(o => o._id && !currentIds.has(String(o._id)))
+
+            // Perform add/remove operations
+            for (const opt of optionsToAdd) {
+                try {
+                    await variantAPI.addOption(id, { value: opt.value.trim() })
+                } catch (error) {
+                    console.error('Failed to add option:', error)
+                    throw new Error(`Failed to add option "${opt.value}": ${error.response?.data?.message || error.message}`)
+                }
             }
 
-            await updateVariantMutation.mutateAsync({ variantId: id, ...payload })
+            for (const opt of optionsToRemove) {
+                try {
+                    await variantAPI.removeOption(id, String(opt._id))
+                } catch (error) {
+                    console.error('Failed to remove option:', error)
+                    throw new Error(`Failed to remove option "${opt.value}": ${error.response?.data?.message || error.message}`)
+                }
+            }
 
             toast.success('Variant updated successfully!')
             navigate('/variants')
@@ -303,6 +334,35 @@ const EditVariant = () => {
                     </form>
                 </div>
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {confirmDelete.open && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                        <div className="flex items-center mb-4">
+                            <FiAlertTriangle className="h-6 w-6 text-red-500 mr-2" />
+                            <h3 className="text-lg font-semibold text-gray-900">Delete Option</h3>
+                        </div>
+                        <p className="text-gray-600 mb-6">
+                            Are you sure you want to delete the option "{confirmDelete.option?.value}"? This action cannot be undone and will affect any products using this variant.
+                        </p>
+                        <div className="flex justify-end space-x-3">
+                            <button
+                                onClick={cancelDeleteOption}
+                                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDeleteOption}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

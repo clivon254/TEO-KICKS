@@ -32,6 +32,7 @@ import Products from './pages/products/Products'
 import AddProduct from './pages/products/AddProduct'
 import EditProduct from './pages/products/EditProduct'
 import ProductDetails from './pages/products/ProductDetails'
+import Inventory from './pages/inventory/Inventory'
 import Cart from './pages/Cart'
 import ProductDetailDemo from './components/demo/ProductDetailDemo'
 import Coupons from './pages/coupons/Coupons'
@@ -109,6 +110,7 @@ function App() {
               <Route path="/cart" element={<Cart />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/inventory" element={<Inventory />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/demo/product-detail" element={<ProductDetailDemo />} />
               <Route path="/categories" element={<Categories />} />
