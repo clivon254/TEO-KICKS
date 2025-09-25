@@ -15,13 +15,17 @@ export const getOverviewStats = async (req, res, next) => {
       totalCategories,
       totalBrands,
       totalOrders,
-      totalCustomers
+      totalCustomers,
+      totalPaidOrders,
+      totalPendingPayments
     ] = await Promise.all([
       Product.countDocuments({}),
       Category.countDocuments({}),
       Brand.countDocuments({}),
       Order.countDocuments({}),
-      User.countDocuments({})
+      User.countDocuments({}),
+      Order.countDocuments({ paymentStatus: "PAID" }),
+      Order.countDocuments({ paymentStatus: "PENDING" })
     ])
 
     // Revenue: sum of successful payments
@@ -45,7 +49,9 @@ export const getOverviewStats = async (req, res, next) => {
         totalOrders,
         totalCustomers,
         totalRevenue,
-        recentOrders
+        recentOrders,
+        totalPaidOrders,
+        totalPendingPayments
       }
     })
   } catch (err) {
@@ -93,6 +99,20 @@ export const getAnalytics = async (req, res, next) => {
       { $sort: { _id: 1 } }
     ])
 
+    // Paid orders per period (based on time they became PAID)
+    const paidOrdersSeries = await Order.aggregate([
+      { $match: { updatedAt: { $gte: start, $lte: now }, paymentStatus: "PAID" } },
+      { $group: { _id: { $dateToString: { format: groupFormat, date: "$updatedAt" } }, count: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ])
+
+    // Pending payment orders per period (by creation time)
+    const pendingOrdersSeries = await Order.aggregate([
+      { $match: { createdAt: { $gte: start, $lte: now }, paymentStatus: "PENDING" } },
+      { $group: { _id: { $dateToString: { format: groupFormat, date: "$createdAt" } }, count: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ])
+
     // Top products by quantity in period
     const topProductsAgg = await Order.aggregate([
       { $match: { createdAt: { $gte: start, $lte: now } } },
@@ -125,6 +145,8 @@ export const getAnalytics = async (req, res, next) => {
         meta: { start, end: now, range },
         ordersSeries,
         revenueSeries,
+        paidOrdersSeries,
+        pendingOrdersSeries,
         customersSeries,
         topProducts: topProductsAgg
       }
