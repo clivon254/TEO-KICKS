@@ -45,6 +45,7 @@ import PaymentStatus from './pages/PaymentStatus'
 import Packaging from './pages/packaging/Packaging'
 import AddPackaging from './pages/packaging/AddPackaging'
 import EditPackaging from './pages/packaging/EditPackaging'
+import Analytics from './pages/Analytics'
 
 // Customers
 import Customers from './pages/customers/Customers'
@@ -120,6 +121,7 @@ function App() {
               <Route path="/cart" element={<Cart />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/analytics" element={<Analytics />} />
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/demo/product-detail" element={<ProductDetailDemo />} />

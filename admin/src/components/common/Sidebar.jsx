@@ -36,7 +36,6 @@ const Sidebar = ({ isSidebarOpen = false, toggleSidebar = () => {} }) => {
         { name: 'Roles', href: '/roles', icon: FiUsers },
         { name: 'Inventory', href: '/inventory', icon: FiTruck },
         { name: 'Analytics', href: '/analytics', icon: FiBarChart2 },
-        { name: 'Reports', href: '/reports', icon: FiFileText },
     ]
 
     const classificationItems = [
