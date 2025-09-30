@@ -115,7 +115,19 @@ export const mpesaWebhook = async (req, res, next) => {
 
     const payload = req.body 
 
+    // Log the full payload for debugging
+    console.log('===== M-PESA WEBHOOK RECEIVED =====')
+    console.log('Full payload:', JSON.stringify(payload, null, 2))
+    console.log('Body.stkCallback:', JSON.stringify(payload?.Body?.stkCallback, null, 2))
+    console.log('CallbackMetadata:', JSON.stringify(payload?.Body?.stkCallback?.CallbackMetadata, null, 2))
+    console.log('====================================')
+
     const parsed = parseDarajaCallback(payload)
+
+    if(payload?.Body?.stkCallback)
+    {
+      io.emit("callback.received", {message:payload?.Body?.stkCallback.ResultDesc , CODE:payload?.Body?.stkCallback.ResultCode})
+    }
 
     if (!parsed.valid) return res.status(400).json({ success: false, message: 'Invalid payload' })
 
@@ -355,8 +367,14 @@ export const queryMpesaByCheckoutId = async (req, res, next) => {
       return res.status(502).json({ success: false, message: result.error, details: result.details })
     }
 
+    console.log('===== SAFARICOM QUERY RESULT =====')
+    console.log('Result Code:', result.resultCode)
+    console.log('Result Desc:', result.resultDesc)
+    console.log('Full Result:', JSON.stringify(result.raw, null, 2))
+    console.log('==================================')
+
     // Map Daraja result codes: 0 = success, others are pending/failure
-    const status = result.resultCode === 0 ? 'SUCCESS' : 'PENDING'
+    const status = result.resultCode === 0 ? 'SUCCESS' : 'FAILED'
     
     // If successful, update payment status and apply payment
     if (result.resultCode === 0 && payment.status !== 'SUCCESS') {
@@ -364,6 +382,11 @@ export const queryMpesaByCheckoutId = async (req, res, next) => {
       if (invoice) {
         await applySuccessfulPayment({ invoice, payment, io: req.app.get('io'), method: 'mpesa_stk' })
       }
+    } else if (result.resultCode !== 0 && payment.status !== 'FAILED') {
+      // If failed, update payment status to FAILED
+      payment.status = 'FAILED'
+      await payment.save()
+      io?.emit('payment.updated', { paymentId: payment._id.toString(), status: payment.status })
     }
 
     return res.json({ 
@@ -373,7 +396,8 @@ export const queryMpesaByCheckoutId = async (req, res, next) => {
         resultCode: result.resultCode, 
         resultDesc: result.resultDesc,
         paymentId: payment._id,
-        invoiceId: payment.invoiceId
+        invoiceId: payment.invoiceId,
+        raw: result.raw
       } 
     })
   } catch (err) {

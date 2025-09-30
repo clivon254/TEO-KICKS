@@ -49,7 +49,8 @@ const PaymentStatus = () => {
 
     // Socket.IO subscription (real-time updates)
     try {
-      const baseUrl = import.meta?.env?.VITE_API_BASE_URL 
+      // Temporary: hardcoded backend URL (replace with env variable after restart)
+      const baseUrl = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000' 
       
       socketRef.current = io(baseUrl, { 
         transports: ['websocket', 'polling'], 
@@ -72,47 +73,241 @@ const PaymentStatus = () => {
         console.log('Socket connection error:', error)
       })
       
-      socketRef.current.on('payment.updated', async (payload) => {
-        console.log('Payment update received:', payload)
+      // Listen for payment database updates (kept separate from callback.received)
+      socketRef.current.on('payment.updated', (payload) => {
+        console.log('Payment database updated:', payload)
         if (!payload || String(payload.paymentId) !== String(trackingPaymentId)) return
         
-        if (payload.status === 'SUCCESS') {
-          clearPaymentTimers()
-          setPaymentView({ 
-            status: 'SUCCESS', 
-            title: 'Order paid successfully', 
-            message: 'Payment confirmed.', 
-            provider 
-          })
-          
-          // Fetch fresh order breakdown
-          if (orderId) {
-            try {
-              const detail = await orderAPI.getOrderById(orderId)
-              const ord = detail?.data?.data?.order
-              setOrderBreakdown(ord?.pricing || null)
-            } catch {}
-          }
-        } else if (payload.status === 'FAILED') {
-          clearPaymentTimers()
-          setPaymentView({ 
-            status: 'FAILED', 
-            title: 'Order payment failed', 
-            message: 'The payment was not completed.', 
-            provider 
-          })
-        }
+        // Just log the database update - UI updates are handled by callback.received
+        console.log('Payment status in database:', payload.status)
       })
       
       socketRef.current.on('receipt.created', (payload) => {
         console.log('Receipt created:', payload)
         // Optional: we could also use this to mark success and show receipt link later
       })
+
+      // Listen for M-Pesa callback received
+      socketRef.current.on('callback.received', async (payload) => {
+        console.log('M-Pesa Callback Received:', payload)
+        
+        const resultCode = payload.CODE
+        const resultMessage = payload.message || 'Payment processing completed'
+        
+        // Handle all M-Pesa result codes
+        switch (resultCode) {
+          case 0: {
+            // SUCCESS - Payment completed successfully
+            clearPaymentTimers()
+            
+            setPaymentView({ 
+              status: 'SUCCESS', 
+              title: 'Payment Successful! 🎉', 
+              message: resultMessage, 
+              provider 
+            })
+
+            // Fetch fresh order breakdown
+            if (orderId) {
+              try {
+                const detail = await orderAPI.getOrderById(orderId)
+                const ord = detail?.data?.data?.order
+                setOrderBreakdown(ord?.pricing || null)
+              } catch (err) {
+                console.error('Failed to fetch order breakdown:', err)
+              }
+            }
+
+            toast.success(resultMessage)
+            break
+          }
+
+          case 1: {
+            // INSUFFICIENT BALANCE
+            clearPaymentTimers()
+            
+            setPaymentView({ 
+              status: 'FAILED', 
+              title: 'Insufficient Balance', 
+              message: resultMessage || 'The balance is insufficient for the transaction', 
+              provider 
+            })
+
+            toast.error('Insufficient M-Pesa balance. Please top up and try again.')
+            break
+          }
+
+          case 1032: {
+            // USER CANCELLED
+            clearPaymentTimers()
+            
+            setPaymentView({ 
+              status: 'FAILED', 
+              title: 'Payment Cancelled', 
+              message: resultMessage || 'Request cancelled by user', 
+              provider 
+            })
+
+            toast.error('You cancelled the payment request')
+            break
+          }
+
+          case 1037: {
+            // TIMEOUT - User cannot be reached
+            clearPaymentTimers()
+            
+            setPaymentView({ 
+              status: 'FAILED', 
+              title: 'Request Timeout', 
+              message: resultMessage || 'DS timeout user cannot be reached', 
+              provider 
+            })
+
+            toast.error('Payment timeout. Please ensure your phone is on and try again.')
+            break
+          }
+
+          case 2001: {
+            // WRONG PIN / PIN BLOCKED
+            clearPaymentTimers()
+            
+            setPaymentView({ 
+              status: 'FAILED', 
+              title: 'Wrong PIN Entered', 
+              message: resultMessage || 'Wrong PIN entered or PIN blocked', 
+              provider 
+            })
+
+            toast.error('Wrong M-Pesa PIN entered. Please try again.')
+            break
+          }
+
+          case 1001: {
+            // UNABLE TO LOCK SUBSCRIBER
+            clearPaymentTimers()
+            
+            setPaymentView({ 
+              status: 'FAILED', 
+              title: 'Transaction Failed', 
+              message: resultMessage || 'Unable to lock subscriber', 
+              provider 
+            })
+
+            toast.error('Transaction failed. Please try again.')
+            break
+          }
+
+          case 1019: {
+            // TRANSACTION EXPIRED
+            clearPaymentTimers()
+            
+            setPaymentView({ 
+              status: 'FAILED', 
+              title: 'Transaction Expired', 
+              message: resultMessage || 'Transaction expired', 
+              provider 
+            })
+
+            toast.error('Transaction expired. Please initiate a new payment.')
+            break
+          }
+
+          case 1025: {
+            // INVALID PHONE NUMBER
+            clearPaymentTimers()
+            
+            setPaymentView({ 
+              status: 'FAILED', 
+              title: 'Invalid Phone Number', 
+              message: resultMessage || 'Unable to initiate transaction - invalid phone', 
+              provider 
+            })
+
+            toast.error('Invalid phone number. Please check and try again.')
+            break
+          }
+
+          case 1026: {
+            // SYSTEM ERROR
+            clearPaymentTimers()
+            
+            setPaymentView({ 
+              status: 'FAILED', 
+              title: 'System Error', 
+              message: resultMessage || 'System internal error', 
+              provider 
+            })
+
+            toast.error('System error occurred. Please try again later.')
+            break
+          }
+
+          case 1036: {
+            // INTERNAL ERROR
+            clearPaymentTimers()
+            
+            setPaymentView({ 
+              status: 'FAILED', 
+              title: 'Internal Error', 
+              message: resultMessage || 'Internal error occurred', 
+              provider 
+            })
+
+            toast.error('An internal error occurred. Please try again.')
+            break
+          }
+
+          case 1050: {
+            // MAX RETRIES REACHED
+            clearPaymentTimers()
+            
+            setPaymentView({ 
+              status: 'FAILED', 
+              title: 'Too Many Attempts', 
+              message: resultMessage || 'Maximum number of retries reached', 
+              provider 
+            })
+
+            toast.error('Too many payment attempts. Please try again later.')
+            break
+          }
+
+          case 9999: {
+            // REQUEST PROCESSING
+            // Don't clear timers - keep waiting
+            setPaymentView({ 
+              status: 'PENDING', 
+              title: 'Processing Payment...', 
+              message: resultMessage || 'Request is being processed', 
+              provider 
+            })
+
+            toast.info('Payment is still being processed...')
+            break
+          }
+
+          default: {
+            // UNKNOWN ERROR CODE
+            clearPaymentTimers()
+            
+            setPaymentView({ 
+              status: 'FAILED', 
+              title: 'Payment Failed', 
+              message: resultMessage || `Transaction failed with code ${resultCode}`, 
+              provider 
+            })
+
+            toast.error(`Payment failed: ${resultMessage}`)
+            break
+          }
+        }
+      })
+
     } catch (error) {
       console.error('Socket.IO setup error:', error)
     }
 
-    // Simplified fallback: Single API call after 75 seconds
+    // Fallback: Query M-Pesa status after 60 seconds if no callback received
     timeoutRef.current = setTimeout(async () => {
       if (provider === 'mpesa' && checkoutRequestId) {
         try {
@@ -120,54 +315,195 @@ const PaymentStatus = () => {
           setIsFallbackActive(true)
           setIsLoading(true)
           
+          console.log('Fallback: Querying M-Pesa status from Safaricom...')
           const res = await paymentAPI.queryMpesaByCheckoutId(checkoutRequestId)
-          const { status, resultDesc } = res.data?.data || {}
+          const { resultCode, resultDesc } = res.data?.data || {}
           
-          if (status === 'SUCCESS') {
-            setPaymentView({ 
-              status: 'SUCCESS', 
-              title: 'Order paid successfully', 
-              message: resultDesc || 'Payment confirmed.', 
-              provider 
-            })
-            
-            // Fetch fresh order breakdown
-            if (orderId) {
-              try {
-                const detail = await orderAPI.getOrderById(orderId)
-                const ord = detail?.data?.data?.order
-                setOrderBreakdown(ord?.pricing || null)
-              } catch {}
+          console.log('Fallback Query Result:', { resultCode, resultDesc })
+          
+          // Handle all M-Pesa result codes from query response
+          switch (resultCode) {
+            case 0: {
+              // SUCCESS
+              setPaymentView({ 
+                status: 'SUCCESS', 
+                title: 'Payment Successful! 🎉', 
+                message: resultDesc || 'Payment confirmed via fallback query.', 
+                provider 
+              })
+              
+              // Fetch fresh order breakdown
+              if (orderId) {
+                try {
+                  const detail = await orderAPI.getOrderById(orderId)
+                  const ord = detail?.data?.data?.order
+                  setOrderBreakdown(ord?.pricing || null)
+                } catch (err) {
+                  console.error('Failed to fetch order breakdown:', err)
+                }
+              }
+              
+              toast.success('Payment confirmed!')
+              break
             }
-          } else {
-            setPaymentView({ 
-              status: 'FAILED', 
-              title: 'Order payment failed', 
-              message: resultDesc || 'The payment was not completed.', 
-              provider 
-            })
+
+            case 1: {
+              // INSUFFICIENT BALANCE
+              setPaymentView({ 
+                status: 'FAILED', 
+                title: 'Insufficient Balance', 
+                message: resultDesc || 'The balance is insufficient for the transaction', 
+                provider 
+              })
+              toast.error('Insufficient M-Pesa balance')
+              break
+            }
+
+            case 1032: {
+              // USER CANCELLED
+              setPaymentView({ 
+                status: 'FAILED', 
+                title: 'Payment Cancelled', 
+                message: resultDesc || 'Request cancelled by user', 
+                provider 
+              })
+              toast.error('Payment was cancelled')
+              break
+            }
+
+            case 1037: {
+              // TIMEOUT
+              setPaymentView({ 
+                status: 'FAILED', 
+                title: 'Request Timeout', 
+                message: resultDesc || 'Could not reach your phone', 
+                provider 
+              })
+              toast.error('Payment request timed out')
+              break
+            }
+
+            case 2001: {
+              // WRONG PIN
+              setPaymentView({ 
+                status: 'FAILED', 
+                title: 'Wrong PIN Entered', 
+                message: resultDesc || 'Wrong PIN entered', 
+                provider 
+              })
+              toast.error('Incorrect M-Pesa PIN')
+              break
+            }
+
+            case 1001: {
+              // UNABLE TO LOCK SUBSCRIBER
+              setPaymentView({ 
+                status: 'FAILED', 
+                title: 'Transaction Failed', 
+                message: resultDesc || 'Unable to complete transaction', 
+                provider 
+              })
+              toast.error('Transaction failed')
+              break
+            }
+
+            case 1019: {
+              // TRANSACTION EXPIRED
+              setPaymentView({ 
+                status: 'FAILED', 
+                title: 'Transaction Expired', 
+                message: resultDesc || 'Transaction has expired', 
+                provider 
+              })
+              toast.error('Transaction expired')
+              break
+            }
+
+            case 1025: {
+              // INVALID PHONE
+              setPaymentView({ 
+                status: 'FAILED', 
+                title: 'Invalid Phone Number', 
+                message: resultDesc || 'Invalid phone number', 
+                provider 
+              })
+              toast.error('Invalid phone number')
+              break
+            }
+
+            case 1026: {
+              // SYSTEM ERROR
+              setPaymentView({ 
+                status: 'FAILED', 
+                title: 'System Error', 
+                message: resultDesc || 'M-Pesa system error', 
+                provider 
+              })
+              toast.error('System error occurred')
+              break
+            }
+
+            case 1036: {
+              // INTERNAL ERROR
+              setPaymentView({ 
+                status: 'FAILED', 
+                title: 'Internal Error', 
+                message: resultDesc || 'Internal error occurred', 
+                provider 
+              })
+              toast.error('Internal error')
+              break
+            }
+
+            case 1050: {
+              // MAX RETRIES
+              setPaymentView({ 
+                status: 'FAILED', 
+                title: 'Too Many Attempts', 
+                message: resultDesc || 'Maximum retries reached', 
+                provider 
+              })
+              toast.error('Too many attempts')
+              break
+            }
+
+            default: {
+              // PENDING or UNKNOWN
+              setPaymentView({ 
+                status: 'FAILED', 
+                title: 'Payment Status Unknown', 
+                message: resultDesc || `Query returned code ${resultCode}. Please retry.`, 
+                provider 
+              })
+              toast.error('Payment status unclear. Please retry.')
+              break
+            }
           }
+          
         } catch (error) {
+          console.error('Fallback query error:', error)
           setPaymentView({ 
             status: 'FAILED', 
-            title: 'Payment timed out', 
-            message: 'No confirmation received. You can retry the payment.', 
+            title: 'Query Failed', 
+            message: 'Could not verify payment status. You can retry the payment.', 
             provider 
           })
+          toast.error('Failed to check payment status')
         } finally {
           setIsLoading(false)
         }
       } else {
         setPaymentView({ 
           status: 'FAILED', 
-          title: 'Payment timed out', 
+          title: 'Payment Timed Out', 
           message: 'No confirmation received. You can retry the payment.', 
           provider 
         })
+        toast.error('Payment request timed out')
       }
       
       clearPaymentTimers()
-    }, 75 * 1000)
+    }, 60 * 1000)
 
   }
 

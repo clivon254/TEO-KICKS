@@ -52,7 +52,7 @@ export const buildPassword = (shortCode, passkey, timestamp) => {
 }
 
 
-export const initiateStkPush = async ({ amount, phone, accountReference, callbackUrl }) => {
+export const initiateStkPush = async ({ amount, phone, accountReference }) => {
 
   const shortCode = process.env.MPESA_SHORT_CODE 
     
@@ -70,7 +70,7 @@ export const initiateStkPush = async ({ amount, phone, accountReference, callbac
   const timestamp = buildTimestamp()
   const password = buildPassword(shortCode, passkey, timestamp)
 
-  const callback = callbackUrl || `${process.env.API_BASE_URL || ''}/api/payments/webhooks/mpesa`
+  const callback = `${process.env.CALLBACK_URL || process.env.API_BASE_URL || ''}/api/payments/webhooks/mpesa`
 
   const payload = {
     BusinessShortCode: Number(shortCode),
@@ -110,7 +110,11 @@ export const parseCallback = (body) => {
   let phone = null
   const items = stk?.CallbackMetadata?.Item || []
 
-  console.log(stk?.CallbackMetadata)
+  console.log('===== PARSING DARAJA CALLBACK =====')
+  console.log('STK Callback:', JSON.stringify(stk, null, 2))
+  console.log('CallbackMetadata Items:', JSON.stringify(items, null, 2))
+  console.log('Result Code:', resultCode)
+  console.log('====================================')
 
   for (const item of items) {
     if (item?.Name === 'Amount') amount = item?.Value
