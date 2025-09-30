@@ -4,7 +4,7 @@ import { useGetProducts, useDeleteProduct } from '../../hooks/useProducts'
 import { useGetBrands } from '../../hooks/useBrands'
 import { useGetCategories } from '../../hooks/useCategories'
 
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiPackage, FiAlertTriangle, FiX, FiList, FiImage, FiDollarSign, FiGrid, FiEye } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiPackage, FiAlertTriangle, FiX, FiList, FiImage, FiGrid, FiEye } from 'react-icons/fi'
 import Pagination from '../../components/common/Pagination'
 
 import StatusBadge from '../../components/common/StatusBadge'
@@ -138,7 +138,7 @@ const Products = () => {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                            
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
@@ -366,9 +366,7 @@ const Products = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Price
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Stock
-                                </th>
+                                
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
                                 </th>
@@ -405,12 +403,6 @@ const Products = () => {
                                             </div>
                                             <div>
                                                 <div className="text-sm font-medium text-gray-900">{product.title}</div>
-                                                <div className="text-sm text-gray-500">{product.slug}</div>
-                                                {product.skus && product.skus.length > 0 && (
-                                                    <div className="text-xs text-blue-600 mt-1">
-                                                        {product.skus.length} variant{product.skus.length !== 1 ? 's' : ''}
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </td>
@@ -421,42 +413,15 @@ const Products = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm text-gray-900">
-                                            <FiDollarSign className="inline h-3 w-3" />
-                                            {product.basePrice?.toLocaleString() || '0'}
+                                            KES {product.basePrice?.toLocaleString() || '0'}
                                         </div>
                                         {product.comparePrice && (
                                             <div className="text-xs text-gray-500 line-through">
-                                                <FiDollarSign className="inline h-2 w-2" />
-                                                {product.comparePrice.toLocaleString()}
+                                                KES {product.comparePrice.toLocaleString()}
                                             </div>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        {product.skus && product.skus.length > 0 ? (
-                                            <div className="flex flex-col">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    product.skus.reduce((total, sku) => total + (sku.stock || 0), 0) > 10
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : product.skus.reduce((total, sku) => total + (sku.stock || 0), 0) > 0
-                                                        ? 'bg-yellow-100 text-yellow-800'
-                                                        : 'bg-red-100 text-red-800'
-                                                }`}>
-                                                    {product.skus.reduce((total, sku) => total + (sku.stock || 0), 0)} units
-                                                </span>
-                                                <span className="text-xs text-gray-500 mt-1">
-                                                    {product.skus.reduce((total, sku) => total + (sku.stock || 0), 0) > 10
-                                                        ? 'In Stock'
-                                                        : product.skus.reduce((total, sku) => total + (sku.stock || 0), 0) > 0
-                                                        ? 'Low Stock'
-                                                        : 'Out of Stock'}
-                                                </span>
-                                            </div>
-                                        ) : (
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                No variants
-                                            </span>
-                                        )}
-                                    </td>
+                                    
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <StatusBadge status={product.status || 'draft'} />
                                     </td>

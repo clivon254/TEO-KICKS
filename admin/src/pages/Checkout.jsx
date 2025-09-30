@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cartAPI, orderAPI, paymentAPI } from '../utils/api'
+import { useGetActivePackagingPublic } from '../hooks/usePackaging'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { FiEdit2, FiShoppingBag, FiClock, FiCreditCard, FiList } from 'react-icons/fi'
@@ -78,6 +79,15 @@ const Checkout = () => {
   const [addressId, setAddressId] = useState(null)
   const [paymentMode, setPaymentMode] = useState('post_to_bill')
   const [paymentMethod, setPaymentMethod] = useState(null) // mpesa_stk | paystack_card | null
+  // Coupon: load from localStorage if set by Cart page
+  const [coupon, setCoupon] = useState(() => {
+    try {
+      const raw = localStorage.getItem('appliedCoupon')
+      return raw ? JSON.parse(raw) : null
+    } catch {
+      return null
+    }
+  })
   // Format phone number to M-Pesa format (254XXXXXXXXX)
   const formatPhoneForMpesa = (phone) => {
     if (!phone) return ''
@@ -107,13 +117,23 @@ const Checkout = () => {
   const [receiptId, setReceiptId] = useState(null)
 
   const canShowAddress = orderType === 'delivery'
-  const canShowPackaging = (cart?.items || []).some((it) => Boolean(it.packagingOptions?.length))
+  const { data: packagingPublic } = useGetActivePackagingPublic()
+  const packagingOptions = packagingPublic?.data?.data?.packaging || packagingPublic?.data?.packaging || []
+  const canShowPackaging = (packagingOptions || []).length > 0
+
+  const [selectedPackagingId, setSelectedPackagingId] = useState(null)
 
   useEffect(() => {
     const load = async () => {
       try {
         const res = await cartAPI.getCart()
         setCart(res.data?.data)
+        // If no items, clear persisted coupon
+        const items = res.data?.data?.items || []
+        if (!items || items.length === 0) {
+          try { localStorage.removeItem('appliedCoupon') } catch {}
+          setCoupon(null)
+        }
       } catch (e) {
         toast.error('Failed to load cart')
       } finally {
@@ -143,11 +163,22 @@ const Checkout = () => {
     }
   }, [user])
 
+  // Auto-select default packaging when available
+  useEffect(() => {
+    if (!canShowPackaging) return
+    if (selectedPackagingId) return
+    const def = packagingOptions.find((p) => p.isDefault) || packagingOptions[0]
+    if (def) setSelectedPackagingId(def._id)
+  }, [canShowPackaging, packagingOptions, selectedPackagingId])
+
   const totals = useMemo(() => {
     const items = cart?.items || []
     const subtotal = items.reduce((sum, it) => sum + (it.price * it.quantity), 0)
-    return { subtotal, total: subtotal }
-  }, [cart])
+    const packagingFee = canShowPackaging ? Number((packagingOptions.find(p => p._id === selectedPackagingId)?.price) || 0) : 0
+    const discount = Math.min(subtotal, Math.max(0, Number(coupon?.discountAmount || 0)))
+    const total = subtotal + packagingFee - discount
+    return { subtotal, packagingFee, discount, total }
+  }, [cart, canShowPackaging, packagingOptions, selectedPackagingId, coupon])
 
   const formatVariantOptions = (variantOptions) => {
     if (!variantOptions || Object.keys(variantOptions).length === 0) return null
@@ -198,7 +229,8 @@ const Checkout = () => {
           mode: paymentMode,
           method: paymentMode === 'pay_now' ? paymentMethod : null,
         },
-        packagingSelections: [],
+        packagingOptionId: canShowPackaging ? selectedPackagingId : null,
+        couponCode: coupon?.code || null,
         cartId: null,
         metadata: {},
       }
@@ -424,17 +456,23 @@ const Checkout = () => {
           )}
 
           {/* STEP 2: Packaging */}
-          {currentStepKey === 'packaging' && (
+          {currentStepKey === 'packaging' && canShowPackaging && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800">Packaging Options</h3>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-blue-800">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                  <span className="font-medium">Standard Packaging</span>
-                </div>
-                <p className="text-sm text-blue-700 mt-2">Your items will be packaged in our standard eco-friendly packaging.</p>
+              <div className="space-y-3">
+                {packagingOptions.map((opt) => (
+                  <label key={opt._id} className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer ${selectedPackagingId === opt._id ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                    <div className="flex items-center gap-3">
+                      <input type="radio" name="packaging" checked={selectedPackagingId === opt._id} onChange={() => setSelectedPackagingId(opt._id)} />
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {opt.name} {opt.isDefault && <span className="ml-2 inline-flex items-center text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Default</span>}
+                        </div>
+                        <div className="text-sm text-gray-600">KES {Number(opt.price).toFixed(0)}</div>
+                      </div>
+                    </div>
+                  </label>
+                ))}
               </div>
             </div>
           )}
@@ -717,6 +755,26 @@ const Checkout = () => {
                 </div>
               </div>
 
+              {/* Packaging (editable shortcut) */}
+              {canShowPackaging && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      
+                      <span className="font-medium text-gray-800 flex items-center gap-2">
+                        <FiList className="text-gray-600" /> Packaging
+                      </span>
+                    </div>
+                    <button onClick={() => gotoStep('packaging')} className="text-gray-400 hover:text-gray-600">
+                      <FiEdit2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Selected: <span className="font-medium">{packagingOptions.find(p => p._id === selectedPackagingId)?.name || 'Standard'}</span>
+                  </div>
+                </div>
+              )}
+
               {/* Payment Method */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -755,7 +813,19 @@ const Checkout = () => {
                     <span className="font-medium">KES {totals.subtotal.toFixed(0)}</span>
                   </div>
                   <hr className="my-2" />
-                  <div className="flex justify-between text-base font-semibold">
+                  {canShowPackaging && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Packaging:</span>
+                      <span className="font-medium">KES {Number(totals.packagingFee || 0).toFixed(0)}</span>
+                    </div>
+                  )}
+                  {coupon?.code && (
+                    <div className="flex justify-between text-sm text-green-700">
+                      <span>Coupon ({coupon.code}):</span>
+                      <span>- KES {Number(totals.discount || 0).toFixed(0)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-base font-semibold mt-2">
                     <span>Total:</span>
                     <span>KES {totals.total.toFixed(0)}</span>
                   </div>

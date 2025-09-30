@@ -32,6 +32,7 @@ import Products from './pages/products/Products'
 import AddProduct from './pages/products/AddProduct'
 import EditProduct from './pages/products/EditProduct'
 import ProductDetails from './pages/products/ProductDetails'
+import Inventory from './pages/inventory/Inventory'
 import Cart from './pages/Cart'
 import ProductDetailDemo from './components/demo/ProductDetailDemo'
 import Coupons from './pages/coupons/Coupons'
@@ -41,6 +42,20 @@ import OrderDetail from './pages/orders/OrderDetail'
 import AddCoupon from './pages/coupons/AddCoupon'
 import EditCoupon from './pages/coupons/EditCoupon'
 import PaymentStatus from './pages/PaymentStatus'
+import Packaging from './pages/packaging/Packaging'
+import AddPackaging from './pages/packaging/AddPackaging'
+import EditPackaging from './pages/packaging/EditPackaging'
+import Analytics from './pages/Analytics'
+
+// Customers
+import Customers from './pages/customers/Customers'
+import EditCustomer from './pages/customers/EditCustomer'
+import AddCustomer from './pages/customers/AddCustomer'
+
+// Roles
+import Roles from './pages/roles/Roles'
+import AddRole from './pages/roles/AddRole'
+import EditRole from './pages/roles/EditRole'
 
 // Settings Pages
 import Settings from './pages/settings/Settings'
@@ -100,11 +115,22 @@ function App() {
               <Route path="/coupons" element={<Coupons />} />
               <Route path="/coupons/add" element={<AddCoupon />} />
               <Route path="/coupons/:couponId/edit" element={<EditCoupon />} />
+              <Route path="/packaging" element={<Packaging />} />
+              <Route path="/packaging/add" element={<AddPackaging />} />
+              <Route path="/packaging/:id/edit" element={<EditPackaging />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/inventory" element={<Inventory />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/demo/product-detail" element={<ProductDetailDemo />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/customers/new" element={<AddCustomer />} />
+              <Route path="/customers/:id/edit" element={<EditCustomer />} />
+              <Route path="/roles" element={<Roles />} />
+              <Route path="/roles/add" element={<AddRole />} />
+              <Route path="/roles/:id/edit" element={<EditRole />} />
               <Route path="/categories" element={<Categories />} />
               <Route path="/categories/add" element={<AddCategory />} />
               <Route path="/categories/:id/edit" element={<EditCategory />} />

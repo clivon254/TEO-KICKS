@@ -2,6 +2,8 @@ import Order from "../models/orderModel.js"
 import Invoice from "../models/invoiceModel.js"
 import Cart from "../models/cartModel.js"
 import Product from "../models/productModel.js"
+import PackagingOption from "../models/packagingOptionModel.js"
+import Coupon from "../models/couponModel.js"
 
 
 // Helper: generate incremental-ish numbers (placeholder; replace with robust generator)
@@ -19,7 +21,9 @@ export const createOrder = async (req, res, next) => {
       timing = { isScheduled: false, scheduledAt: null },
       addressId = null,
       paymentPreference,
+      packagingOptionId = null,
       packagingSelections = [],
+      couponCode = null,
       cartId = null,
       metadata = {}
     } = req.body || {}
@@ -36,9 +40,9 @@ export const createOrder = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Cart is empty' })
     }
 
-    // Map packaging selections for quick lookup
+    // Map per-item packaging selections (not primary path; order-level selection preferred)
     const packagingMap = new Map()
-    for (const sel of packagingSelections) {
+    for (const sel of (packagingSelections || [])) {
       if (sel?.skuId && sel?.choiceId) packagingMap.set(String(sel.skuId), sel.choiceId)
     }
 
@@ -55,15 +59,48 @@ export const createOrder = async (req, res, next) => {
       variantOptions: ci.variantOptions || {},
       quantity: ci.quantity,
       unitPrice: ci.price,
+      // keep optional per-item snapshot if provided; fee is captured at order level
       packagingChoice: packagingMap.has(String(ci.skuId)) ? { id: packagingMap.get(String(ci.skuId)), name: null, fee: 0 } : undefined
     }))
 
+    // Resolve packaging option (order-level)
+    let selectedPackaging = null
+    if (packagingOptionId) {
+      const opt = await PackagingOption.findOne({ _id: packagingOptionId, isActive: true })
+      if (opt) selectedPackaging = { id: String(opt._id), name: opt.name, price: opt.price }
+    }
+    if (!selectedPackaging) {
+      const def = await PackagingOption.findOne({ isActive: true, isDefault: true })
+      if (def) selectedPackaging = { id: String(def._id), name: def.name, price: def.price }
+    }
+
     // Recalculate pricing
     const subtotal = items.reduce((sum, it) => sum + (it.unitPrice * it.quantity), 0)
-    const packagingFee = items.reduce((sum, it) => sum + (it.packagingChoice?.fee || 0), 0)
+    const packagingFee = selectedPackaging ? Number(selectedPackaging.price || 0) : 0
     const schedulingFee = timing?.isScheduled ? 0 : 0 // TODO: derive from config
     const deliveryFee = (type === 'delivery') ? 0 : 0 // TODO: compute distance-based
-    const discounts = 0 // TODO: apply coupons if any
+    // Apply coupon discount if provided
+    let couponSnapshot = null
+    let discounts = 0
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ code: String(couponCode).toUpperCase() })
+      if (coupon) {
+        // Validate against current user and subtotal
+        const validation = coupon.validateCoupon(String(ownerCustomerId), subtotal)
+        if (validation.isValid) {
+          const discountAmount = coupon.calculateDiscount(subtotal)
+          discounts = Math.max(0, Number(discountAmount) || 0)
+          couponSnapshot = {
+            _id: coupon._id,
+            code: coupon.code,
+            name: coupon.name,
+            discountType: coupon.discountType,
+            discountValue: coupon.discountValue,
+            discountAmount: discounts
+          }
+        }
+      }
+    }
     const tax = 0 // TODO: compute from config
     const total = subtotal - discounts + packagingFee + schedulingFee + deliveryFee + tax
 
@@ -80,7 +117,11 @@ export const createOrder = async (req, res, next) => {
       paymentPreference,
       status: 'PLACED',
       paymentStatus: paymentPreference?.mode === 'pay_now' ? 'PENDING' : 'UNPAID',
-      metadata
+      metadata: {
+        ...metadata,
+        packaging: selectedPackaging || null,
+        coupon: couponSnapshot || null
+      }
     })
 
     // Create Invoice linked to Order
@@ -89,21 +130,35 @@ export const createOrder = async (req, res, next) => {
       number: generateInvoiceNumber(),
       lineItems: [
         { label: 'Items subtotal', amount: subtotal },
-        ...(packagingFee ? [{ label: 'Packaging', amount: packagingFee }] : []),
+        ...(packagingFee ? [{ label: `Packaging${selectedPackaging?.name ? ` - ${selectedPackaging.name}` : ''}`, amount: packagingFee }] : []),
         ...(schedulingFee ? [{ label: 'Scheduling', amount: schedulingFee }] : []),
         ...(deliveryFee ? [{ label: 'Delivery', amount: deliveryFee }] : []),
         ...(tax ? [{ label: 'Tax', amount: tax }] : [])
       ],
       subtotal,
+      discounts,
       fees: packagingFee + schedulingFee + deliveryFee,
       tax,
       total,
       balanceDue: total,
-      paymentStatus: 'PENDING'
+      paymentStatus: 'PENDING',
+      metadata: {
+        coupon: couponSnapshot || null
+      }
     })
 
     order.invoiceId = invoice._id
     await order.save()
+
+    // Mark coupon as used (increment usage) on order creation if applied
+    if (couponSnapshot) {
+      try {
+        const c = await Coupon.findById(couponSnapshot._id)
+        if (c) await c.incrementUsage(String(ownerCustomerId))
+      } catch (_) {
+        // Do not block order on coupon usage write
+      }
+    }
 
     // Optionally mark cart converted
     cart.status = 'converted'
@@ -127,6 +182,8 @@ export const getOrderById = async (req, res, next) => {
       .populate('invoiceId')
       .populate('receiptId')
       .populate('addressId')
+      .populate({ path: 'customerId', select: 'name email phone' })
+      .populate({ path: 'items.productId', select: 'primaryImage images' })
 
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' })
     return res.json({ success: true, data: { order } })
@@ -186,10 +243,45 @@ export const getOrders = async (req, res, next) => {
 
     const pipeline = [
       { $match: filters },
-      ...(q ? [{ $match: { 'items.title': { $regex: q, $options: 'i' } } }] : []),
+      // Join invoice and customer first
+      {
+        $lookup: {
+          from: 'invoices',
+          localField: 'invoiceId',
+          foreignField: '_id',
+          as: 'invoice'
+        }
+      },
+      { $unwind: { path: '$invoice', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'customerId',
+          foreignField: '_id',
+          as: 'customer'
+        }
+      },
+      { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
+      // Search by invoice number only
+      ...(q ? [{ $match: { 'invoice.number': { $regex: q, $options: 'i' } } }] : []),
       { $sort: { createdAt: -1 } },
-      { $facet: {
-          data: [ { $skip: skip }, { $limit: Number(limit) } ],
+      {
+        $facet: {
+          data: [
+            { $skip: skip },
+            { $limit: Number(limit) },
+            {
+              $project: {
+                _id: 1,
+                createdAt: 1,
+                status: 1,
+                paymentStatus: 1,
+                pricing: 1,
+                invoice: { _id: '$invoice._id', number: '$invoice.number' },
+                customer: { _id: '$customer._id', name: '$customer.name', email: '$customer.email' }
+              }
+            }
+          ],
           meta: [ { $count: 'total' } ]
         }
       }

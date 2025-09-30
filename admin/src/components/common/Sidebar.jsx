@@ -16,7 +16,8 @@ import {
     FiChevronDown,
     FiChevronRight,
     FiLayers,
-    FiX
+    FiX,
+    FiBox
 } from 'react-icons/fi'
 
 
@@ -27,13 +28,14 @@ const Sidebar = ({ isSidebarOpen = false, toggleSidebar = () => {} }) => {
     const navigation = [
         { name: 'Dashboard', href: '/', icon: FiHome },
         { name: 'Products', href: '/products', icon: FiPackage },
+        { name: 'Packaging', href: '/packaging', icon: FiBox },
         { name: 'Variants', href: '/variants', icon: FiGrid },
         { name: 'Coupons', href: '/coupons', icon: FiTag },
         { name: 'Orders', href: '/orders', icon: FiShoppingBag },
         { name: 'Customers', href: '/customers', icon: FiUsers },
+        { name: 'Roles', href: '/roles', icon: FiUsers },
         { name: 'Inventory', href: '/inventory', icon: FiTruck },
         { name: 'Analytics', href: '/analytics', icon: FiBarChart2 },
-        { name: 'Reports', href: '/reports', icon: FiFileText },
     ]
 
     const classificationItems = [

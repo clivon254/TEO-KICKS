@@ -105,6 +105,21 @@ export const userAPI = {
     
     // Change password
     changePassword: (passwordData) => api.put('/users/change-password', passwordData),
+
+    // Admin: Get all users
+    getAllUsers: (params) => api.get('/users', { params }),
+
+    // Admin: Get user by ID
+    getUserById: (userId) => api.get(`/users/${userId}`),
+
+    // Admin: Update user status / roles
+    updateUserStatus: (userId, data) => api.put(`/users/${userId}/status`, data),
+
+    // Admin: Delete user
+    deleteUser: (userId) => api.delete(`/users/${userId}`),
+
+    // Admin: Create customer (password = phone)
+    adminCreateCustomer: (data) => api.post('/users/admin-create', data),
 }
 
 // Product API calls
@@ -316,6 +331,27 @@ export const paymentAPI = {
 
 export const receiptAPI = {
     getReceiptById: (receiptId) => api.get(`/receipts/${receiptId}`),
+}
+
+// Stats API calls (Admin)
+export const statsAPI = {
+    getOverview: () => api.get('/stats/overview'),
+    getAnalytics: (params) => api.get('/stats/analytics', { params }),
+}
+
+// Packaging API calls
+export const packagingAPI = {
+    // Admin list/search/filter/sort
+    getPackaging: (params) => api.get('/packaging', { params }),
+    getById: (id) => api.get(`/packaging/${id}`),
+    create: (data) => api.post('/packaging', data),
+    update: (id, data) => api.patch(`/packaging/${id}`, data),
+    remove: (id) => api.delete(`/packaging/${id}`),
+    setDefault: (id) => api.patch(`/packaging/${id}/default`),
+
+    // Public for checkout
+    getActivePublic: () => api.get('/packaging/public'),
+    getDefaultPublic: () => api.get('/packaging/public/default'),
 }
 
 // Review API calls

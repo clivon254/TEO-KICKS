@@ -256,13 +256,42 @@ productSchema.methods.generateSKUs = async function() {
     // Generate all possible combinations
     const combinations = this.generateCombinations(variants)
 
-    // Create SKUs for each combination
-    this.skus = combinations.map(combination => ({
-        attributes: combination,
-        price: this.basePrice,
-        stock: 0,
-        skuCode: this.generateSKUCode(combination)
-    }))
+    // Helper to build a stable key from attributes for accurate matching
+    const buildAttributesKey = (attributes) => {
+        const normalized = (attributes || []).map(attr => ({
+            variantId: attr.variantId.toString(),
+            optionId: attr.optionId.toString(),
+        })).sort((a, b) => {
+            if (a.variantId !== b.variantId) return a.variantId.localeCompare(b.variantId)
+            return a.optionId.localeCompare(b.optionId)
+        })
+        return normalized.map(n => `${n.variantId}:${n.optionId}`).join('|')
+    }
+
+    // Create a map of existing SKUs by their attribute combination for stock preservation
+    const existingSkusMap = new Map()
+    this.skus.forEach(sku => {
+        const key = buildAttributesKey(Array.isArray(sku.attributes) ? sku.attributes.slice() : [])
+        existingSkusMap.set(key, sku)
+    })
+
+    // Create SKUs for each combination, preserving existing stock levels
+    this.skus = combinations.map(combination => {
+        const key = buildAttributesKey(Array.isArray(combination) ? combination.slice() : [])
+
+        const existingSku = existingSkusMap.get(key)
+
+        return {
+            attributes: combination,
+            price: existingSku?.price ?? this.basePrice,
+            stock: existingSku?.stock ?? 0,
+            skuCode: existingSku?.skuCode ?? this.generateSKUCode(combination),
+            barcode: existingSku?.barcode ?? null,
+            lowStockThreshold: existingSku?.lowStockThreshold ?? 0,
+            allowPreOrder: existingSku?.allowPreOrder ?? false,
+            preOrderStock: existingSku?.preOrderStock ?? 0,
+        }
+    })
 
     return this.save()
 
