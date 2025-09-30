@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { io } from 'socket.io-client'
-import { paymentAPI, orderAPI } from '../utils/api'
+import { paymentAPI, orderAPI, cartAPI } from '../utils/api'
 import toast from 'react-hot-toast'
+import { FiShoppingCart } from 'react-icons/fi'
 
 
 const PaymentStatus = () => {
@@ -26,6 +27,7 @@ const PaymentStatus = () => {
     provider 
   })
   const [orderBreakdown, setOrderBreakdown] = useState(null)
+  const [cart, setCart] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isFallbackActive, setIsFallbackActive] = useState(false)
 
@@ -177,7 +179,7 @@ const PaymentStatus = () => {
               message: resultMessage || 'Wrong PIN entered or PIN blocked', 
               provider 
             })
-
+ 
             toast.error('Wrong M-Pesa PIN entered. Please try again.')
             break
           }
@@ -507,6 +509,73 @@ const PaymentStatus = () => {
 
   }
 
+  // Load cart and order details on mount
+  useEffect(() => {
+    const loadOrderData = async () => {
+      console.log('🔍 PaymentStatus: Loading order data...', { orderId, invoiceId })
+      
+      try {
+        // Try to load order details if orderId is available
+        if (orderId) {
+          console.log('📦 Fetching order details for orderId:', orderId)
+          const orderDetail = await orderAPI.getOrderById(orderId)
+          console.log('📦 Order API Response:', orderDetail)
+          
+          const order = orderDetail?.data?.data?.order
+          console.log('📦 Extracted order:', order)
+          
+          if (order) {
+            console.log('📦 Full order object:', order)
+            
+            // Set order breakdown from order.pricing
+            if (order.pricing) {
+              console.log('💰 Setting order breakdown:', order.pricing)
+              setOrderBreakdown(order.pricing)
+            } else {
+              console.warn('⚠️ Order has no pricing object!')
+            }
+            
+            // Set cart items from order
+            if (order.items && order.items.length > 0) {
+              console.log('🛒 Setting cart items from order:', order.items)
+              console.log('🛒 First item details:', {
+                title: order.items[0].title,
+                unitPrice: order.items[0].unitPrice,
+                productId: order.items[0].productId,
+                quantity: order.items[0].quantity,
+                variantOptions: order.items[0].variantOptions
+              })
+              setCart({ items: order.items })
+            } else {
+              console.warn('⚠️ Order has no items!')
+            }
+          } else {
+            console.warn('⚠️ No order found in response')
+          }
+        } else {
+          console.warn('⚠️ No orderId available')
+        }
+      } catch (error) {
+        console.error('❌ Failed to load order data:', error)
+        console.error('Error details:', error.response?.data)
+        
+        // Try to load cart as fallback
+        try {
+          console.log('🔄 Trying to load cart as fallback...')
+          const cartRes = await cartAPI.getCart()
+          console.log('🛒 Cart API Response:', cartRes)
+          setCart(cartRes.data?.data)
+        } catch (cartError) {
+          console.error('❌ Failed to load cart:', cartError)
+          console.error('Cart error details:', cartError.response?.data)
+        }
+      }
+    }
+
+    loadOrderData()
+  }, [orderId])
+
+
   useEffect(() => {
     if (paymentId) {
       startPaymentTracking()
@@ -533,13 +602,13 @@ const PaymentStatus = () => {
         const newReference = res.data?.data?.reference
         
         // Reset payment status to PENDING and restart tracking
+        // NOTE: Keep orderBreakdown and cart - don't reset them
         setPaymentView({ 
           status: 'PENDING', 
           title: 'Payment Processing', 
           message: 'Awaiting approval on your phone…', 
           provider 
         })
-        setOrderBreakdown(null)
         setIsFallbackActive(false)
         setIsLoading(false)
         
@@ -581,109 +650,218 @@ const PaymentStatus = () => {
     navigate('/orders')
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-        
-        {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {paymentView.title}
-          </h1>
-          <p className="text-gray-600">
-            {paymentView.message}
-          </p>
-        </div>
+  // Helper function to get product image (same as Cart.jsx)
+  const getProductImage = (product) => {
+    if (product?.images && product.images.length > 0) {
+      // Find the primary image first
+      const primaryImage = product.images.find(img => img.isPrimary === true)
+      if (primaryImage) {
+        return primaryImage.url
+      }
+      // If no primary image, use the first image
+      return product.images[0].url
+    }
+    if (product?.primaryImage) {
+      return product.primaryImage
+    }
+    return null // Return null to trigger placeholder
+  }
 
-        {/* Status Indicator */}
-        {paymentView.status === 'PENDING' && !isFallbackActive && (
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-6">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            <span>Processing...</span>
+  // Helper function to format variant options (same as Cart.jsx)
+  const formatVariantOptions = (variantOptions) => {
+    if (!variantOptions || Object.keys(variantOptions).length === 0) {
+      return 'No variants'
+    }
+
+    return Object.entries(variantOptions)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(', ')
+  }
+
+  return (
+    <div className="min-h-screen h-screen bg-white flex flex-col relative">
+      
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto pb-24">
+        <div className="flex flex-col items-center justify-center px-4 py-8">
+        
+          {/* Status Icon */}
+          {paymentView.status === 'PENDING' && !isFallbackActive && (
+            <div className="flex justify-center mb-6">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
+        </div>
           </div>
         )}
 
         {paymentView.status === 'SUCCESS' && (
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <div className="flex justify-center mb-6">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+                <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
           </div>
         )}
 
         {paymentView.status === 'FAILED' && (
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <div className="flex justify-center mb-6">
+              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-12 h-12 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
               </svg>
             </div>
           </div>
         )}
 
+          {/* Title */}
+          <h2 className="text-2xl font-bold text-gray-900 mb-3 text-center">
+            {paymentView.title}
+          </h2>
+
+          {/* Message */}
+          <p className="text-gray-600 text-base mb-8 text-center max-w-md">
+            {paymentView.message}
+          </p>
+
         {/* Loading indicator for fallback API call */}
         {isLoading && isFallbackActive && (
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-4">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-8">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
             <span>Checking payment status...</span>
           </div>
         )}
 
-        {/* Order Breakdown (Success only) */}
-        {paymentView.status === 'SUCCESS' && orderBreakdown && (
-          <div className="bg-gray-50 rounded-md p-4 text-sm text-gray-700 mb-6">
-            <h3 className="font-semibold mb-3">Order Summary</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>KSh {Number(orderBreakdown.subtotal || 0).toFixed(2)}</span>
-              </div>
-              {Number(orderBreakdown.discounts || 0) > 0 && (
-                <div className="flex justify-between text-green-700">
-                  <span>Discounts</span>
-                  <span>-KSh {Number(orderBreakdown.discounts).toFixed(2)}</span>
-                </div>
-              )}
-              {Number(orderBreakdown.packagingFee || 0) > 0 && (
-                <div className="flex justify-between">
-                  <span>Packaging</span>
-                  <span>KSh {Number(orderBreakdown.packagingFee).toFixed(2)}</span>
-                </div>
-              )}
-              {Number(orderBreakdown.schedulingFee || 0) > 0 && (
-                <div className="flex justify-between">
-                  <span>Scheduling</span>
-                  <span>KSh {Number(orderBreakdown.schedulingFee).toFixed(2)}</span>
-                </div>
-              )}
-              {Number(orderBreakdown.deliveryFee || 0) > 0 && (
-                <div className="flex justify-between">
-                  <span>Delivery</span>
-                  <span>KSh {Number(orderBreakdown.deliveryFee).toFixed(2)}</span>
-                </div>
-              )}
-              {Number(orderBreakdown.tax || 0) > 0 && (
-                <div className="flex justify-between">
-                  <span>Tax</span>
-                  <span>KSh {Number(orderBreakdown.tax).toFixed(2)}</span>
-                </div>
-              )}
-              <div className="flex justify-between font-semibold border-t pt-2 mt-2">
-                <span>Total</span>
-                <span>KSh {Number(orderBreakdown.total || 0).toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-        )}
+          {/* Order Items and Price Breakdown - Always visible */}
+          <div className="w-full max-w-md space-y-6">
+            
+            {/* Order Items - Cart Style */}
+            {cart?.items && cart.items.length > 0 && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 mb-4">Order Items</h3>
+                <div className="space-y-4">
+                  {cart.items.map((item) => (
+                    <div key={item._id} className="flex items-start space-x-4 p-3 bg-white rounded-lg border border-gray-200">
+                      
+                      {/* Product Image */}
+                      <div className="flex-shrink-0">
+                        {getProductImage(item.productId) ? (
+                          <img
+                            src={getProductImage(item.productId)}
+                            alt={item.productId?.title || 'Product'}
+                            className="w-20 h-20 object-cover rounded-lg"
+                            onError={(e) => {
+                              e.target.style.display = 'none'
+                              e.target.nextSibling.style.display = 'flex'
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200"
+                          style={{ display: getProductImage(item.productId) ? 'none' : 'flex' }}
+                        >
+                          <FiShoppingCart className="w-8 h-8 text-gray-400" />
+                        </div>
+                      </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3">
+                      {/* Product Details */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base font-semibold text-gray-900 mb-1">
+                          {item.title || item.productId?.title || 'Product Name'}
+                        </h3>
+
+                        <p className="text-sm text-gray-500 mb-2">
+                          {formatVariantOptions(item.variantOptions)}
+                        </p>
+
+                        <p className="text-sm text-gray-500 mb-2">
+                          Qty: {item.quantity}
+                        </p>
+
+                        <p className="text-lg font-bold text-primary">
+                          KSh {(item.unitPrice || item.price || 0)?.toFixed(2)}
+                        </p>
+                      </div>
+
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Price Breakdown - Always visible if we have order breakdown */}
+            {orderBreakdown && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 mb-4">Price Breakdown</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between text-gray-700">
+                    <span>Subtotal</span>
+                    <span className="font-medium">
+                      KSh {Number(orderBreakdown.subtotal || 0).toFixed(2)}
+                    </span>
+                  </div>
+
+                  {Number(orderBreakdown.discounts || 0) > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discounts</span>
+                      <span className="font-medium">-KSh {Number(orderBreakdown.discounts).toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  {Number(orderBreakdown.packagingFee || 0) > 0 && (
+                    <div className="flex justify-between text-gray-700">
+                      <span>Packaging</span>
+                      <span className="font-medium">KSh {Number(orderBreakdown.packagingFee).toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  {Number(orderBreakdown.schedulingFee || 0) > 0 && (
+                    <div className="flex justify-between text-gray-700">
+                      <span>Scheduling</span>
+                      <span className="font-medium">KSh {Number(orderBreakdown.schedulingFee).toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  {Number(orderBreakdown.deliveryFee || 0) > 0 && (
+                    <div className="flex justify-between text-gray-700">
+                      <span>Delivery</span>
+                      <span className="font-medium">KSh {Number(orderBreakdown.deliveryFee).toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  {Number(orderBreakdown.tax || 0) > 0 && (
+                    <div className="flex justify-between text-gray-700">
+                      <span>Tax</span>
+                      <span className="font-medium">KSh {Number(orderBreakdown.tax).toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between font-bold text-gray-900 border-t border-gray-300 pt-2 mt-2">
+                    <span>Total</span>
+                    <span>
+                      KSh {Number(orderBreakdown.total || 0).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Payment ID */}
+            <div className="text-xs text-gray-400 text-center pb-4 mt-6">
+              Payment ID: {paymentId}
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons - Absolutely Positioned at Bottom */}
+      <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 bg-white p-4 shadow-lg">
+        <div className="max-w-md mx-auto flex gap-3">
           {paymentView.status === 'SUCCESS' ? (
             <button 
               onClick={handleGoToOrders} 
-              className="flex-1 btn-primary"
+              className="flex-1 bg-primary hover:bg-primary-button text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
             >
               Go to Orders
             </button>
@@ -691,13 +869,13 @@ const PaymentStatus = () => {
             <>
               <button
                 onClick={handleRetryPayment}
-                className="flex-1 btn-primary"
+                className="flex-1 bg-primary hover:bg-primary-button text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
               >
                 Retry Payment
               </button>
               <button
                 onClick={handleClose}
-                className="flex-1 btn-outline"
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
               >
                 Close
               </button>
@@ -705,18 +883,14 @@ const PaymentStatus = () => {
           ) : (
             <button 
               onClick={handleClose} 
-              className="flex-1 btn-outline"
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
             >
               Hide
             </button>
           )}
         </div>
-
-        {/* Payment Info */}
-        <div className="mt-4 text-xs text-gray-500 text-center">
-          Payment ID: {paymentId}
-        </div>
       </div>
+
     </div>
   )
 }

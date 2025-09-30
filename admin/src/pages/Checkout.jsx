@@ -263,8 +263,9 @@ const Checkout = () => {
     }
   }
 
-  const payInvoiceNow = async (explicitInvoiceId) => {
+  const payInvoiceNow = async (explicitInvoiceId, explicitOrderId) => {
     const targetInvoiceId = explicitInvoiceId || invoiceId
+    const targetOrderId = explicitOrderId || orderId
     if (!targetInvoiceId) return
     try {
       setPaying(true)
@@ -278,7 +279,7 @@ const Checkout = () => {
           // Navigate to payment status page instead of showing modal
           const params = new URLSearchParams({
             paymentId,
-            orderId: orderId,
+            orderId: targetOrderId,
             provider: 'mpesa',
             checkoutRequestId: checkoutRequestId || '',
             invoiceId: targetInvoiceId,
@@ -297,7 +298,7 @@ const Checkout = () => {
         // Navigate to payment status page instead of showing modal
         const params = new URLSearchParams({
           paymentId,
-          orderId: orderId,
+          orderId: targetOrderId,
           provider: 'paystack',
           reference: reference || '',
           invoiceId: targetInvoiceId,
@@ -327,12 +328,14 @@ const Checkout = () => {
       ensuredInvoiceId = created?.invoiceId
     }
 
-    // 2) If pay now, initiate payment immediately using the ensured invoice id
+    console.log('✅ handleCompleteOrder - Order IDs:', { ensuredOrderId, ensuredInvoiceId })
+
+    // 2) If pay now, initiate payment immediately using the ensured invoice id AND order id
     if (paymentMode === 'pay_now' && paymentMethod) {
       if (paymentMethod === 'cash') {
         toast.success('Order placed. Collect cash at counter.')
       } else {
-        await payInvoiceNow(ensuredInvoiceId)
+        await payInvoiceNow(ensuredInvoiceId, ensuredOrderId)
       }
     } else if (paymentMode === 'post_to_bill') {
       toast.success('Order posted to bill.')
