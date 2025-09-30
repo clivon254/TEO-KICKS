@@ -124,13 +124,14 @@ export const mpesaWebhook = async (req, res, next) => {
 
     const parsed = parseDarajaCallback(payload)
 
-    if(payload?.Body?.stkCallback)
-    {
-      io.emit("callback.received", {message:payload?.Body?.stkCallback.ResultDesc , CODE:payload?.Body?.stkCallback.ResultCode})
-    }
+    console.log(parsed)
+
+    console.log(payload)
+
+    console.log("this is daraja callback")
 
     if (!parsed.valid) return res.status(400).json({ success: false, message: 'Invalid payload' })
-
+    
     const payment = await Payment.findOne({ 'processorRefs.daraja.checkoutRequestId': parsed.checkoutRequestId })
     if (!payment) return res.status(404).json({ success: false, message: 'Payment not found' })
 
