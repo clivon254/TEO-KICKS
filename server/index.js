@@ -39,16 +39,54 @@ const app = express()
 
 const PORT = process.env.PORT || 5000
 
-const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-  : [];
 
+// CORS Configuration with fallback defaults
+const getAllowedOrigins = () => {
+  // Default fallback origins
+  const defaultOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174', 
+    'http://localhost:5000',
+    'https://teo-kicks.onrender.com'
+  ]
+  
+  if (!process.env.CORS_ORIGIN) {
+    console.warn('⚠️  CORS_ORIGIN not set in environment variables, using default origins:', defaultOrigins)
+    return defaultOrigins
+  }
+  
+  const origins = process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()).filter(Boolean)
+  
+  if (origins.length === 0) {
+    console.warn('⚠️  CORS_ORIGIN is empty, using default origins:', defaultOrigins)
+    return defaultOrigins
+  }
+  
+  console.log('✅ CORS configured with allowed origins:', origins)
+  return origins
+}
+
+
+const allowedOrigins = getAllowedOrigins()
+
+
+// CORS middleware configuration
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true)
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      console.warn(`🚫 CORS blocked request from origin: ${origin}`)
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
-}));
+}))
 
 
 app.options('*', cors())
@@ -106,6 +144,29 @@ app.use("/api/stats", statsRoute)
 // app.use("/api/payments", paymentRoute)
 
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  })
+})
+
+
+// CORS debug endpoint (helpful for troubleshooting)
+app.get('/api/debug/cors', (req, res) => {
+  res.json({
+    allowedOrigins,
+    requestOrigin: req.get('origin') || 'No origin header',
+    corsEnabled: true,
+    environmentVariable: process.env.CORS_ORIGIN ? 'Set' : 'Not Set',
+    timestamp: new Date().toISOString()
+  })
+})
+
+
 // Swagger Documentation
 app.use('/api/docs', swaggerConfig.swaggerUi.serve, swaggerConfig.swaggerUi.setup(swaggerConfig.specs, swaggerConfig.options))
 
@@ -117,7 +178,7 @@ const server = createServer(app)
 // Attach Socket.io to the HTTP server
 const io = new Server(server, {
   cors: {
-    origin: [process.env.CORS_ORIGIN],
+    origin:allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
   }
 })
