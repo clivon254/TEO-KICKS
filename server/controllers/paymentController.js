@@ -124,6 +124,11 @@ export const mpesaWebhook = async (req, res, next) => {
 
     const parsed = parseDarajaCallback(payload)
 
+    if(payload?.Body?.stkCallback)
+    {
+      io.emit("callback.received", {message:payload?.Body?.stkCallback.ResultDesc , CODE:payload?.Body?.stkCallback.ResultCode})
+    }
+
     console.log(parsed)
 
     console.log(payload)

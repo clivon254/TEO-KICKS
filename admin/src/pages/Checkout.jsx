@@ -249,9 +249,17 @@ const Checkout = () => {
       try {
         const cartRes = await cartAPI.getCart()
         setCart(cartRes.data?.data)
+        console.log('✅ Cart refreshed after order creation')
       } catch (cartError) {
         console.warn('Failed to refresh cart:', cartError)
         // Don't fail the order creation if cart refresh fails
+      }
+      
+      // Clear applied coupon from localStorage
+      try {
+        localStorage.removeItem('appliedCoupon')
+      } catch (e) {
+        console.warn('Failed to clear applied coupon:', e)
       }
       
       return { orderId: createdOrderId, invoiceId: createdInvoiceId }
@@ -263,8 +271,9 @@ const Checkout = () => {
     }
   }
 
-  const payInvoiceNow = async (explicitInvoiceId) => {
+  const payInvoiceNow = async (explicitInvoiceId, explicitOrderId) => {
     const targetInvoiceId = explicitInvoiceId || invoiceId
+    const targetOrderId = explicitOrderId || orderId
     if (!targetInvoiceId) return
     try {
       setPaying(true)
@@ -275,10 +284,11 @@ const Checkout = () => {
           const paymentId = res.data?.data?.paymentId
           const checkoutRequestId = res.data?.data?.daraja?.checkoutRequestId
           
-          // Navigate to payment status page instead of showing modal
+          // Navigate to payment status page with method parameter
           const params = new URLSearchParams({
+            method: 'mpesa',
             paymentId,
-            orderId: orderId,
+            orderId: targetOrderId,
             provider: 'mpesa',
             checkoutRequestId: checkoutRequestId || '',
             invoiceId: targetInvoiceId,
@@ -294,10 +304,11 @@ const Checkout = () => {
         const paymentId = res.data?.data?.paymentId
         const reference = res.data?.data?.reference
         
-        // Navigate to payment status page instead of showing modal
+        // Navigate to payment status page with method parameter
         const params = new URLSearchParams({
+          method: 'paystack',
           paymentId,
-          orderId: orderId,
+          orderId: targetOrderId,
           provider: 'paystack',
           reference: reference || '',
           invoiceId: targetInvoiceId,
@@ -317,7 +328,84 @@ const Checkout = () => {
 
 
   const handleCompleteOrder = async () => {
-    // 1) Ensure order (+ invoice) exists
+    // Handle Cash and Post-to-Bill (order creation with instant navigation)
+    if (paymentMode === 'post_to_bill' || (paymentMode === 'pay_now' && paymentMethod === 'cash')) {
+      try {
+        setCreating(true)
+        
+        const payload = {
+          location,
+          type: orderType,
+          timing,
+          addressId: canShowAddress ? addressId : null,
+          paymentPreference: {
+            mode: paymentMode,
+            method: paymentMode === 'pay_now' ? paymentMethod : null,
+          },
+          packagingOptionId: canShowPackaging ? selectedPackagingId : null,
+          couponCode: coupon?.code || null,
+          cartId: null,
+          metadata: {},
+        }
+
+        // Save checkout data to localStorage for retry functionality
+        try {
+          localStorage.setItem('checkoutData', JSON.stringify({
+            payload,
+            method: paymentMode === 'post_to_bill' ? 'post_to_bill' : 'cash'
+          }))
+        } catch (e) {
+          console.warn('Failed to save checkout data:', e)
+        }
+
+        const res = await orderAPI.createOrder(payload)
+        const createdOrderId = res.data?.data?.orderId
+        const orderDetail = await orderAPI.getOrderById(createdOrderId)
+        const inv = orderDetail.data?.data?.order?.invoiceId
+        const createdInvoiceId = inv?._id || inv
+        
+        // Refresh cart after successful order creation (backend clears cart items)
+        try {
+          const cartRes = await cartAPI.getCart()
+          setCart(cartRes.data?.data)
+          console.log('✅ Cart refreshed after order creation')
+        } catch (cartError) {
+          console.warn('Failed to refresh cart:', cartError)
+          // Don't fail the order creation if cart refresh fails
+        }
+        
+        // Clear applied coupon from localStorage
+        try {
+          localStorage.removeItem('appliedCoupon')
+        } catch (e) {
+          console.warn('Failed to clear applied coupon:', e)
+        }
+        
+        // Navigate to payment status with method parameter
+        const method = paymentMode === 'post_to_bill' ? 'post_to_bill' : 'cash'
+        const params = new URLSearchParams({
+          method: method,
+          orderId: createdOrderId,
+          invoiceId: createdInvoiceId
+        })
+        navigate(`/payment-status?${params.toString()}`)
+        
+      } catch (error) {
+        // Order creation failed - navigate to payment status with error indication
+        const method = paymentMode === 'post_to_bill' ? 'post_to_bill' : 'cash'
+        const params = new URLSearchParams({
+          method: method,
+          error: error?.response?.data?.message || 'Failed to create order'
+        })
+        navigate(`/payment-status?${params.toString()}`)
+      } finally {
+        setCreating(false)
+      }
+      return
+    }
+
+    // Handle M-Pesa and Paystack (order creation first, then payment initiation)
+    if (paymentMode === 'pay_now' && (paymentMethod === 'mpesa_stk' || paymentMethod === 'paystack_card')) {
     let ensuredOrderId = orderId
     let ensuredInvoiceId = invoiceId
 
@@ -327,15 +415,10 @@ const Checkout = () => {
       ensuredInvoiceId = created?.invoiceId
     }
 
-    // 2) If pay now, initiate payment immediately using the ensured invoice id
-    if (paymentMode === 'pay_now' && paymentMethod) {
-      if (paymentMethod === 'cash') {
-        toast.success('Order placed. Collect cash at counter.')
-      } else {
-        await payInvoiceNow(ensuredInvoiceId)
-      }
-    } else if (paymentMode === 'post_to_bill') {
-      toast.success('Order posted to bill.')
+    console.log('✅ handleCompleteOrder - Order IDs:', { ensuredOrderId, ensuredInvoiceId })
+
+      // Initiate payment
+        await payInvoiceNow(ensuredInvoiceId, ensuredOrderId)
     }
   }
 
