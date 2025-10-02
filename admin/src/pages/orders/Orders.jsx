@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { orderAPI } from '../../utils/api'
-import { FiSearch, FiX, FiFilter, FiList, FiAlertTriangle, FiEye, FiTrash2, FiTag } from 'react-icons/fi'
+import { orderAPI, adminOrderAPI } from '../../utils/api'
+import { FiSearch, FiX, FiFilter, FiList, FiAlertTriangle, FiEye, FiTrash2, FiTag, FiPlus } from 'react-icons/fi'
 import Pagination from '../../components/common/Pagination'
 import OrderStatusBadge from '../../components/common/OrderStatusBadge'
 import PaymentStatusBadge from '../../components/common/PaymentStatusBadge'
@@ -17,6 +17,8 @@ const Orders = () => {
   const [filterPayment, setFilterPayment] = useState('all')
   const [filterType, setFilterType] = useState('all')
   const [filterLocation, setFilterLocation] = useState('all')
+  const [filterCreatedBy, setFilterCreatedBy] = useState('all')
+  const [filterCustomerType, setFilterCustomerType] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [selectedOrders, setSelectedOrders] = useState([])
@@ -36,16 +38,18 @@ const Orders = () => {
     if (filterPayment !== 'all') p.paymentStatus = filterPayment
     if (filterType !== 'all') p.type = filterType
     if (filterLocation !== 'all') p.location = filterLocation
-    if (debouncedSearch) p.q = debouncedSearch
+    if (filterCreatedBy !== 'all') p.createdBy = filterCreatedBy
+    if (filterCustomerType !== 'all') p.customerType = filterCustomerType
+    if (debouncedSearch) p.search = debouncedSearch
     p.page = currentPage
     p.limit = itemsPerPage
     return p
-  }, [filterStatus, filterPayment, filterType, filterLocation, debouncedSearch, currentPage, itemsPerPage])
+  }, [filterStatus, filterPayment, filterType, filterLocation, filterCreatedBy, filterCustomerType, debouncedSearch, currentPage, itemsPerPage])
 
   const loadOrders = useCallback(async () => {
     try {
       setIsLoading(true)
-      const res = await orderAPI.getOrders(params)
+      const res = await adminOrderAPI.getAllOrders(params)
       const payload = res.data?.data || {}
       setOrdersData({
         orders: payload.orders || [],
@@ -92,7 +96,7 @@ const Orders = () => {
 
   const clearSearch = useCallback(() => { setSearchTerm(''); setCurrentPage(1) }, [])
   const clearFilters = useCallback(() => {
-    setFilterStatus('all'); setFilterPayment('all'); setFilterType('all'); setFilterLocation('all'); setCurrentPage(1)
+    setFilterStatus('all'); setFilterPayment('all'); setFilterType('all'); setFilterLocation('all'); setFilterCreatedBy('all'); setFilterCustomerType('all'); setCurrentPage(1)
   }, [])
 
   const goToDetails = (orderId) => navigate(`/orders/${orderId}`)
@@ -117,9 +121,18 @@ const Orders = () => {
       )}
 
       <header className="mb-4">
-        <div className="mb-4">
-          <h1 className="title2">Orders</h1>
-          <p className="text-gray-600">Manage customer orders, statuses, and payments</p>
+        <div className="mb-4 flex justify-between items-start">
+          <div>
+            <h1 className="title2">Orders</h1>
+            <p className="text-gray-600">Manage customer orders, statuses, and payments</p>
+          </div>
+          <button
+            onClick={() => navigate('/orders/create')}
+            className="btn-primary flex items-center gap-2"
+          >
+            <FiPlus className="h-4 w-4" />
+            Create Order
+          </button>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
@@ -128,7 +141,7 @@ const Orders = () => {
               <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <input
                 type="text"
-                placeholder="Search by invoice number..."
+                placeholder="Search by order number or customer name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-9 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
@@ -187,7 +200,26 @@ const Orders = () => {
             </select>
           </div>
 
-          {(filterStatus !== 'all' || filterPayment !== 'all' || filterType !== 'all' || filterLocation !== 'all') && (
+          <div className="relative">
+            <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-3 w-3" />
+            <select value={filterCreatedBy} onChange={(e) => setFilterCreatedBy(e.target.value)} className="border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-white text-xs">
+              <option value="all">Created By: All</option>
+              <option value="customer">Customer Created</option>
+              <option value="admin">Admin Created</option>
+            </select>
+          </div>
+
+          <div className="relative">
+            <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-3 w-3" />
+            <select value={filterCustomerType} onChange={(e) => setFilterCustomerType(e.target.value)} className="border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-white text-xs">
+              <option value="all">Customer Type: All</option>
+              <option value="registered">Registered</option>
+              <option value="guest">Guest</option>
+              <option value="anonymous">Anonymous</option>
+            </select>
+          </div>
+
+          {(filterStatus !== 'all' || filterPayment !== 'all' || filterType !== 'all' || filterLocation !== 'all' || filterCreatedBy !== 'all' || filterCustomerType !== 'all') && (
             <button onClick={clearFilters} className="px-3 py-2 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1">
               <FiX className="h-3 w-3" />
               Clear
@@ -223,6 +255,7 @@ const Orders = () => {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
@@ -239,7 +272,30 @@ const Orders = () => {
                         <div className="text-sm font-medium text-gray-900">{order?.invoice?.number || order._id}</div>
                         <div className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleString()}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order?.customer?.name || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div>{order?.customer?.name || order?.guestCustomerInfo?.name || 'Anonymous'}</div>
+                        {order?.customerType && (
+                          <div className="text-xs text-gray-500 capitalize">
+                            {order.customerType === 'registered' && 'Registered'}
+                            {order.customerType === 'guest' && 'Guest'}
+                            {order.customerType === 'anonymous' && 'Anonymous'}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            order.isAdminCreated 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {order.isAdminCreated ? 'Admin' : 'Customer'}
+                          </span>
+                          {order?.createdBy?.name && (
+                            <span className="text-xs text-gray-500">{order.createdBy.name}</span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><OrderStatusBadge status={order.status} /></td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><PaymentStatusBadge status={order.paymentStatus} /></td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">KSh {order?.pricing?.total?.toFixed(2) || '0.00'}</td>

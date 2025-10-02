@@ -408,6 +408,21 @@ export const couponAPI = {
     generateNewCode: (couponId) => api.patch(`/coupons/${couponId}/generate-code`),
 }
 
+// Admin Order API calls
+export const adminOrderAPI = {
+    // Create admin order
+    createAdminOrder: (orderData) => api.post('/orders/admin/create', orderData),
+
+    // Get all orders with filtering
+    getAllOrders: (params = {}) => api.get('/orders/admin/all', { params }),
+
+    // Get order statistics
+    getOrderStats: (params = {}) => api.get('/orders/admin/stats', { params }),
+
+    // Convert guest to registered
+    convertGuestToRegistered: (data) => api.post('/orders/admin/convert-guest', data),
+}
+
 // Store Configuration API calls
 export const storeConfigAPI = {
     // Get store configuration

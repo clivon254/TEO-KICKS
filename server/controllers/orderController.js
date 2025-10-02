@@ -4,6 +4,12 @@ import Cart from "../models/cartModel.js"
 import Product from "../models/productModel.js"
 import PackagingOption from "../models/packagingOptionModel.js"
 import Coupon from "../models/couponModel.js"
+import User from "../models/userModel.js"
+import StoreConfig from "../models/storeConfigModel.js"
+import bcrypt from "bcryptjs"
+import { sendOrderNotification } from "../services/notificationService.js"
+import { initiateStkPush } from "../services/external/darajaService.js"
+import { initTransaction } from "../services/external/paystackService.js"
 
 
 // Helper: generate incremental-ish numbers (placeholder; replace with robust generator)
@@ -317,6 +323,599 @@ export const deleteOrder = async (req, res, next) => {
     return res.json({ success: true })
   } catch (err) {
     return next(err)
+  }
+}
+
+
+// ==================== ADMIN ORDER FUNCTIONS ====================
+
+/**
+ * Create order for customer (admin-initiated)
+ */
+export const createAdminOrder = async (req, res, next) => {
+  try {
+    const io = req.app.get('io')
+
+    const {
+      customerType, // 'registered' | 'guest' | 'anonymous'
+      customerInfo, // For guest/anonymous customers
+      customerId, // For registered customers
+      items,
+      deliveryDetails,
+      paymentPreference,
+      packagingOptionId,
+      couponCode,
+      metadata = {}
+    } = req.body
+
+    const adminUserId = req.user?._id || req.user?.id
+
+    // Step 1: Determine and prepare customer
+    const customerResult = await prepareCustomerForOrder({
+      customerType,
+      customerInfo,
+      customerId,
+      adminUserId
+    })
+
+    // Step 2: Validate and prepare order items
+    const orderItems = await prepareOrderItems(items)
+
+    // Step 3: Calculate pricing and apply discounts
+    const pricingResult = await calculateOrderPricing({
+      items: orderItems,
+      couponCode,
+      packagingOptionId,
+      deliveryDetails
+    })
+
+    // Step 4: Create order record
+    const order = await createOrderRecord({
+      customerId: customerResult.customerId,
+      customerType,
+      items: orderItems,
+      pricing: pricingResult,
+      deliveryDetails,
+      paymentPreference,
+      adminUserId,
+      metadata
+    })
+
+    // Step 5: Handle payment initiation based on method
+    const paymentResult = await initiateAdminPayment({
+      order,
+      paymentPreference,
+      customerInfo: customerResult.customerInfo
+    })
+
+    // Step 6: Send notifications
+    await sendOrderNotifications({
+      order,
+      customerInfo: customerResult.customerInfo,
+      paymentResult
+    })
+    
+    return res.status(201).json({ 
+      success: true, 
+      data: { 
+        orderId: order._id,
+        customerId: customerResult.customerId,
+        customerType,
+        paymentResult,
+        orderNumber: order.orderNumber
+      }
+    })
+
+  } catch (err) {
+    return next(err)
+  }
+}
+
+/**
+ * Get all orders with enhanced filtering (customer + admin created)
+ */
+export const getAllOrders = async (req, res, next) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      customerType,
+      createdBy, // 'customer' | 'admin' | 'all'
+      dateFrom,
+      dateTo,
+      search
+    } = req.query
+
+    const filter = {}
+
+    // Apply filters
+    if (status) filter.status = status
+    if (customerType) filter.customerType = customerType
+    if (createdBy && createdBy !== 'all') {
+      if (createdBy === 'admin') {
+        filter.isAdminCreated = true
+      } else if (createdBy === 'customer') {
+        filter.isAdminCreated = { $ne: true }
+      }
+    }
+    if (dateFrom || dateTo) {
+      filter.createdAt = {}
+      if (dateFrom) filter.createdAt.$gte = new Date(dateFrom)
+      if (dateTo) filter.createdAt.$lte = new Date(dateTo)
+    }
+
+    // Search by order number or customer name
+    if (search) {
+      filter.$or = [
+        { orderNumber: { $regex: search, $options: 'i' } },
+        { 'guestCustomerInfo.name': { $regex: search, $options: 'i' } }
+      ]
+    }
+
+    const orders = await Order.find(filter)
+      .populate('customerId', 'name email phone')
+      .populate('createdBy', 'name email')
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+
+    const total = await Order.countDocuments(filter)
+
+    return res.json({
+      success: true,
+      data: {
+        orders,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    })
+
+  } catch (err) {
+    return next(err)
+  }
+}
+
+/**
+ * Get unified order statistics (all orders with breakdown by creation method)
+ */
+export const getOrderStats = async (req, res, next) => {
+  try {
+    const { period = '30d' } = req.query
+
+    // Calculate date range
+    const now = new Date()
+    const startDate = new Date()
+    
+    switch (period) {
+      case '7d':
+        startDate.setDate(now.getDate() - 7)
+        break
+      case '30d':
+        startDate.setDate(now.getDate() - 30)
+        break
+      case '90d':
+        startDate.setDate(now.getDate() - 90)
+        break
+      default:
+        startDate.setDate(now.getDate() - 30)
+    }
+
+    const stats = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: now }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          totalRevenue: { $sum: '$total' },
+          avgOrderValue: { $avg: '$total' },
+          customerOrders: {
+            $sum: { $cond: [{ $ne: ['$isAdminCreated', true] }, 1, 0] }
+          },
+          adminOrders: {
+            $sum: { $cond: [{ $eq: ['$isAdminCreated', true] }, 1, 0] }
+          },
+          registeredCustomers: {
+            $sum: { $cond: [{ $eq: ['$customerType', 'registered'] }, 1, 0] }
+          },
+          guestCustomers: {
+            $sum: { $cond: [{ $eq: ['$customerType', 'guest'] }, 1, 0] }
+          },
+          anonymousCustomers: {
+            $sum: { $cond: [{ $eq: ['$customerType', 'anonymous'] }, 1, 0] }
+          }
+        }
+      }
+    ])
+
+    const result = stats[0] || {
+      totalOrders: 0,
+      totalRevenue: 0,
+      avgOrderValue: 0,
+      customerOrders: 0,
+      adminOrders: 0,
+      registeredCustomers: 0,
+      guestCustomers: 0,
+      anonymousCustomers: 0
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        period,
+        ...result,
+        creationMethodBreakdown: {
+          customer: result.customerOrders,
+          admin: result.adminOrders
+        },
+        customerTypeBreakdown: {
+          registered: result.registeredCustomers,
+          guest: result.guestCustomers,
+          anonymous: result.anonymousCustomers
+        }
+      }
+    })
+
+  } catch (err) {
+    return next(err)
+  }
+}
+
+/**
+ * Convert guest customer to registered
+ */
+export const convertGuestToRegistered = async (req, res, next) => {
+  try {
+    const { guestCustomerId, registrationData } = req.body
+
+    const guestCustomer = await User.findById(guestCustomerId)
+    if (!guestCustomer || !guestCustomer.isGuest) {
+      throw new Error('Guest customer not found')
+    }
+
+    // Update customer with registration data
+    guestCustomer.name = registrationData.name
+    guestCustomer.email = registrationData.email
+    guestCustomer.phone = registrationData.phone
+    guestCustomer.password = await bcrypt.hash(registrationData.password, 10)
+    guestCustomer.isGuest = false
+    guestCustomer.isActive = true
+    guestCustomer.conversionDate = new Date()
+
+    await guestCustomer.save()
+
+    // Link all guest orders to registered customer
+    await Order.updateMany(
+      { customerId: guestCustomerId },
+      { 
+        customerId: guestCustomerId, 
+        isGuestOrder: false,
+        customerType: 'registered'
+      }
+    )
+
+    return res.json({
+      success: true,
+      data: {
+        customerId: guestCustomer._id,
+        message: 'Guest customer converted to registered successfully'
+      }
+    })
+
+  } catch (err) {
+    return next(err)
+  }
+}
+
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Prepare customer for order creation
+ */
+const prepareCustomerForOrder = async ({ customerType, customerInfo, customerId, adminUserId }) => {
+  switch (customerType) {
+    case 'registered':
+      return await handleRegisteredCustomer(customerId, adminUserId)
+    
+    case 'guest':
+      return await handleGuestCustomer(customerInfo)
+    
+    case 'anonymous':
+      return await handleAnonymousCustomer()
+    
+    default:
+      throw new Error('Invalid customer type')
+  }
+}
+
+/**
+ * Handle registered customer selection
+ */
+const handleRegisteredCustomer = async (customerId, adminUserId) => {
+  // Verify customer exists and is active
+  const customer = await User.findById(customerId)
+  if (!customer || !customer.isActive) {
+    throw new Error('Customer not found or inactive')
+  }
+
+  // Verify customer is not the admin creating the order
+  if (String(customerId) === String(adminUserId)) {
+    throw new Error('Cannot create order for yourself')
+  }
+
+  return {
+    customerId: customer._id,
+    customerInfo: {
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone
+    }
+  }
+}
+
+/**
+ * Handle guest customer creation/selection
+ */
+const handleGuestCustomer = async (customerInfo) => {
+  // Try to find existing guest by phone
+  if (customerInfo.phone) {
+    let guestCustomer = await User.findOne({ 
+      phone: customerInfo.phone, 
+      isGuest: true 
+    })
+    
+    if (guestCustomer) {
+      // Update existing guest with new information
+      guestCustomer.name = customerInfo.name || guestCustomer.name
+      guestCustomer.email = customerInfo.email || guestCustomer.email
+      await guestCustomer.save()
+
+      return {
+        customerId: guestCustomer._id,
+        customerInfo: {
+          name: guestCustomer.name,
+          email: guestCustomer.email,
+          phone: guestCustomer.phone
+        }
+      }
+    }
+  }
+  
+  // Create new guest customer
+  const guestCustomer = await User.create({
+    name: customerInfo.name || 'Guest Customer',
+    phone: customerInfo.phone || null,
+    email: customerInfo.email || null,
+    role: 'customer',
+    isGuest: true,
+    isActive: true
+  })
+  
+  return {
+    customerId: guestCustomer._id,
+    customerInfo: {
+      name: guestCustomer.name,
+      email: guestCustomer.email,
+      phone: guestCustomer.phone
+    }
+  }
+}
+
+/**
+ * Handle anonymous customer
+ */
+const handleAnonymousCustomer = async () => {
+  // Create minimal anonymous customer record
+  const anonymousCustomer = await User.create({
+    name: 'Anonymous Customer',
+    phone: null,
+    email: null,
+    role: 'customer',
+    isGuest: true,
+    isAnonymous: true,
+    isActive: true
+  })
+
+  return {
+    customerId: anonymousCustomer._id,
+    customerInfo: {
+      name: 'Anonymous Customer',
+      email: null,
+      phone: null
+    }
+  }
+}
+
+/**
+ * Prepare and validate order items
+ */
+const prepareOrderItems = async (items) => {
+  const orderItems = []
+
+  for (const item of items) {
+    // Validate product exists and is active
+    const product = await Product.findById(item.productId)
+    if (!product || !product.isActive) {
+      throw new Error(`Product ${item.productId} not found or inactive`)
+    }
+
+    // Validate SKU if provided
+    if (item.skuId) {
+      const sku = product.skus.find(s => s._id.toString() === item.skuId)
+      if (!sku) {
+        throw new Error(`SKU ${item.skuId} not found for product ${product.name}`)
+      }
+
+      // Check stock availability
+      if (sku.stock < item.quantity) {
+        throw new Error(`Insufficient stock for ${product.name} - ${sku.attributesString}`)
+      }
+    }
+
+    // Calculate item pricing
+    const itemPrice = item.skuId 
+      ? product.skus.find(s => s._id.toString() === item.skuId).price
+      : product.price
+
+    orderItems.push({
+      productId: item.productId,
+      skuId: item.skuId,
+      variantOptions: item.variantOptions || {},
+      quantity: item.quantity,
+      price: itemPrice,
+      total: itemPrice * item.quantity
+    })
+  }
+
+  return orderItems
+}
+
+/**
+ * Calculate order pricing with discounts
+ */
+const calculateOrderPricing = async ({ items, couponCode, packagingOptionId, deliveryDetails }) => {
+  let subtotal = items.reduce((sum, item) => sum + item.total, 0)
+  let discount = 0
+  let coupon = null
+
+  // Apply coupon if provided
+  if (couponCode) {
+    coupon = await Coupon.findOne({ code: couponCode, isActive: true })
+    if (coupon) {
+      if (coupon.type === 'percentage') {
+        discount = (subtotal * coupon.value) / 100
+      } else {
+        discount = coupon.value
+      }
+      discount = Math.min(discount, subtotal) // Don't exceed subtotal
+    }
+  }
+
+  // Calculate packaging cost
+  let packagingCost = 0
+  if (packagingOptionId) {
+    const packaging = await PackagingOption.findById(packagingOptionId)
+    if (packaging) {
+      packagingCost = packaging.fee
+    }
+  }
+
+  // Calculate delivery cost
+  let deliveryCost = 0
+  if (deliveryDetails.method === 'delivery' && deliveryDetails.distance) {
+    // Use store configuration for delivery fee per km
+    const storeConfig = await StoreConfig.findOne()
+    if (storeConfig?.delivery?.feePerKm) {
+      deliveryCost = deliveryDetails.distance * storeConfig.delivery.feePerKm
+    }
+  }
+
+  const total = subtotal - discount + packagingCost + deliveryCost
+
+  return {
+    subtotal,
+    discount,
+    packagingCost,
+    deliveryCost,
+    total,
+    coupon
+  }
+}
+
+/**
+ * Create order record in database
+ */
+const createOrderRecord = async ({ customerId, customerType, items, pricing, deliveryDetails, paymentPreference, adminUserId, metadata }) => {
+  const order = await Order.create({
+    customerId,
+    customerType,
+    isGuestOrder: customerType !== 'registered',
+    guestCustomerInfo: customerType !== 'registered' ? {
+      name: metadata.customerName,
+      phone: metadata.customerPhone,
+      email: metadata.customerEmail
+    } : undefined,
+    items,
+    subtotal: pricing.subtotal,
+    discount: pricing.discount,
+    packagingCost: pricing.packagingCost,
+    deliveryCost: pricing.deliveryCost,
+    total: pricing.total,
+    status: 'placed',
+    paymentStatus: 'pending',
+    deliveryMethod: deliveryDetails.method,
+    addressId: deliveryDetails.addressId,
+    timing: deliveryDetails.timing,
+    paymentPreference,
+    createdBy: adminUserId,
+    isAdminCreated: true,
+    metadata
+  })
+
+  return order
+}
+
+/**
+ * Initiate payment based on method
+ */
+const initiateAdminPayment = async ({ order, paymentPreference, customerInfo }) => {
+  const { mode, method } = paymentPreference
+
+  if (mode === 'post_to_bill') {
+    // No payment initiation needed
+    return { method: 'post_to_bill', status: 'pending' }
+  }
+
+  if (mode === 'cash') {
+    // No payment initiation needed
+    return { method: 'cash', status: 'pending' }
+  }
+
+  if (mode === 'pay_now') {
+    if (method === 'mpesa_stk') {
+      const result = await initiateStkPush({
+        amount: order.total,
+        phone: customerInfo.phone,
+        accountReference: order.orderNumber
+      })
+      return { method: 'mpesa_stk', status: 'pending', ...result }
+    }
+    
+    if (method === 'paystack') {
+      const callbackUrl = `${process.env.API_BASE_URL}/api/payments/webhooks/paystack`
+      const result = await initTransaction({
+        amount: order.total,
+        email: customerInfo.email,
+        reference: order.orderNumber,
+        callbackUrl
+      })
+      return { method: 'paystack', status: 'pending', ...result }
+    }
+  }
+
+  throw new Error('Invalid payment method')
+}
+
+/**
+ * Send order notifications
+ */
+const sendOrderNotifications = async ({ order, customerInfo, paymentResult }) => {
+  // Send order notification (SMS and email)
+  if (customerInfo.phone || customerInfo.email) {
+    await sendOrderNotification(
+      customerInfo.phone,
+      order.orderNumber,
+      'placed',
+      customerInfo.name
+    )
   }
 }
 

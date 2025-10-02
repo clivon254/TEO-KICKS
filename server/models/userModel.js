@@ -92,7 +92,23 @@ const userSchema = new mongoose.Schema({
     // Account status
     isActive: { type: Boolean, default: true },
 
-    lastLoginAt: { type: Date }
+    lastLoginAt: { type: Date },
+
+    // New fields for guest customers
+    isGuest: {
+        type: Boolean,
+        default: false
+    },
+    
+    isAnonymous: {
+        type: Boolean,
+        default: false
+    },
+    
+    conversionDate: {
+        type: Date,
+        default: null
+    }
 
 }, {
     timestamps: true

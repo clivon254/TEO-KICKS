@@ -70,6 +70,29 @@ const orderSchema = new mongoose.Schema({
     invoiceId: { type: mongoose.Schema.Types.ObjectId, ref: "Invoice", default: null },
     receiptId: { type: mongoose.Schema.Types.ObjectId, ref: "Receipt", default: null },
 
+    // New fields for admin order creation
+    customerType: {
+        type: String,
+        enum: ['registered', 'guest', 'anonymous'],
+        default: 'registered'
+    },
+    
+    isGuestOrder: {
+        type: Boolean,
+        default: false
+    },
+    
+    isAdminCreated: {
+        type: Boolean,
+        default: false
+    },
+    
+    guestCustomerInfo: {
+        name: String,
+        phone: String,
+        email: String
+    },
+
     metadata: { type: mongoose.Schema.Types.Mixed, default: {} }
 
 }, { timestamps: true })
