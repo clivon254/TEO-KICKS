@@ -4,6 +4,9 @@ import Cart from "../models/cartModel.js"
 import Product from "../models/productModel.js"
 import PackagingOption from "../models/packagingOptionModel.js"
 import Coupon from "../models/couponModel.js"
+import User from "../models/userModel.js"
+import { sendNotification, sendNotificationToRole } from "../services/notificationService.js"
+import { emitNotification, emitOrderCreated, emitInvoiceCreated } from "../utils/socketNotifications.js"
 
 
 // Helper: generate incremental-ish numbers (placeholder; replace with robust generator)
@@ -164,9 +167,44 @@ export const createOrder = async (req, res, next) => {
     cart.status = 'converted'
     await cart.save()
 
-    // Emit events
-    io?.emit('order.created', { orderId: order._id.toString() })
-    io?.emit('invoice.created', { invoiceId: invoice._id.toString(), orderId: order._id.toString() })
+    // Send notifications
+    try {
+        // Notify customer
+        await sendNotification({
+            userId: ownerCustomerId,
+            type: 'order_created',
+            payload: {
+                orderId: order._id,
+                orderNumber: order.orderNumber || order._id.toString(),
+                totalAmount: order.totalAmount,
+                items: order.items,
+                estimatedDelivery: order.estimatedDelivery
+            },
+            channels: ['inapp', 'sms', 'email']
+        })
+
+        // Notify admins
+        await sendNotificationToRole('admin', {
+            type: 'new_order_received',
+            payload: {
+                orderId: order._id,
+                customerName: order.customer?.name || 'Unknown Customer',
+                customerPhone: order.customer?.phone || 'N/A',
+                totalAmount: order.totalAmount,
+                items: order.items
+            },
+            channels: ['inapp', 'email']
+        })
+
+        // Emit socket notifications
+        if (io) {
+            emitOrderCreated(io, { orderId: order._id.toString() })
+            emitInvoiceCreated(io, { invoiceId: invoice._id.toString(), orderId: order._id.toString() })
+        }
+    } catch (notificationError) {
+        console.error('Notification error:', notificationError)
+        // Don't fail the order creation if notifications fail
+    }
 
     return res.status(201).json({ success: true, data: { orderId: order._id } })
   } catch (err) {
@@ -197,12 +235,45 @@ export const updateOrderStatus = async (req, res, next) => {
   try {
     const io = req.app.get('io')
     const { id } = req.params
-    const { status } = req.body
+    const { status, trackingNumber, estimatedDelivery } = req.body
 
-    const order = await Order.findByIdAndUpdate(id, { status }, { new: true })
+    const order = await Order.findByIdAndUpdate(
+      id, 
+      { status, ...(trackingNumber && { trackingNumber }), ...(estimatedDelivery && { estimatedDelivery }) }, 
+      { new: true }
+    ).populate('customerId', 'name email phone')
+
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' })
 
-    io?.to(`order_${order._id}`).emit('order.updated', { orderId: order._id.toString(), status: order.status })
+    // Send notification to customer about status change
+    try {
+      await sendNotification({
+        userId: order.customerId._id,
+        type: 'order_status_changed',
+        payload: {
+          orderId: order._id,
+          oldStatus: req.body.previousStatus || 'unknown',
+          newStatus: status,
+          trackingNumber,
+          estimatedDelivery
+        },
+        channels: ['inapp', 'sms']
+      })
+
+      // Emit socket notification
+      if (io) {
+        io.to(`order_${order._id}`).emit('order.updated', { 
+          orderId: order._id.toString(), 
+          status: order.status,
+          trackingNumber,
+          estimatedDelivery
+        })
+      }
+    } catch (notificationError) {
+      console.error('Notification error:', notificationError)
+      // Don't fail the status update if notifications fail
+    }
+
     return res.json({ success: true })
   } catch (err) {
     return next(err)

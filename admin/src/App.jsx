@@ -13,6 +13,7 @@ import ResetPassword from './pages/auth/ResetPassword'
 import GoogleCallback from './pages/auth/GoogleCallback'
 import Dashboard from './pages/Dashboard'
 import NotFound from './pages/NotFound'
+import Notifications from './pages/Notifications'
 import Categories from './pages/classifications/category/Categories'
 import AddCategory from './pages/classifications/category/AddCategory'
 import EditCategory from './pages/classifications/category/EditCategory'
@@ -124,6 +125,7 @@ function App() {
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/notifications" element={<Notifications />} />
               <Route path="/demo/product-detail" element={<ProductDetailDemo />} />
               <Route path="/customers" element={<Customers />} />
               <Route path="/customers/new" element={<AddCustomer />} />

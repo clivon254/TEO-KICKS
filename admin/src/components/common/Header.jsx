@@ -1,21 +1,28 @@
 import { useAuth } from '../../contexts/AuthContext'
 import { FiUser, FiBell, FiSearch, FiMenu, FiX, FiLogOut, FiShoppingCart } from 'react-icons/fi'
 import { useGetCart } from '../../hooks/useCart'
+import { useNotifications } from '../../hooks/useNotifications'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import logo from '../../assets/logo.png'
+import NotificationDropdown from './NotificationDropdown'
 
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
     const { user, logout } = useAuth()
     const navigate = useNavigate()
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
+    const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false)
     const dropdownRef = useRef(null)
+    const notificationDropdownRef = useRef(null)
 
     // Get cart data for count
     const { data: cartData } = useGetCart()
     const cartItems = cartData?.data?.data?.items || []
     const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0)
+
+    // Get notification data
+    const { unreadCount } = useNotifications()
 
 
     const handleLogout = async () => {
@@ -24,11 +31,14 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     }
 
 
-    // Close dropdown when clicking outside
+    // Close dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setIsUserDropdownOpen(false)
+            }
+            if (notificationDropdownRef.current && !notificationDropdownRef.current.contains(event.target)) {
+                setIsNotificationDropdownOpen(false)
             }
         }
 
@@ -87,9 +97,27 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                         </button>
 
                         {/* Notifications */}
-                        <button className="p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md">
-                            <FiBell className="h-6 w-6" />
-                        </button>
+                        <div className="relative" ref={notificationDropdownRef}>
+                            <button 
+                                onClick={() => setIsNotificationDropdownOpen(!isNotificationDropdownOpen)}
+                                className="p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md relative"
+                            >
+                                <FiBell className="h-6 w-6" />
+                                {unreadCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                        {unreadCount > 99 ? '99+' : unreadCount}
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* Notification Dropdown */}
+                            {isNotificationDropdownOpen && (
+                                <NotificationDropdown 
+                                    isOpen={isNotificationDropdownOpen}
+                                    onClose={() => setIsNotificationDropdownOpen(false)}
+                                />
+                            )}
+                        </div>
 
 
                         {/* User dropdown */}

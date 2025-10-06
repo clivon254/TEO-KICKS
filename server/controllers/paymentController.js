@@ -2,9 +2,12 @@ import Payment from "../models/paymentModel.js"
 import Invoice from "../models/invoiceModel.js"
 import Order from "../models/orderModel.js"
 import Receipt from "../models/receiptModel.js"
+import User from "../models/userModel.js"
 import { initiateMpesaForInvoice, initiatePaystackForInvoice, createPaymentRecord, applySuccessfulPayment } from "../services/paymentService.js"
 import { parseCallback as parseDarajaCallback, queryStkPushStatus } from "../services/external/darajaService.js"
 import { parseWebhook as parsePaystackWebhook } from "../services/external/paystackService.js"
+import { sendNotification, sendNotificationToRole } from "../services/notificationService.js"
+import { emitPaymentUpdate, emitReceiptCreated, emitPaymentCallback } from "../utils/socketNotifications.js"
 
 
 const generateReceiptNumber = () => `RCP-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`
@@ -76,7 +79,7 @@ export const markCashCollected = async (req, res, next) => {
     invoice.balanceDue = 0
     await invoice.save()
 
-    const order = await Order.findById(invoice.orderId)
+    const order = await Order.findById(invoice.orderId).populate('customerId', 'name email phone')
     if (order) {
       order.paymentStatus = 'PAID'
       await order.save()
@@ -92,6 +95,48 @@ export const markCashCollected = async (req, res, next) => {
       issuedAt: new Date(),
       pdfUrl: null
     })
+
+    // Send notifications
+    try {
+      if (order?.customerId) {
+        // Notify customer
+        await sendNotification({
+          userId: order.customerId._id,
+          type: 'payment_success',
+          payload: {
+            paymentId: payment._id,
+            orderId: order._id,
+            amount: payment.amount,
+            method: 'cash',
+            receiptNumber: receipt.receiptNumber
+          },
+          channels: ['inapp', 'sms']
+        })
+
+        // Notify admins
+        await sendNotificationToRole('admin', {
+          type: 'payment_received',
+          payload: {
+            paymentId: payment._id,
+            orderId: order._id,
+            customerName: order.customerId.name,
+            amount: payment.amount,
+            method: 'cash'
+          },
+          channels: ['inapp', 'email']
+        })
+      }
+
+      // Emit socket events
+      const io = req.app.get('io')
+      if (io) {
+        emitPaymentUpdate(io, payment._id, { paymentId: payment._id.toString(), status: 'SUCCESS' })
+        emitReceiptCreated(io, { receiptId: receipt._id.toString(), orderId: order._id.toString() })
+      }
+    } catch (notificationError) {
+      console.error('Notification error:', notificationError)
+      // Don't fail the payment if notifications fail
+    }
 
     if (order) {
       order.receiptId = receipt._id
@@ -146,10 +191,66 @@ export const mpesaWebhook = async (req, res, next) => {
       const invoice = await Invoice.findById(payment.invoiceId)
       if (invoice) {
         await applySuccessfulPayment({ invoice, payment, io, method: 'mpesa_stk' })
+        
+        // Send payment success notifications
+        try {
+          const order = await Order.findById(invoice.orderId).populate('customerId', 'name email phone')
+          if (order?.customerId) {
+            // Notify customer
+            await sendNotification({
+              userId: order.customerId._id,
+              type: 'payment_success',
+              payload: {
+                paymentId: payment._id,
+                orderId: order._id,
+                amount: payment.amount,
+                method: 'mpesa'
+              },
+              channels: ['inapp', 'sms']
+            })
+
+            // Notify admins
+            await sendNotificationToRole('admin', {
+              type: 'payment_received',
+              payload: {
+                paymentId: payment._id,
+                orderId: order._id,
+                customerName: order.customerId.name,
+                amount: payment.amount,
+                method: 'mpesa'
+              },
+              channels: ['inapp', 'email']
+            })
+          }
+        } catch (notificationError) {
+          console.error('Notification error:', notificationError)
+        }
       }
     } else {
       payment.status = 'FAILED'
       await payment.save()
+      
+      // Send payment failure notification
+      try {
+        const invoice = await Invoice.findById(payment.invoiceId)
+        const order = await Order.findById(invoice?.orderId).populate('customerId', 'name email phone')
+        if (order?.customerId) {
+          await sendNotification({
+            userId: order.customerId._id,
+            type: 'payment_failed',
+            payload: {
+              paymentId: payment._id,
+              orderId: order._id,
+              reason: parsed.resultDesc || 'Payment failed',
+              retryAvailable: true
+            },
+            channels: ['inapp', 'sms']
+          })
+        }
+      } catch (notificationError) {
+        console.error('Notification error:', notificationError)
+      }
+      
       io?.emit('payment.updated', { paymentId: payment._id.toString(), status: payment.status })
     }
 

@@ -31,6 +31,7 @@ import couponRoute from "./routes/couponRoute.js"
 import storeConfigRoute from "./routes/storeConfigRoute.js"
 import packagingRoute from "./routes/packagingRoute.js"
 import statsRoute from "./routes/statsRoute.js"
+import notificationRoute from "./routes/notificationRoute.js"
 // import orderRoute from "./routes/orderRoute.js"
 // import paymentRoute from "./routes/paymentRoute.js"
 
@@ -141,6 +142,7 @@ app.use("/api/coupons", couponRoute)
 app.use("/api/store-config", storeConfigRoute)
 app.use("/api/packaging", packagingRoute)
 app.use("/api/stats", statsRoute)
+app.use("/api/notifications", notificationRoute)
 // app.use("/api/payments", paymentRoute)
 
 
@@ -194,6 +196,9 @@ io.on('connection', (socket) => {
   socket.on('authenticate', (userId) => {
 
     socketConnections.set(userId, socket.id)
+    
+    // Join user-specific room for notifications
+    socket.join(`user_${userId}`)
 
     console.log(`User ${userId} connected with socket ${socket.id}`)
 
