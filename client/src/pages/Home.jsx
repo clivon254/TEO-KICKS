@@ -1,47 +1,53 @@
-import { useState, useEffect } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { FiArrowRight, FiShoppingBag, FiHeart, FiTrendingUp } from 'react-icons/fi'
-import Header from '../components/common/Header'
 import { useGetProducts } from '../hooks/useProducts'
 import { useGetCollections } from '../hooks/useCollections'
 
 
 const Home = () => {
-
-  const [featuredProducts, setFeaturedProducts] = useState([])
-
-  const [collections, setCollections] = useState([])
-
-  const [loading, setLoading] = useState(true)
-
-
   const { data: productsData, isLoading: loadingProducts } = useGetProducts({ limit: 8, sort: '-createdAt' })
 
   const { data: collectionsData, isLoading: loadingCollections } = useGetCollections({ limit: 3, sort: '-createdAt' })
 
-  useEffect(() => {
-    const apiProducts = productsData?.data?.data?.products || productsData?.data?.products || []
-    const mappedProducts = apiProducts.slice(0, 4).map((p) => ({
+  const rawProducts = useMemo(() => {
+    const d = productsData
+    if (Array.isArray(d?.data?.data?.products)) return d.data.data.products
+    if (Array.isArray(d?.data?.products)) return d.data.products
+    if (Array.isArray(d?.data)) return d.data
+    if (Array.isArray(d?.products)) return d.products
+    return []
+  }, [productsData])
+
+  const featuredProducts = useMemo(() => {
+    return rawProducts.slice(0, 4).map((p) => ({
       id: p._id || p.id,
       name: p.title || p.name,
       price: p.basePrice || p.price || 0,
       image: p.images?.[0]?.url || p.images?.[0] || 'https://via.placeholder.com/300x300/4B2E83/FFFFFF?text=Product',
       rating: p.averageRating || p.rating || 4.5,
     }))
-    if (mappedProducts.length) setFeaturedProducts(mappedProducts)
+  }, [rawProducts])
 
-    const apiCollections = collectionsData?.data?.data?.collections || collectionsData?.data?.collections || []
-    const mappedCollections = apiCollections.slice(0, 3).map((c) => ({
+  const rawCollections = useMemo(() => {
+    const d = collectionsData
+    if (Array.isArray(d?.data?.data?.collections)) return d.data.data.collections
+    if (Array.isArray(d?.data?.collections)) return d.data.collections
+    if (Array.isArray(d?.collections)) return d.collections
+    return []
+  }, [collectionsData])
+
+  const collections = useMemo(() => {
+    return rawCollections.slice(0, 3).map((c) => ({
       id: c._id || c.id,
       name: c.name,
       description: c.description || '',
       image: c.bannerImage || 'https://via.placeholder.com/400x500/E879F9/FFFFFF?text=Collection',
       productCount: c.productCount || c.productsCount || 0,
     }))
-    if (mappedCollections.length) setCollections(mappedCollections)
+  }, [rawCollections])
 
-    setLoading(loadingProducts || loadingCollections)
-  }, [productsData, collectionsData, loadingProducts, loadingCollections])
+  const loading = loadingProducts || loadingCollections
 
 
   const HeroSection = () => (
@@ -577,8 +583,6 @@ const Home = () => {
   return (
 
     <div className="min-h-screen">
-
-      <Header />
 
       <HeroSection />
 

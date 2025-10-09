@@ -3,12 +3,14 @@ import { cartAPI } from '../utils/api'
 import toast from 'react-hot-toast'
 
 
-export const useGetCart = () => {
+export const useGetCart = (options = {}) => {
+  const { enabled = true } = options
   return useQuery({
     queryKey: ['cart'],
     queryFn: () => cartAPI.getCart(),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+    enabled,
   })
 }
 

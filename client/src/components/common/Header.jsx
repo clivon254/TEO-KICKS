@@ -19,7 +19,7 @@ const Header = () => {
   const dropdownRef = useRef(null)
 
 
-  const { data: cartData } = useGetCart()
+  const { data: cartData } = useGetCart({ enabled: !!user })
 
   const cartItems = cartData?.data?.data?.items || cartData?.data?.items || []
 

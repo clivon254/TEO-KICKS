@@ -1,13 +1,30 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Outlet } from 'react-router-dom'
 import Home from './pages/Home'
 import './index.css'
+import Header from './components/common/Header'
+import Footer from './components/common/Footer'
 
 
 function App() {
 
+  const Layout = () => {
+  return (
+      <div className="min-h-screen flex flex-col bg-white">
+        <Header />
+        <div className="flex-1">
+          <Outlet />
+        </div>
+        <Footer />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-white">
+
       <Routes>
+
+        <Route element={<Layout /> }>
           <Route path="/" element={<Home />} />
           
           {/* Public Routes */}
@@ -37,10 +54,13 @@ function App() {
           <Route path="/account/notifications" element={<div className="p-8">Notifications Page (Protected)</div>} />
           <Route path="/account/orders" element={<div className="p-8">Orders Page (Protected)</div>} />
           <Route path="/account/orders/:id" element={<div className="p-8">Order Detail Page (Protected)</div>} />
+        </Route>
           
           {/* 404 */}
-          <Route path="*" element={<div className="p-8 text-center">404 - Page Not Found</div>} />
+        <Route path="*" element={<div className="p-8 text-center">404 - Page Not Found</div>} />
+
       </Routes>
+
     </div>
   )
 }
