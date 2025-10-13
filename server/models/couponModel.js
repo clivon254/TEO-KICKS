@@ -100,7 +100,6 @@ const couponSchema = new mongoose.Schema({
 })
 
 // Indexes for better performance
-couponSchema.index({ code: 1 })
 couponSchema.index({ isActive: 1, expiryDate: 1 })
 couponSchema.index({ createdBy: 1 })
 
