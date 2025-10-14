@@ -28,10 +28,17 @@ api.interceptors.response.use(
     const originalRequest = error.config
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      const isAuthEndpoint = originalRequest?.url?.includes('/auth/')
+      const refreshToken = localStorage.getItem('refreshToken')
+
+      // Do not attempt refresh for auth endpoints (e.g., login failure) or when no refresh token
+      if (isAuthEndpoint || !refreshToken) {
+        return Promise.reject(error)
+      }
+
       originalRequest._retry = true
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken')
         const response = await axios.post(`${baseURL}/auth/refresh`, { refreshToken })
         const { accessToken } = response.data.data
 
@@ -40,10 +47,7 @@ api.interceptors.response.use(
 
         return api(originalRequest)
       } catch (refreshError) {
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('user')
-        window.location.href = '/login'
+        // Let the app's route guards handle unauthenticated state; do not hard-refresh here
         return Promise.reject(refreshError)
       }
     }
@@ -59,7 +63,7 @@ export const authAPI = {
   verifyOTP: (otpData) => api.post('/auth/verify-otp', otpData),
   resendOTP: (emailData) => api.post('/auth/resend-otp', emailData),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
-  resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, newPassword }),
+  resetPassword: (token, newPassword) => api.post(`/auth/reset-password/${token}`, { newPassword }),
   logout: () => api.post('/auth/logout'),
   getMe: () => api.get('/auth/me'),
   googleAuth: () => api.get('/auth/google'),

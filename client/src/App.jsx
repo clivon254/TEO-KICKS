@@ -1,5 +1,9 @@
 import { Routes, Route, Outlet } from 'react-router-dom'
 import Home from './pages/Home'
+import Login from './pages/auth/Login'
+import Register from './pages/auth/Register'
+import ForgotPassword from './pages/auth/ForgotPassword'
+import ResetPassword from './pages/auth/ResetPassword'
 import './index.css'
 import Header from './components/common/Header'
 import Footer from './components/common/Footer'
@@ -26,7 +30,6 @@ function App() {
 
         <Route element={<Layout /> }>
           <Route path="/" element={<Home />} />
-          
           {/* Public Routes */}
           <Route path="/collections" element={<div className="p-8">Collections Page</div>} />
           <Route path="/collections/:slug" element={<div className="p-8">Collection Detail Page</div>} />
@@ -36,14 +39,13 @@ function App() {
           <Route path="/product/:slug" element={<div className="p-8">Product Detail Page</div>} />
           <Route path="/compare" element={<div className="p-8">Compare Page</div>} />
           <Route path="/contact" element={<div className="p-8">Contact Page</div>} />
-          
-          {/* Auth Routes */}
-          <Route path="/login" element={<div className="p-8">Login Page</div>} />
-          <Route path="/register" element={<div className="p-8">Register Page</div>} />
-          <Route path="/verify-otp" element={<div className="p-8">OTP Verification Page</div>} />
-          <Route path="/forgot-password" element={<div className="p-8">Forgot Password Page</div>} />
-          <Route path="/reset-password" element={<div className="p-8">Reset Password Page</div>} />
-          
+
+          {/* Auth Routes (with header/footer) */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+
           {/* Protected Routes */}
           <Route path="/wishlist" element={<div className="p-8">Wishlist Page (Protected)</div>} />
           <Route path="/cart" element={<div className="p-8">Cart Page (Protected)</div>} />
