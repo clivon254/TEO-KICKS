@@ -6,10 +6,11 @@
 3. [API Endpoints](#api-endpoints)
 4. [Authentication Functions](#authentication-functions)
 5. [Pages & Components](#pages--components)
-6. [Authentication Flows](#authentication-flows)
-7. [Token Management](#token-management)
-8. [Error Handling](#error-handling)
-9. [State Management](#state-management)
+6. [Button Handler & Form Submit Functions](#button-handler--form-submit-functions)
+7. [Authentication Flows](#authentication-flows)
+8. [Token Management](#token-management)
+9. [Error Handling](#error-handling)
+10. [State Management](#state-management)
 
 ---
 
@@ -547,6 +548,729 @@ const clearError = () => {
 **Key Functions**:
 - `handleCallback()` - Processes OAuth callback
 - Automatic redirect to dashboard or login
+
+---
+
+## Button Handler & Form Submit Functions
+
+### Login Page Handlers
+
+#### 1. **handleSubmit() - Login Form Submission**
+```javascript
+const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError('')
+    setValidationErrors({})
+
+    try {
+        // Validate form data
+        const validationData = {
+            ...formData,
+            email: formData.loginMethod === 'email' ? formData.email : undefined,
+            phone: formData.loginMethod === 'phone' ? formData.phone : undefined
+        }
+        
+        await loginSchema.validate(validationData, { abortEarly: false })
+
+        const credentials = {
+            password: formData.password
+        }
+
+        if (formData.loginMethod === 'email') {
+            credentials.email = formData.email
+        } else {
+            // Combine country code with phone number
+            credentials.phone = countryCode + formData.phone
+        }
+
+        const result = await login(credentials)
+        
+        if (result.success) {
+            navigate('/')
+        } else {
+            setError(result.error)
+        }
+    } catch (validationError) {
+        if (validationError.name === 'ValidationError') {
+            const errors = {}
+            validationError.inner.forEach((error) => {
+                errors[error.path] = error.message
+            })
+            setValidationErrors(errors)
+        } else {
+            setError('An unexpected error occurred')
+        }
+    } finally {
+        setIsLoading(false)
+    }
+}
+```
+
+#### 2. **handleGoogleLogin() - Google OAuth Button**
+```javascript
+const handleGoogleLogin = async () => {
+    setIsLoading(true)
+    setError('')
+
+    try {
+        await initiateGoogleAuth()
+        // Note: The page will redirect to Google, so this code won't execute
+    } catch (error) {
+        console.error('Google login error:', error)
+        setError('Failed to initiate Google authentication. Please check your Google OAuth configuration.')
+        setIsLoading(false)
+    }
+}
+```
+
+#### 3. **handleAppleLogin() - Apple OAuth Button**
+```javascript
+const handleAppleLogin = () => {
+    console.log('Apple login clicked')
+    // TODO: Implement Apple OAuth
+}
+```
+
+#### 4. **handleInstagramLogin() - Instagram OAuth Button**
+```javascript
+const handleInstagramLogin = () => {
+    console.log('Instagram login clicked')
+    // TODO: Implement Instagram OAuth
+}
+```
+
+#### 5. **handleLoginMethodChange() - Toggle Email/Phone**
+```javascript
+const handleLoginMethodChange = (method) => {
+    setFormData(prev => ({
+        ...prev,
+        loginMethod: method,
+        email: method === 'email' ? prev.email : '',
+        phone: method === 'phone' ? prev.phone : ''
+    }))
+}
+```
+
+#### 6. **handleInputChange() - Form Input Handler**
+```javascript
+const handleInputChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+        ...prev,
+        [name]: value
+    }))
+}
+```
+
+### Forgot Password Handlers
+
+#### 1. **handleSubmit() - Forgot Password Form**
+```javascript
+const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setValidationErrors({})
+
+    try {
+        // Validate email
+        await forgotPasswordSchema.validate({ email }, { abortEarly: false })
+
+        const result = await forgotPassword(email)
+
+        if (result.success) {
+            setIsSubmitted(true)
+        }
+    } catch (validationError) {
+        if (validationError.name === 'ValidationError') {
+            const errors = {}
+            validationError.inner.forEach((error) => {
+                errors[error.path] = error.message
+            })
+            setValidationErrors(errors)
+        }
+    } finally {
+        setIsLoading(false)
+    }
+}
+```
+
+### Reset Password Handlers
+
+#### 1. **handleSubmit() - Reset Password Form**
+```javascript
+const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setValidationErrors({})
+
+    try {
+        // Validate form data
+        await resetPasswordSchema.validate(formData, { abortEarly: false })
+
+        const result = await resetPassword(token, formData.newPassword)
+
+        if (result.success) {
+            setIsSuccess(true)
+        }
+    } catch (validationError) {
+        if (validationError.name === 'ValidationError') {
+            const errors = {}
+            validationError.inner.forEach((error) => {
+                errors[error.path] = error.message
+            })
+            setValidationErrors(errors)
+        }
+    } finally {
+        setIsLoading(false)
+    }
+}
+```
+
+#### 2. **handleInputChange() - Password Input Handler**
+```javascript
+const handleInputChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+        ...prev,
+        [name]: value
+    }))
+}
+```
+
+### OTP Verification Handlers
+
+#### 1. **handleSubmit() - OTP Verification Form**
+```javascript
+const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setValidationErrors({})
+
+    try {
+        const otpString = otp.join('')
+        
+        // Validate OTP
+        await otpSchema.validate({
+            otp: otpString,
+            email
+        }, { abortEarly: false })
+
+        const result = await verifyOTP({
+            email,
+            otp: otpString
+        })
+
+        if (result.success) {
+            localStorage.removeItem('pendingEmail')
+            navigate('/dashboard')
+        }
+    } catch (validationError) {
+        if (validationError.name === 'ValidationError') {
+            const errors = {}
+            validationError.inner.forEach((error) => {
+                errors[error.path] = error.message
+            })
+            setValidationErrors(errors)
+        }
+    } finally {
+        setIsLoading(false)
+    }
+}
+```
+
+#### 2. **handleOtpChange() - OTP Input Handler**
+```javascript
+const handleOtpChange = (index, value) => {
+    if (value.length > 1) return // Only allow single digit
+    
+    const newOtp = [...otp]
+    newOtp[index] = value
+    setOtp(newOtp)
+
+    // Auto-focus next input
+    if (value && index < 5) {
+        const nextInput = document.getElementById(`otp-${index + 1}`)
+        if (nextInput) nextInput.focus()
+    }
+}
+```
+
+#### 3. **handleKeyDown() - OTP Backspace Navigation**
+```javascript
+const handleKeyDown = (index, e) => {
+    // Handle backspace
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+        const prevInput = document.getElementById(`otp-${index - 1}`)
+        if (prevInput) prevInput.focus()
+    }
+}
+```
+
+#### 4. **handleResendOTP() - Resend OTP Button**
+```javascript
+const handleResendOTP = async () => {
+    setResendLoading(true)
+    
+    const result = await resendOTP({ email })
+    
+    if (result.success) {
+        setCountdown(60) // 60 seconds countdown
+    }
+    
+    setResendLoading(false)
+}
+```
+
+#### 5. **handleBackToLogin() - Back Button Navigation**
+```javascript
+const handleBackToLogin = () => {
+    localStorage.removeItem('pendingEmail')
+    navigate('/login')
+}
+```
+
+### Google Callback Handlers
+
+#### 1. **handleCallback() - Process OAuth Callback**
+```javascript
+const handleCallback = async () => {
+    try {
+        console.log('Google callback initiated')
+        console.log('Search params:', Object.fromEntries(searchParams.entries()))
+
+        const code = searchParams.get('code')
+        const error = searchParams.get('error')
+        const state = searchParams.get('state')
+
+        console.log('OAuth callback details:', { code: !!code, error, state })
+
+        if (error) {
+            console.error('OAuth error received:', error)
+            setError(`Authentication failed: ${error}`)
+            setIsLoading(false)
+            return
+        }
+
+        if (!code) {
+            console.error('No authorization code received')
+            setError('No authorization code received from Google')
+            setIsLoading(false)
+            return
+        }
+
+        console.log('Processing authorization code...')
+        const result = await handleGoogleCallback(code)
+
+        if (result.success) {
+            navigate('/', { replace: true })
+        } else {
+            setError(result.error || 'Authentication failed')
+        }
+    } catch (err) {
+        console.error('Google callback error:', err)
+        setError('Authentication failed. Please try again.')
+    } finally {
+        setIsLoading(false)
+    }
+}
+```
+
+**Note**: This function runs automatically on component mount via `useEffect` and extracts the OAuth code from URL parameters to complete the authentication flow.
+
+### AuthContext Functions (Backend Integration)
+
+#### 1. **login() - Main Login Function**
+```javascript
+const login = async (credentials) => {
+    dispatch({ type: AUTH_ACTIONS.LOGIN_START })
+    reduxDispatch(setAuthLoading(true))
+    
+    try {
+        const response = await authAPI.login(credentials)
+        const { user, accessToken, refreshToken } = response.data.data
+
+        // Store tokens and user data
+        localStorage.setItem('accessToken', accessToken)
+        localStorage.setItem('refreshToken', refreshToken)
+        localStorage.setItem('user', JSON.stringify(user))
+
+        dispatch({
+            type: AUTH_ACTIONS.LOGIN_SUCCESS,
+            payload: { user }
+        })
+        reduxDispatch(setAuthSuccess(user))
+
+        toast.success('Login successful!')
+        return { success: true }
+        
+    } catch (error) {
+        const errorMessage = error?.response?.data?.message || error?.message || 'Login failed'
+        dispatch({
+            type: AUTH_ACTIONS.LOGIN_FAILURE,
+            payload: errorMessage
+        })
+        reduxDispatch(setAuthFailure(errorMessage))
+        toast.error(errorMessage)
+        return { success: false, error: errorMessage }
+    }
+}
+```
+
+#### 2. **forgotPassword() - Forgot Password Function**
+```javascript
+const forgotPassword = async (email) => {
+    try {
+        await authAPI.forgotPassword(email)
+        toast.success('Password reset instructions sent to your email!')
+        return { success: true }
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || 'Failed to send reset email'
+        toast.error(errorMessage)
+        return { success: false, error: errorMessage }
+    }
+}
+```
+
+#### 3. **resetPassword() - Reset Password Function**
+```javascript
+const resetPassword = async (token, newPassword) => {
+    try {
+        await authAPI.resetPassword(token, newPassword)
+        toast.success('Password reset successfully!')
+        return { success: true }
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || 'Failed to reset password'
+        toast.error(errorMessage)
+        return { success: false, error: errorMessage }
+    }
+}
+```
+
+#### 4. **verifyOTP() - OTP Verification Function**
+```javascript
+const verifyOTP = async (otpData) => {
+    dispatch({ type: AUTH_ACTIONS.LOGIN_START })
+    reduxDispatch(setAuthLoading(true))
+
+    try {
+        const response = await authAPI.verifyOTP(otpData)
+        const { user, accessToken, refreshToken } = response.data.data
+
+        // Store tokens and user data
+        localStorage.setItem('accessToken', accessToken)
+        localStorage.setItem('refreshToken', refreshToken)
+        localStorage.setItem('user', JSON.stringify(user))
+
+        dispatch({
+            type: AUTH_ACTIONS.LOGIN_SUCCESS,
+            payload: { user }
+        })
+        reduxDispatch(setAuthSuccess(user))
+
+        toast.success('Email verified successfully!')
+        return { success: true }
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || 'OTP verification failed'
+        dispatch({
+            type: AUTH_ACTIONS.LOGIN_FAILURE,
+            payload: errorMessage
+        })
+        reduxDispatch(setAuthFailure(errorMessage))
+        toast.error(errorMessage)
+        return { success: false, error: errorMessage }
+    }
+}
+```
+
+#### 5. **resendOTP() - Resend OTP Function**
+```javascript
+const resendOTP = async (emailData) => {
+    try {
+        await authAPI.resendOTP(emailData)
+        toast.success('OTP has been resent to your email!')
+        return { success: true }
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || 'Failed to resend OTP'
+        toast.error(errorMessage)
+        return { success: false, error: errorMessage }
+    }
+}
+```
+
+#### 6. **initiateGoogleAuth() - Start Google OAuth Flow**
+```javascript
+const initiateGoogleAuth = async () => {
+    try {
+        const response = await authAPI.getGoogleAuthUrl()
+        const authUrl = response.data.data.authUrl
+
+        // Open Google OAuth in a popup or redirect
+        window.location.href = authUrl
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || 'Failed to initiate Google authentication'
+        toast.error(errorMessage)
+        throw error
+    }
+}
+```
+
+#### 7. **handleGoogleCallback() - Process Google OAuth Callback**
+```javascript
+const handleGoogleCallback = async (code) => {
+    dispatch({ type: AUTH_ACTIONS.LOGIN_START })
+    reduxDispatch(setAuthLoading(true))
+
+    try {
+        const response = await authAPI.googleAuthCallback({ code })
+        const { user, tokens } = response.data.data
+
+        // Store tokens and user data
+        localStorage.setItem('accessToken', tokens.accessToken)
+        localStorage.setItem('refreshToken', tokens.refreshToken)
+        localStorage.setItem('user', JSON.stringify(user))
+
+        dispatch({
+            type: AUTH_ACTIONS.LOGIN_SUCCESS,
+            payload: { user }
+        })
+        reduxDispatch(setAuthSuccess(user))
+
+        toast.success('Google authentication successful!')
+        return { success: true }
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || 'Google authentication failed'
+        dispatch({
+            type: AUTH_ACTIONS.LOGIN_FAILURE,
+            payload: errorMessage
+        })
+        reduxDispatch(setAuthFailure(errorMessage))
+        toast.error(errorMessage)
+        return { success: false, error: errorMessage }
+    }
+}
+```
+
+#### 8. **googleAuthWithIdToken() - Google Auth with ID Token (Mobile/Web)**
+```javascript
+const googleAuthWithIdToken = async (idToken) => {
+    dispatch({ type: AUTH_ACTIONS.LOGIN_START })
+    reduxDispatch(setAuthLoading(true))
+
+    try {
+        const response = await authAPI.googleAuthMobile({ idToken })
+        const { user, tokens } = response.data.data
+
+        // Store tokens and user data
+        localStorage.setItem('accessToken', tokens.accessToken)
+        localStorage.setItem('refreshToken', tokens.refreshToken)
+        localStorage.setItem('user', JSON.stringify(user))
+
+        dispatch({
+            type: AUTH_ACTIONS.LOGIN_SUCCESS,
+            payload: { user }
+        })
+        reduxDispatch(setAuthSuccess(user))
+
+        toast.success('Google authentication successful!')
+        return { success: true }
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || 'Google authentication failed'
+        dispatch({
+            type: AUTH_ACTIONS.LOGIN_FAILURE,
+            payload: errorMessage
+        })
+        reduxDispatch(setAuthFailure(errorMessage))
+        toast.error(errorMessage)
+        return { success: false, error: errorMessage }
+    }
+}
+```
+
+### Practical Usage - Attaching Handlers to Buttons & Forms
+
+#### Login Form Example
+```jsx
+{/* Login Form with onSubmit handler */}
+<form className="space-y-6" onSubmit={handleSubmit}>
+    
+    {/* Email/Phone Input Field */}
+    <input
+        id="email"
+        name="email"
+        type="email"
+        required
+        className="input pl-10"
+        placeholder="Enter your email"
+        value={formData.email}
+        onChange={handleInputChange}
+    />
+
+    {/* Password Input Field */}
+    <input
+        id="password"
+        name="password"
+        type={showPassword ? 'text' : 'password'}
+        required
+        className="input pl-10 pr-10"
+        placeholder="Enter your password"
+        value={formData.password}
+        onChange={handleInputChange}
+    />
+
+    {/* Submit Button */}
+    <button
+        type="submit"
+        disabled={isLoading}
+        className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+        {isLoading ? (
+            <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Signing in...
+            </div>
+        ) : (
+            'Sign in'
+        )}
+    </button>
+</form>
+
+{/* Google Login Button with onClick handler */}
+<button
+    onClick={handleGoogleLogin}
+    className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-700 hover:bg-gray-50"
+>
+    <FcGoogle className="w-5 h-5 mr-3" />
+    <span className="font-medium">Continue with Google</span>
+</button>
+
+{/* Password Visibility Toggle Button */}
+<button
+    type="button"
+    onClick={() => setShowPassword(!showPassword)}
+    className="text-primary hover:text-secondary transition-colors"
+>
+    {showPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+</button>
+```
+
+#### OTP Verification Example
+```jsx
+{/* OTP Form with onSubmit handler */}
+<form className="space-y-6" onSubmit={handleSubmit}>
+    
+    {/* OTP Input Fields with onChange and onKeyDown */}
+    <div className="flex justify-between space-x-2">
+        {otp.map((digit, index) => (
+            <input
+                key={index}
+                id={`otp-${index}`}
+                type="text"
+                maxLength="1"
+                value={digit}
+                onChange={(e) => handleOtpChange(index, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(index, e)}
+                className="w-12 h-12 text-center text-lg font-semibold border border-gray-300 rounded-lg"
+                placeholder="0"
+            />
+        ))}
+    </div>
+
+    {/* Verify Button */}
+    <button
+        type="submit"
+        disabled={isLoading || otp.join('').length !== 6}
+        className="btn-primary w-full"
+    >
+        {isLoading ? 'Verifying...' : 'Verify Email'}
+    </button>
+
+    {/* Resend OTP Button with onClick handler */}
+    <button
+        type="button"
+        onClick={handleResendOTP}
+        disabled={resendLoading || countdown > 0}
+        className="mt-2 text-sm font-medium text-primary hover:text-secondary"
+    >
+        {resendLoading ? 'Sending...' : countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
+    </button>
+</form>
+```
+
+#### Forgot Password Example
+```jsx
+{/* Forgot Password Form with onSubmit handler */}
+<form className="space-y-6" onSubmit={handleSubmit}>
+    
+    {/* Email Input */}
+    <input
+        id="email"
+        name="email"
+        type="email"
+        required
+        className="input pl-10"
+        placeholder="Enter your email address"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+    />
+
+    {/* Submit Button */}
+    <button
+        type="submit"
+        disabled={isLoading || !email}
+        className="btn-primary w-full"
+    >
+        {isLoading ? (
+            <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Sending...
+            </div>
+        ) : (
+            'Send reset instructions'
+        )}
+    </button>
+</form>
+```
+
+#### Reset Password Example
+```jsx
+{/* Reset Password Form with onSubmit handler */}
+<form className="space-y-6" onSubmit={handleSubmit}>
+    
+    {/* New Password Input */}
+    <input
+        id="newPassword"
+        name="newPassword"
+        type={showPassword ? 'text' : 'password'}
+        required
+        className="input pl-10 pr-10"
+        placeholder="Enter new password"
+        value={formData.newPassword}
+        onChange={handleInputChange}
+    />
+
+    {/* Confirm Password Input */}
+    <input
+        id="confirmPassword"
+        name="confirmPassword"
+        type={showConfirmPassword ? 'text' : 'password'}
+        required
+        className="input pl-10 pr-10"
+        placeholder="Confirm new password"
+        value={formData.confirmPassword}
+        onChange={handleInputChange}
+    />
+
+    {/* Submit Button */}
+    <button
+        type="submit"
+        disabled={isLoading || !formData.newPassword || !formData.confirmPassword || formData.newPassword !== formData.confirmPassword}
+        className="btn-primary w-full"
+    >
+        {isLoading ? 'Resetting...' : 'Reset Password'}
+    </button>
+</form>
+```
 
 ---
 
