@@ -521,6 +521,93 @@ const MyComponent = () => {
 
 ---
 
+## Page Wireframes & Structures
+
+### Login Page (`/login`)
+```
+┌───────────────────────────────────────────────────────────────┐
+│                         LOGIN                                  │
+├───────────────────────────────────────────────────────────────┤
+│  Title: "Sign in to TEO KICKS"                                 │
+│  Subtitle (optional)                                           │
+│                                                               │
+│  [ Email or Phone ]                                           │
+│  [ Password         ]  (👁 toggle)                             │
+│  [  Sign In  ]  (loading state)                                │
+│                                                               │
+│  [Forgot password?]             [Create account]               │
+│                                                               │
+│  Inline error placeholder (validation/server)                  │
+└───────────────────────────────────────────────────────────────┘
+```
+- Fields: **identifier**, **password**
+- States: `isLoading`, `error`, optional `showPassword`
+- Links: forgot → `/forgot-password`, register → `/register`
+
+### Register Page (`/register`)
+```
+┌───────────────────────────────────────────────────────────────┐
+│                         SIGN UP                                │
+├───────────────────────────────────────────────────────────────┤
+│  Title: "Create your account"                                  │
+│                                                               │
+│  [ First Name ]  [ Last Name ]                                 │
+│  [ Email ]       [ Phone (optional) ]                          │
+│  [ Password ]    [ Confirm Password ] (strength indicator)     │
+│  [  Create Account  ] (loading state)                           │
+│                                                               │
+│  [Already have an account? Sign in] → /login                   │
+│  Inline error placeholder (validation/server)                  │
+└───────────────────────────────────────────────────────────────┘
+```
+- Fields: **firstName**, **lastName**, **email**, **phone?**, **password**, **confirmPassword**
+- States: `isLoading`, `error`, `passwordStrength`
+
+### Forgot Password Page (`/forgot-password`)
+```
+┌───────────────────────────────────────────────────────────────┐
+│                     FORGOT PASSWORD                            │
+├───────────────────────────────────────────────────────────────┤
+│  Title: "Reset your password"                                  │
+│  Helper: "Enter your email; we’ll send a reset link."          │
+│                                                               │
+│  [ Email ]                                                     │
+│  [  Send reset instructions  ] (loading state)                 │
+│                                                               │
+│  Success state panel with next steps                           │
+│  [Back to sign in] → /login                                    │
+└───────────────────────────────────────────────────────────────┘
+```
+- Field: **email**
+- States: `isLoading`, `isSubmitted`, `validationErrors`
+
+### Reset Password Page (`/reset-password/:token`)
+```
+┌───────────────────────────────────────────────────────────────┐
+│                     RESET PASSWORD                             │
+├───────────────────────────────────────────────────────────────┤
+│  Title: "Set a new password"                                   │
+│                                                               │
+│  [ New Password ] (👁 toggle)  [ Confirm Password ] (👁)        │
+│   Strength meter (0–4)                                         │
+│  [  Reset Password  ] (disabled until valid; loading state)     │
+│                                                               │
+│  Success state → CTA to Login                                  │
+└───────────────────────────────────────────────────────────────┘
+```
+- Fields: **newPassword**, **confirmPassword** (match required)
+- States: `isLoading`, `isSuccess`, `passwordStrength`, `validationErrors`
+
+### Header (Unauthenticated)
+```
+┌─────────────── HEADER ───────────────┐
+│  [Logo]        …       [Login] [🛒]   │
+└───────────────────────────────────────┘
+```
+- Show avatar placeholder with a prominent **Login** button routing to `/login`.
+
+---
+
 Last Updated: October 14, 2025  
 Version: 1.0.0  
 Maintained By: TEO KICKS Development Team
