@@ -94,48 +94,50 @@ const Header = () => {
             </button>
 
             <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                aria-label="User menu"
-              >
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  {user?.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt={user?.name || 'User'}
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <FiUser className="h-5 w-5 text-primary" />
-                  )}
-                </div>
-              </button>
+              {user ? (
+                <>
+                  <button
+                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                    className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    aria-label="User menu"
+                  >
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      {user?.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user?.name || 'User'}
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <FiUser className="h-5 w-5 text-primary" />
+                      )}
+                    </div>
+                  </button>
 
-              {isUserDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                  <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">{user?.name || 'Guest'}</p>
-                    <p className="text-xs text-gray-500">{user?.email || 'Not signed in'}</p>
-                  </div>
+                  {isUserDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
+                        <p className="text-xs text-gray-500">{user?.email}</p>
+                      </div>
 
-                  {user ? (
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
-                    >
-                      <FiLogOut className="mr-2 h-4 w-4" />
-                      Logout
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => navigate('/login')}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      Sign In
-                    </button>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                      >
+                        <FiLogOut className="mr-2 h-4 w-4" />
+                        Logout
+                      </button>
+                    </div>
                   )}
-                </div>
+                </>
+              ) : (
+                <button
+                  onClick={() => navigate('/login')}
+                  className="btn-outline"
+                >
+                  Login
+                </button>
               )}
             </div>
           </div>

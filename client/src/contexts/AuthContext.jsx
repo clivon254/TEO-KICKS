@@ -144,6 +144,43 @@ export const AuthProvider = ({ children }) => {
   }
 
 
+  const forgotPassword = async (email) => {
+    try {
+      await authAPI.forgotPassword(email)
+      return { success: true }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to send reset email'
+      return { success: false, error: errorMessage }
+    }
+  }
+
+
+  const resetPassword = async (token, newPassword) => {
+    try {
+      await authAPI.resetPassword(token, newPassword)
+      return { success: true }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to reset password'
+      return { success: false, error: errorMessage }
+    }
+  }
+
+
+  const initiateGoogleAuth = async () => {
+    try {
+      const response = await authAPI.googleAuth()
+      const authUrl = response.data?.data?.authUrl
+      if (authUrl) {
+        window.location.href = authUrl
+      } else {
+        throw new Error('Failed to get Google auth URL')
+      }
+    } catch (error) {
+      throw error
+    }
+  }
+
+
   const logout = async () => {
     try {
       await authAPI.logout()
@@ -170,6 +207,9 @@ export const AuthProvider = ({ children }) => {
     error,
     login,
     register,
+    forgotPassword,
+    resetPassword,
+    initiateGoogleAuth,
     logout,
   }
 
