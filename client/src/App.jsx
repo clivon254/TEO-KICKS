@@ -7,6 +7,9 @@ import ResetPassword from './pages/auth/ResetPassword'
 import './index.css'
 import Header from './components/common/Header'
 import Footer from './components/common/Footer'
+import ProductDetails from './pages/ProductDetails'
+import Cart from './pages/Cart'
+import Checkout from './pages/Checkout'
 
 
 function App() {
@@ -36,7 +39,7 @@ function App() {
           <Route path="/c/:slug" element={<div className="p-8">Category Page</div>} />
           <Route path="/search" element={<div className="p-8">Search Page</div>} />
           <Route path="/products" element={<div className="p-8">Products Page</div>} />
-          <Route path="/product/:slug" element={<div className="p-8">Product Detail Page</div>} />
+          <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/compare" element={<div className="p-8">Compare Page</div>} />
           <Route path="/contact" element={<div className="p-8">Contact Page</div>} />
 
@@ -48,8 +51,8 @@ function App() {
 
           {/* Protected Routes */}
           <Route path="/wishlist" element={<div className="p-8">Wishlist Page (Protected)</div>} />
-          <Route path="/cart" element={<div className="p-8">Cart Page (Protected)</div>} />
-          <Route path="/checkout" element={<div className="p-8">Checkout Page (Protected)</div>} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="/account" element={<div className="p-8">Account Page (Protected)</div>} />
           <Route path="/account/profile" element={<div className="p-8">Profile Page (Protected)</div>} />
           <Route path="/account/addresses" element={<div className="p-8">Addresses Page (Protected)</div>} />
