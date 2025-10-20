@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:5000/api'
+const API_BASE_URL =  'http://localhost:5000'
 
 // Create axios instance
 const api = axios.create({
@@ -42,7 +42,7 @@ api.interceptors.response.use(
             const refreshToken = localStorage.getItem('refreshToken')
             if (refreshToken) {
                 try {
-                    const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+                    const response = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
                         refreshToken
                     })
 
@@ -66,367 +66,367 @@ api.interceptors.response.use(
 // Auth API calls
 export const authAPI = {
     // Login
-    login: (credentials) => api.post('/auth/login', credentials),
+    login: (credentials) => api.post('/api/auth/login', credentials),
     
     // Register
-    register: (userData) => api.post('/auth/register', userData),
+    register: (userData) => api.post('/api/auth/register', userData),
     
     // Verify OTP
-    verifyOTP: (otpData) => api.post('/auth/verify-otp', otpData),
+    verifyOTP: (otpData) => api.post('/api/auth/verify-otp', otpData),
     
     // Resend OTP
-    resendOTP: (emailData) => api.post('/auth/resend-otp', emailData),
+    resendOTP: (emailData) => api.post('/api/auth/resend-otp', emailData),
     
     // Forgot Password
-    forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+    forgotPassword: (email) => api.post('/api/auth/forgot-password', { email }),
     
     // Reset Password
-    resetPassword: (token, newPassword) => api.post(`/auth/reset-password/${token}`, { newPassword }),
+    resetPassword: (token, newPassword) => api.post(`/api/auth/reset-password/${token}`, { newPassword }),
     
     // Get current user
-    getMe: () => api.get('/auth/me'),
+    getMe: () => api.get('/api/auth/me'),
     
     // Logout
-    logout: () => api.post('/auth/logout'),
+    logout: () => api.post('/api/auth/logout'),
 
     // Google OAuth
-    googleAuth: () => api.get('/auth/google'),
-    googleAuthCallback: (codeData) => api.post('/auth/google/callback', codeData),
-    googleAuthMobile: (idTokenData) => api.post('/auth/google/mobile', idTokenData),
+    googleAuth: () => api.get('/api/auth/google'),
+    googleAuthCallback: (codeData) => api.post('/api/auth/google/callback', codeData),
+    googleAuthMobile: (idTokenData) => api.post('/api/auth/google/mobile', idTokenData),
 }
 
 // User API calls
 export const userAPI = {
     // Get user profile
-    getProfile: () => api.get('/users/profile'),
+    getProfile: () => api.get('/api/users/profile'),
     
     // Update user profile
-    updateProfile: (profileData) => api.put('/users/profile', profileData),
+    updateProfile: (profileData) => api.put('/api/users/profile', profileData),
     
     // Change password
-    changePassword: (passwordData) => api.put('/users/change-password', passwordData),
+    changePassword: (passwordData) => api.put('/api/users/change-password', passwordData),
 
     // Admin: Get all users
-    getAllUsers: (params) => api.get('/users', { params }),
+    getAllUsers: (params) => api.get('/api/users', { params }),
 
     // Admin: Get user by ID
-    getUserById: (userId) => api.get(`/users/${userId}`),
+    getUserById: (userId) => api.get(`/api/users/${userId}`),
 
     // Admin: Update user status / roles
-    updateUserStatus: (userId, data) => api.put(`/users/${userId}/status`, data),
+    updateUserStatus: (userId, data) => api.put(`/api/users/${userId}/status`, data),
 
     // Admin: Delete user
-    deleteUser: (userId) => api.delete(`/users/${userId}`),
+    deleteUser: (userId) => api.delete(`/api/users/${userId}`),
 
     // Admin: Create customer (password = phone)
-    adminCreateCustomer: (data) => api.post('/users/admin-create', data),
+    adminCreateCustomer: (data) => api.post('/api/users/admin-create', data),
 }
 
 // Product API calls
 export const productAPI = {
     // Get all products
-    getAllProducts: (params) => api.get('/products', { params }),
+    getAllProducts: (params) => api.get('/api/products', { params }),
     
     // Get product by ID
-    getProductById: (id) => api.get(`/products/${id}`),
+    getProductById: (id) => api.get(`/api/products/${id}`),
     
     // Create product
-    createProduct: (productData) => api.post('/products', productData),
+    createProduct: (productData) => api.post('/api/products', productData),
     
     // Update product
-    updateProduct: (id, productData) => api.put(`/products/${id}`, productData),
+    updateProduct: (id, productData) => api.put(`/api/products/${id}`, productData),
     
     // Delete product
-    deleteProduct: (id) => api.delete(`/products/${id}`),
+    deleteProduct: (id) => api.delete(`/api/products/${id}`),
     
     // Upload product images
-    uploadImages: (id, formData) => api.post(`/products/${id}/images`, formData, {
+    uploadImages: (id, formData) => api.post(`/api/products/${id}/images`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
     }),
     
     // Delete product image
-    deleteImage: (productId, imageId) => api.delete(`/products/${productId}/images/${imageId}`),
+    deleteImage: (productId, imageId) => api.delete(`/api/products/${productId}/images/${imageId}`),
     
     // Set primary image
-    setPrimaryImage: (productId, imageId) => api.put(`/products/${productId}/images/${imageId}/primary`),
+    setPrimaryImage: (productId, imageId) => api.put(`/api/products/${productId}/images/${imageId}/primary`),
     
     // Update SKU
-    updateSKU: (productId, skuId, skuData) => api.patch(`/products/${productId}/skus/${skuId}`, skuData),
+    updateSKU: (productId, skuId, skuData) => api.patch(`/api/products/${productId}/skus/${skuId}`, skuData),
     
     // Delete SKU
-    deleteSKU: (productId, skuId) => api.delete(`/products/${productId}/skus/${skuId}`),
+    deleteSKU: (productId, skuId) => api.delete(`/api/products/${productId}/skus/${skuId}`),
     
     // Generate SKUs
-    generateSKUs: (productId) => api.post(`/products/${productId}/generate-skus`),
+    generateSKUs: (productId) => api.post(`/api/products/${productId}/generate-skus`),
 }
 
 // Category API calls
 export const categoryAPI = {
     // Get all categories
-    getAllCategories: (params) => api.get('/categories', { params }),
+    getAllCategories: (params) => api.get('/api/categories', { params }),
     
     // Get category by ID
-    getCategoryById: (id) => api.get(`/categories/${id}`),
+    getCategoryById: (id) => api.get(`/api/categories/${id}`),
     
     // Create category
-    createCategory: (categoryData) => api.post('/categories', categoryData),
+    createCategory: (categoryData) => api.post('/api/categories', categoryData),
     
     // Update category
-    updateCategory: (id, categoryData) => api.put(`/categories/${id}`, categoryData),
+    updateCategory: (id, categoryData) => api.put(`/api/categories/${id}`, categoryData),
     
     // Delete category
-    deleteCategory: (id) => api.delete(`/categories/${id}`),
+    deleteCategory: (id) => api.delete(`/api/categories/${id}`),
     
     // Get category tree
-    getCategoryTree: () => api.get('/categories/tree'),
+    getCategoryTree: () => api.get('/api/categories/tree'),
     
     // Get categories with products
-    getCategoriesWithProducts: () => api.get('/categories/with-products'),
+    getCategoriesWithProducts: () => api.get('/api/categories/with-products'),
 }
 
 // Brand API calls
 export const brandAPI = {
     // Get all brands
-    getAllBrands: (params) => api.get('/brands', { params }),
+    getAllBrands: (params) => api.get('/api/brands', { params }),
     
     // Get brand by ID
-    getBrandById: (id) => api.get(`/brands/${id}`),
+    getBrandById: (id) => api.get(`/api/brands/${id}`),
     
     // Create brand
-    createBrand: (brandData) => api.post('/brands', brandData),
+    createBrand: (brandData) => api.post('/api/brands', brandData),
     
     // Update brand
-    updateBrand: (id, brandData) => api.put(`/brands/${id}`, brandData),
+    updateBrand: (id, brandData) => api.put(`/api/brands/${id}`, brandData),
     
     // Delete brand
-    deleteBrand: (id) => api.delete(`/brands/${id}`),
+    deleteBrand: (id) => api.delete(`/api/brands/${id}`),
     
     // Get popular brands
-    getPopularBrands: (params) => api.get('/brands/popular', { params }),
+    getPopularBrands: (params) => api.get('/api/brands/popular', { params }),
 }
 
 // Tag API calls
 export const tagAPI = {
     // Get all tags
-    getAllTags: (params) => api.get('/tags', { params }),
+    getAllTags: (params) => api.get('/api/tags', { params }),
     
     // Get tag by ID
-    getTagById: (id) => api.get(`/tags/${id}`),
+    getTagById: (id) => api.get(`/api/tags/${id}`),
     
     // Create tag
-    createTag: (tagData) => api.post('/tags', tagData),
+    createTag: (tagData) => api.post('/api/tags', tagData),
     
     // Update tag
-    updateTag: (id, tagData) => api.put(`/tags/${id}`, tagData),
+    updateTag: (id, tagData) => api.put(`/api/tags/${id}`, tagData),
     
     // Delete tag
-    deleteTag: (id) => api.delete(`/tags/${id}`),
+    deleteTag: (id) => api.delete(`/api/tags/${id}`),
     
     // Get tags by type
-    getTagsByType: (type) => api.get(`/tags/type/${type}`),
+    getTagsByType: (type) => api.get(`/api/tags/type/${type}`),
     
     // Get popular tags
-    getPopularTags: (params) => api.get('/tags/popular', { params }),
+    getPopularTags: (params) => api.get('/api/tags/popular', { params }),
 }
 
 // Collection API calls
 export const collectionAPI = {
     // Get all collections
-    getAllCollections: (params) => api.get('/collections', { params }),
+    getAllCollections: (params) => api.get('/api/collections', { params }),
 
     // Get collection by ID
-    getCollectionById: (id) => api.get(`/collections/${id}`),
+    getCollectionById: (id) => api.get(`/api/collections/${id}`),
 
     // Create collection
-    createCollection: (collectionData) => api.post('/collections', collectionData),
+    createCollection: (collectionData) => api.post('/api/collections', collectionData),
 
     // Update collection
-    updateCollection: (id, collectionData) => api.put(`/collections/${id}`, collectionData),
+    updateCollection: (id, collectionData) => api.put(`/api/collections/${id}`, collectionData),
 
     // Delete collection
-    deleteCollection: (id) => api.delete(`/collections/${id}`),
+    deleteCollection: (id) => api.delete(`/api/collections/${id}`),
 
     // Add product to collection
-    addProduct: (id, productId) => api.post(`/collections/${id}/products`, { productId }),
+    addProduct: (id, productId) => api.post(`/api/collections/${id}/products`, { productId }),
 
     // Remove product from collection
-    removeProduct: (id, productId) => api.delete(`/collections/${id}/products/${productId}`),
+    removeProduct: (id, productId) => api.delete(`/api/collections/${id}/products/${productId}`),
 }
 
 // Variant API calls
 export const variantAPI = {
     // Get all variants
-    getAllVariants: (params) => api.get('/variants', { params }),
+    getAllVariants: (params) => api.get('/api/variants', { params }),
 
     // Get variant by ID
-    getVariantById: (id) => api.get(`/variants/${id}`),
+    getVariantById: (id) => api.get(`/api/variants/${id}`),
 
     // Create variant
-    createVariant: (variantData) => api.post('/variants', variantData),
+    createVariant: (variantData) => api.post('/api/variants', variantData),
 
     // Update variant
-    updateVariant: (id, variantData) => api.put(`/variants/${id}`, variantData),
+    updateVariant: (id, variantData) => api.put(`/api/variants/${id}`, variantData),
 
     // Delete variant
-    deleteVariant: (id) => api.delete(`/variants/${id}`),
+    deleteVariant: (id) => api.delete(`/api/variants/${id}`),
 
     // Get active variants
-    getActiveVariants: () => api.get('/variants/active'),
+    getActiveVariants: () => api.get('/api/variants/active'),
 
     // Add option to variant
-    addOption: (variantId, optionData) => api.post(`/variants/${variantId}/options`, optionData),
+    addOption: (variantId, optionData) => api.post(`/api/variants/${variantId}/options`, optionData),
 
     // Update variant option
-    updateOption: (variantId, optionId, optionData) => api.put(`/variants/${variantId}/options/${optionId}`, optionData),
+    updateOption: (variantId, optionId, optionData) => api.put(`/api/variants/${variantId}/options/${optionId}`, optionData),
 
     // Remove option from variant
-    removeOption: (variantId, optionId) => api.delete(`/variants/${variantId}/options/${optionId}`),
+    removeOption: (variantId, optionId) => api.delete(`/api/variants/${variantId}/options/${optionId}`),
 }
 
 // Cart API calls
 export const cartAPI = {
     // Get user's cart
-    getCart: () => api.get('/cart'),
+    getCart: () => api.get('/api/cart'),
     
     // Add item to cart
-    addToCart: (cartData) => api.post('/cart/add', cartData),
+    addToCart: (cartData) => api.post('/api/cart/add', cartData),
     
     // Update cart item quantity
-    updateCartItem: (skuId, quantity) => api.put(`/cart/items/${skuId}`, { quantity }),
+    updateCartItem: (skuId, quantity) => api.put(`/api/cart/items/${skuId}`, { quantity }),
     
     // Remove item from cart
-    removeFromCart: (skuId) => api.delete(`/cart/items/${skuId}`),
+    removeFromCart: (skuId) => api.delete(`/api/cart/items/${skuId}`),
     
     // Clear cart
-    clearCart: () => api.delete('/cart/clear'),
+    clearCart: () => api.delete('/api/cart/clear'),
     
     // Validate cart
-    validateCart: () => api.get('/cart/validate'),
+    validateCart: () => api.get('/api/cart/validate'),
 }
 
 
 // Checkout APIs
 export const orderAPI = {
-    createOrder: (payload) => api.post('/orders', payload),
-    getOrders: (params) => api.get('/orders', { params }),
-    getOrderById: (orderId) => api.get(`/orders/${orderId}`),
-    updateOrderStatus: (orderId, status) => api.patch(`/orders/${orderId}/status`, { status }),
-    deleteOrder: (orderId) => api.delete(`/orders/${orderId}`),
+    createOrder: (payload) => api.post('/api/orders', payload),
+    getOrders: (params) => api.get('/api/orders', { params }),
+    getOrderById: (orderId) => api.get(`/api/orders/${orderId}`),
+    updateOrderStatus: (orderId, status) => api.patch(`/api/orders/${orderId}/status`, { status }),
+    deleteOrder: (orderId) => api.delete(`/api/orders/${orderId}`),
 }
 
 
 export const invoiceAPI = {
-    getInvoiceById: (invoiceId) => api.get(`/invoices/${invoiceId}`),
+    getInvoiceById: (invoiceId) => api.get(`/api/invoices/${invoiceId}`),
 }
 
 
 export const paymentAPI = {
-    payInvoice: (data) => api.post('/payments/pay-invoice', data),
-    getPaymentById: (paymentId) => api.get(`/payments/${paymentId}`),
-    markCashCollected: (paymentId, amount) => api.patch(`/payments/${paymentId}/cash`, { amount }),
-    getMpesaStatus: (paymentId) => api.get(`/payments/${paymentId}/mpesa-status`),
-    queryMpesaByCheckoutId: (checkoutRequestId) => api.get(`/payments/mpesa-status/${checkoutRequestId}`),
+    payInvoice: (data) => api.post('/api/payments/pay-invoice', data),
+    getPaymentById: (paymentId) => api.get(`/api/payments/${paymentId}`),
+    markCashCollected: (paymentId, amount) => api.patch(`/api/payments/${paymentId}/cash`, { amount }),
+    getMpesaStatus: (paymentId) => api.get(`/api/payments/${paymentId}/mpesa-status`),
+    queryMpesaByCheckoutId: (checkoutRequestId) => api.get(`/api/payments/mpesa-status/${checkoutRequestId}`),
 }
 
 
 export const receiptAPI = {
-    getReceiptById: (receiptId) => api.get(`/receipts/${receiptId}`),
+    getReceiptById: (receiptId) => api.get(`/api/receipts/${receiptId}`),
 }
 
 // Stats API calls (Admin)
 export const statsAPI = {
-    getOverview: () => api.get('/stats/overview'),
-    getAnalytics: (params) => api.get('/stats/analytics', { params }),
+    getOverview: () => api.get('/api/stats/overview'),
+    getAnalytics: (params) => api.get('/api/stats/analytics', { params }),
 }
 
 // Packaging API calls
 export const packagingAPI = {
     // Admin list/search/filter/sort
-    getPackaging: (params) => api.get('/packaging', { params }),
-    getById: (id) => api.get(`/packaging/${id}`),
-    create: (data) => api.post('/packaging', data),
-    update: (id, data) => api.patch(`/packaging/${id}`, data),
-    remove: (id) => api.delete(`/packaging/${id}`),
-    setDefault: (id) => api.patch(`/packaging/${id}/default`),
+    getPackaging: (params) => api.get('/api/packaging', { params }),
+    getById: (id) => api.get(`/api/packaging/${id}`),
+    create: (data) => api.post('/api/packaging', data),
+    update: (id, data) => api.patch(`/api/packaging/${id}`, data),
+    remove: (id) => api.delete(`/api/packaging/${id}`),
+    setDefault: (id) => api.patch(`/api/packaging/${id}/default`),
 
     // Public for checkout
-    getActivePublic: () => api.get('/packaging/public'),
-    getDefaultPublic: () => api.get('/packaging/public/default'),
+    getActivePublic: () => api.get('/api/packaging/public'),
+    getDefaultPublic: () => api.get('/api/packaging/public/default'),
 }
 
 // Review API calls
 export const reviewAPI = {
     // Get reviews for a product
-    getProductReviews: (productId, params) => api.get(`/reviews/products/${productId}`, { params }),
+    getProductReviews: (productId, params) => api.get(`/api/reviews/products/${productId}`, { params }),
     
     // Get a single review
-    getReviewById: (reviewId) => api.get(`/reviews/${reviewId}`),
+    getReviewById: (reviewId) => api.get(`/api/reviews/${reviewId}`),
     
     // Create a review
-    createReview: (productId, reviewData) => api.post(`/reviews/products/${productId}`, reviewData),
+    createReview: (productId, reviewData) => api.post(`/api/reviews/products/${productId}`, reviewData),
     
     // Update a review
-    updateReview: (reviewId, reviewData) => api.put(`/reviews/${reviewId}`, reviewData),
+    updateReview: (reviewId, reviewData) => api.put(`/api/reviews/${reviewId}`, reviewData),
     
     // Delete a review
-    deleteReview: (reviewId) => api.delete(`/reviews/${reviewId}`),
+    deleteReview: (reviewId) => api.delete(`/api/reviews/${reviewId}`),
     
     // Get user's reviews
-    getUserReviews: (params) => api.get('/reviews/user/reviews', { params }),
+    getUserReviews: (params) => api.get('/api/reviews/user/reviews', { params }),
     
     // Admin: Approve/Reject review
-    approveReview: (reviewId, isApproved) => api.patch(`/reviews/${reviewId}/approve`, { isApproved }),
+    approveReview: (reviewId, isApproved) => api.patch(`/api/reviews/${reviewId}/approve`, { isApproved }),
 }
 
 // Coupon API calls
 export const couponAPI = {
     // Get all coupons (admin only)
-    getAllCoupons: (params) => api.get('/coupons', { params }),
+    getAllCoupons: (params) => api.get('/api/coupons', { params }),
 
     // Get coupon by ID
-    getCouponById: (couponId) => api.get(`/coupons/${couponId}`),
+    getCouponById: (couponId) => api.get(`/api/coupons/${couponId}`),
 
     // Create coupon (admin only)
-    createCoupon: (couponData) => api.post('/coupons', couponData),
+    createCoupon: (couponData) => api.post('/api/coupons', couponData),
 
     // Update coupon (admin only)
-    updateCoupon: (couponId, couponData) => api.put(`/coupons/${couponId}`, couponData),
+    updateCoupon: (couponId, couponData) => api.put(`/api/coupons/${couponId}`, couponData),
 
     // Delete coupon (admin only)
-    deleteCoupon: (couponId) => api.delete(`/coupons/${couponId}`),
+    deleteCoupon: (couponId) => api.delete(`/api/coupons/${couponId}`),
 
     // Validate coupon (public)
-    validateCoupon: (code, orderAmount) => api.post('/coupons/validate', { code }, { params: { orderAmount } }),
+    validateCoupon: (code, orderAmount) => api.post('/api/coupons/validate', { code }, { params: { orderAmount } }),
 
     // Apply coupon to order (protected)
-    applyCoupon: (code, orderAmount) => api.post('/coupons/apply', { code, orderAmount }),
+    applyCoupon: (code, orderAmount) => api.post('/api/coupons/apply', { code, orderAmount }),
 
     // Get coupon statistics (admin only)
-    getCouponStats: () => api.get('/coupons/stats'),
+    getCouponStats: () => api.get('/api/coupons/stats'),
 
     // Generate new coupon code (admin only)
-    generateNewCode: (couponId) => api.patch(`/coupons/${couponId}/generate-code`),
+    generateNewCode: (couponId) => api.patch(`/api/coupons/${couponId}/generate-code`),
 }
 
 // Store Configuration API calls
 export const storeConfigAPI = {
     // Get store configuration
-    getStoreConfig: () => api.get('/store-config'),
+    getStoreConfig: () => api.get('/api/store-config'),
 
     // Create store configuration (admin only)
-    createStoreConfig: (configData) => api.post('/store-config', configData),
+    createStoreConfig: (configData) => api.post('/api/store-config', configData),
 
     // Update store configuration (admin only)
-    updateStoreConfig: (configData) => api.put('/store-config', configData),
+    updateStoreConfig: (configData) => api.put('/api/store-config', configData),
 
     // Delete store configuration (admin only)
-    deleteStoreConfig: () => api.delete('/store-config'),
+    deleteStoreConfig: () => api.delete('/api/store-config'),
 
     // Get store configuration status
-    getStoreConfigStatus: () => api.get('/store-config/status'),
+    getStoreConfigStatus: () => api.get('/api/store-config/status'),
 
     // Initialize default store configuration (admin only)
-    initStoreConfig: () => api.post('/store-config/init'),
+    initStoreConfig: () => api.post('/api/store-config/init'),
 }
 
 export default api 
