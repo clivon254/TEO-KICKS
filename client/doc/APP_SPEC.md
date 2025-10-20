@@ -1,115 +1,149 @@
 ### Client App Spec (Storefront)
 
-This document defines the customer‑facing React app: user flow, pages, functionalities, routes, packages (roles), and environment variables. Do not install packages yet; for now, install only `react-router-dom`.
+This document defines the customer‑facing React app: flow, pages, functionalities, routes, packages (roles), and environment variables. Do not install packages yet; for now, install only `react-router-dom`.
 
 ---
 
 ## Flow (Customer Journey)
 
-1) Browse as guest → search, filter, view products/collections/categories.
-2) Register/Login (Google, Apple ID, Instagram supported) → verify OTP → activate account; Forgot/Reset Password available.
-3) Manage profile and addresses; set notification preferences.
-4) Wishlist and product compare; select variants and customization.
-5) Add to cart; adjust quantities and variants; apply coupon.
-6) Checkout → address → shipping → payment (M‑Pesa, Paystack, Cash).
-7) Order created → receive notifications → track order status. A receipt is generated; the customer receives a copy (email/in‑app) and can view/download it from Order Detail.
+1) Guest browses storefront (home, collections, categories, brands, search) and views product details.
+2) Register/Login (email/phone + password or SSO via Google, Apple ID, Instagram). Forgot/Reset Password supported.
+3) Verify OTP to activate account and unlock features.
+4) Manage profile and settings; set default address; manage notification preferences.
+5) Receive alerts (order status, promotions, price drops, low stock) in‑app/email/SMS.
+6) Discover products via search, collections, categories, brands; filter and sort.
+7) Wishlist and compare products; organize and remove anytime.
+8) Product detail: choose variants/options; see real‑time price and stock per variant.
+9) Pre‑orders: when enabled, allow adding out‑of‑stock variants to cart; otherwise block.
+10) Packaging options (e.g., standard, gift, premium) with clear fees.
+11) Contact store via Contact page; receive confirmation and response.
+12) Reviews: verified purchasers can write reviews/ratings (badge shown).
+13) Cart and quantity management; apply coupon codes and view savings.
+14) Checkout: confirm address, delivery/pick‑up, schedule (optional fee), and payment.
+15) Payments: M‑Pesa (Daraja prompt), Paystack (card), or Cash (if available/policy allows).
+16) Order created and tracked: Placed → Confirmed → Packed → Shipped → Out for Delivery → Delivered (or Cancelled/Returned). Receipt generated and accessible.
 
 ---
 
 ## Pages and Functionalities
 
-- Public
-  - Home `/`
-    - Highlights collections, featured products, banners.
-  - Collections `/collections`, `/collections/:slug`
-    - Browse curated groups.
-  - Categories `/c/:slug`
-    - Clothes, shoes, caps & hats, every head gear, glasses.
-  - Search `/search`
-    - Query bar, facets, results, sort.
-  - Contact `/contact`
-    - Show store contact info, location map, hours and days off; inquiry form.
-    - Form fields: email, message (content). Optional: name/phone.
-    - Validation and spam protection (rate limit / CAPTCHA). Show success confirmation after submit.
-  - Product Listing `/products`
-    - Filters (category, collection, price, rating, attributes), sorting.
-  - Product Details `/product/:slug`
-    - Variant selection (size/color/etc.), images, specs, stock per SKU, customization, related products.
-    - Reviews: list with average rating; only users who purchased and received the product can write/edit one review (verified purchase badge).
-    - Packaging options: choose from available packaging (with fees) before adding to cart.
-  - Compare `/compare`
-    - Side‑by‑side spec and price comparison.
+- Home `/`
+  - Featured collections, new arrivals, best sellers, banners.
+  - Carousels, quick links to categories/brands.
 
-- Auth & Account
-  - Login `/login` (supports Google, Apple ID, Instagram)
+- Catalog & Discovery
+  - Collections `/collections` and detail `/collections/:handle`
+  - Categories `/categories` and detail `/category/:slug`
+  - Brands `/brands` and detail `/brands/:slug`
+  - Search `/search` with results, filters, and sorting
+  - Filters: category, collection, brand, size, color, style, price, rating, availability, variants/options
+  - Sorting: relevance, newest, price, popularity
+
+- Product
+  - Product detail `/products/:slug`
+    - Images/gallery, description (rich text), specs, price, discounts
+    - Variant/option picker (e.g., size, color); displays per‑variant price and stock
+    - Packaging select with fee preview
+    - Reviews: list, rating summary; write review if verified purchaser
+
+- Cart & Checkout
+  - Cart `/cart` — adjust quantity, change variants, remove items, coupon input, totals
+  - Checkout `/checkout` — address confirmation, delivery/pick‑up, schedule (optional), payment selection
+  - Order status
+    - Success `/order/success`
+    - Failure `/order/failed`
+
+- Auth
+  - Login `/login`
   - Register `/register`
   - Verify OTP `/verify-otp`
   - Forgot/Reset Password `/forgot-password`, `/reset-password`
-  - Account `/account`
-    - Profile `/account/profile`
-    - Addresses `/account/addresses`
-    - Notifications `/account/notifications`
-    - Orders `/account/orders`
-    - Order Detail `/account/orders/:id`
-      - View/download receipt (PDF)
 
-- Shopping
+- Account
+  - Overview `/account`
+  - Profile `/account/profile`
+  - Addresses `/account/addresses`
+  - Orders `/account/orders`
+  - Order detail `/account/orders/:id`
+  - Notifications `/account/notifications`
+  - Reviews `/account/reviews` (user’s submitted reviews)
+
+- Wishlist & Compare
   - Wishlist `/wishlist`
-    - Add/remove items; login required.
   - Compare `/compare`
-    - Add/remove products to comparison; login required.
-  - Cart `/cart`
-    - Add items and edit quantities/variants/packaging; login required. Prevent adding out‑of‑stock variants unless pre‑order is enabled.
-  - Checkout `/checkout`
-    - Steps: Address → Shipping/Pick‑up → Payment → Review.
-    - Fulfilment: “Now” or “Scheduled” (show scheduling fee if applicable).
-    - In‑shop vs Away rules: if Away, require payment at checkout; if In‑shop, allow pay now or post to bill.
+
+- Contact & Content
+  - Contact `/contact`
+  - Content pages `/pages/:slug` (About, Terms, Privacy, etc.)
+
+Notes:
+- Real‑time availability per variant on product detail; prevent add‑to‑cart if out of stock unless pre‑order is enabled.
+- Distance‑based delivery fee is shown before payment when applicable.
 
 ---
 
 ## Routes (Browser Routes)
 
-- `/`
-- `/collections`, `/collections/:slug`
-- `/c/:slug`
+- `/`, `/collections`, `/collections/:handle`
+- `/categories`, `/category/:slug`, `/brands`, `/brands/:slug`
 - `/search`
-- `/products`
-- `/product/:slug`
-- `/product/:slug/review` (optional dedicated page/modal for writing/editing a review if eligible)
-- `/compare`
-- `/contact`
+- `/products/:slug`
+- `/cart`, `/checkout`, `/order/success`, `/order/failed`
 - `/login`, `/register`, `/verify-otp`, `/forgot-password`, `/reset-password`
-- `/auth/callback` (OAuth redirect handler if needed)
-- `/wishlist` (auth‑required)
-- `/cart` (auth‑required)
-- `/checkout`
-  - `/checkout/schedule` (optional)
-- `/account`, `/account/profile`, `/account/addresses`, `/account/notifications`, `/account/orders`, `/account/orders/:id`
-- `/account/orders/:id/receipt` (optional direct link)
+- `/account`, `/account/profile`, `/account/addresses`, `/account/orders`, `/account/orders/:id`, `/account/notifications`, `/account/reviews`
+- `/wishlist`, `/compare`
+- `/contact`, `/pages/:slug`
 
-Protected route guards should enforce authentication for wishlist persistence, checkout, and all `/account` routes.
-Additionally enforce authentication for add‑to‑cart and compare actions.
+Auth & Guards:
+- Protect `/account/*`, `/checkout`, and write actions (add to cart, wishlist, compare, submit review) with auth guards.
+- Guests may browse all catalog pages and product details; writing actions require login.
 
 ---
 
 ## Packages & Libraries (Roles)
 
 Install now:
-- `react-router-dom` — Client‑side routing and route guards.
+- `react-router-dom` — Routing, nested routes, and protected route guards.
 
 Planned (do not install yet):
-- `axios` — HTTP client with interceptors for auth tokens and error handling.
-- `@tanstack/react-query` — Server state caching, retries, and optimistic updates.
-- `@reduxjs/toolkit` or `zustand` — Client state (cart UI, modals, small UI state).
-- `react-hook-form` + `zod` — Forms and schema validation.
-- OAuth & social sign‑in SDKs (e.g., `@react-oauth/google`, Apple Sign In JS; Instagram via backend redirect) — Social login buttons and token flow.
-- `tailwindcss` + `@headlessui/react` + `@heroicons/react` — Styling and accessible components.
-- `react-hot-toast` or `sonner` — User notifications.
-- `dayjs` — Date/time utilities.
-- `framer-motion` — Micro‑interactions and transitions.
-- `react-helmet-async` — SEO tags per route.
-- `react-pdf` (or open receipt URL) — Optional in‑app PDF viewing/printing of receipts.
-- (Optional later) CAPTCHA library/integration — Protect contact form from spam.
+- `axios` — HTTP client with interceptors for auth/session and retries.
+- `@tanstack/react-query` — Product lists/details, cart mutations, order creation with caching.
+- State: `zustand` or `@reduxjs/toolkit` — Cart, auth, UI preferences.
+- UI: `tailwindcss` + `@headlessui/react` + `@radix-ui/react-*` — Storefront UI, dialogs, menus.
+- Forms & validation: `react-hook-form` + `zod` — Checkout forms, profile, addresses.
+- SEO: `react-helmet-async` — Meta tags, canonical links, structured data.
+- Media: `swiper` (or `keen-slider`) — Product carousels and galleries.
+- Dates: `dayjs` — Formatting dates in reviews and orders.
+- Icons: `lucide-react` (or similar) — UI icons.
+- Rich text (read‑only): `tiptap` or `react-quill` for product descriptions (optional if server‑rendered HTML is safe).
+
+---
+
+## Environment Variables (Vite)
+
+- `VITE_API_BASE_URL` — Backend base URL for storefront endpoints.
+- `VITE_STORE_NAME` — Display name of the storefront.
+- `VITE_PAYSTACK_PUBLIC_KEY` — Initialize Paystack.
+- `VITE_MPESA_ENV` — `sandbox` or `production` for environment badges and flows.
+- `VITE_ANALYTICS_ID` — Analytics for storefront usage (optional).
+- `VITE_SENTRY_DSN` — Error tracking (optional).
+- `VITE_GOOGLE_CLIENT_ID` — OAuth client ID for Google sign‑in.
+- `VITE_APPLE_CLIENT_ID` — OAuth client ID/service ID for Apple sign‑in.
+- `VITE_INSTAGRAM_CLIENT_ID` — OAuth client ID for Instagram sign‑in.
+- `VITE_OAUTH_REDIRECT_URL` — Frontend URL to handle OAuth redirects (e.g., `/auth/callback`).
+- `VITE_DEFAULT_CURRENCY` — ISO currency code for price formatting (optional).
+- `VITE_MAPS_API_KEY` — For address autocomplete/distance fee preview (optional).
+
+Usage note: Only `VITE_`‑prefixed variables are exposed to the client app at build time.
+
+---
+
+## Install (only routing for now)
+
+```sh
+npm i react-router-dom
+```
+
 
 ---
 
@@ -141,30 +175,19 @@ Four palette options derived from the brand purple. Use as Tailwind custom color
   - primary-button-color: #3A1F66
   - secondary-button-color: #FDE7FF
 
-Note: Background stays white. Ensure AA contrast for text on buttons.
+Notes:
+- Background stays white. Ensure AA contrast for text, buttons, and on images.
+- Use Tailwind tokens and utilities for consistent spacing, typography, and elevation.
 
 ---
 
-## Environment Variables (Vite)
+## Implementation Notes (Non‑binding)
 
-- `VITE_API_BASE_URL` — Backend base URL for API requests.
-- `VITE_APP_NAME` — App display name.
-- `VITE_PAYSTACK_PUBLIC_KEY` — For Paystack initialization (client side; optional until payments are wired).
-- `VITE_MPESA_ENV` — `sandbox` or `production` for conditional UI messaging.
-- `VITE_ANALYTICS_ID` — Analytics key (optional).
-- `VITE_NOTIFICATIONS_WS_URL` — WebSocket endpoint for real‑time notifications (optional).
-- `VITE_GOOGLE_CLIENT_ID` — OAuth client ID for Google sign‑in.
-- `VITE_APPLE_CLIENT_ID` — OAuth client ID/service ID for Apple sign‑in.
-- `VITE_INSTAGRAM_CLIENT_ID` — OAuth client ID for Instagram sign‑in.
-- `VITE_OAUTH_REDIRECT_URL` — Frontend URL to handle OAuth redirects (e.g., `/auth/callback`).
+- API client: centralize `axios` instance with auth token handling, retries, and error normalization.
+- Auth: token storage (httpOnly cookie preferred) and silent session refresh; role isn’t typically used on storefront beyond customer.
+- Caching: use React Query for product lists/details, cart, and order mutations.
+- Accessibility: keyboard navigation in menus, carousels, and modals; focus management on route changes.
+- Performance: image lazy‑loading, responsive sources, and code‑splitting for route groups.
+- Internationalization (optional): currency and locale formatting; prepare for future i18n.
 
-Usage note: Vite exposes only `VITE_`‑prefixed variables to the browser.
-
----
-
-## Install (only routing for now)
-
-```sh
-npm i react-router-dom
-```
 
